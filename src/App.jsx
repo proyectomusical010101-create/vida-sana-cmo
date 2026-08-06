@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Database, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw
 } from 'lucide-react';
 
 import {
@@ -43,7 +43,6 @@ export default function App() {
 
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
-  const [dbConnected, setDbConnected] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Tasa de cambio BCV / DolarAPI
@@ -84,10 +83,8 @@ export default function App() {
   const loadDbData = async () => {
     try {
       const p = await fetchPatients();
-      if (p && p.length > 0) {
-        setPatients(p);
-        setDbConnected(true);
-      }
+      if (p && p.length > 0) setPatients(p);
+
       const inv = await fetchInventory();
       if (inv && inv.length > 0) setInventory(inv);
 
@@ -115,7 +112,7 @@ export default function App() {
       const appts = await fetchAppointmentsApi();
       if (appts && appts.length > 0) setAppointments(appts);
     } catch (err) {
-      console.log('Usando almacenamiento local');
+      console.log('Cargando datos');
     }
   };
 
@@ -240,12 +237,7 @@ export default function App() {
             VS
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{CLINIC_INFO.name}</h1>
-              <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <Database className="w-3 h-3 text-emerald-600" /> DB Cloud Supabase
-              </span>
-            </div>
+            <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{CLINIC_INFO.name}</h1>
             <span className={`text-[11px] font-mono font-semibold hidden sm:block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>RIF: {CLINIC_INFO.rif}</span>
           </div>
         </div>
@@ -368,9 +360,6 @@ export default function App() {
             isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0d162f] border-[#1e2d5a] text-slate-300'
           }`}>
             <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v1.0</div>
-            <p className="flex items-center gap-1 font-semibold text-emerald-700">
-              <Database className="w-3 h-3 text-emerald-600" /> DB Cloud Supabase
-            </p>
           </div>
         </aside>
 
