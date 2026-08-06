@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Database, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User
+  Sun, Moon, Database, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw
 } from 'lucide-react';
 
 import {
@@ -45,6 +45,23 @@ export default function App() {
   const [theme, setTheme] = useState('light');
   const [dbConnected, setDbConnected] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Tasa de cambio BCV / DolarAPI
+  const [bcvRate, setBcvRate] = useState(42.50);
+
+  const fetchGlobalBcvRate = async () => {
+    try {
+      const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      const data = await res.json();
+      if (data && data.promedio) {
+        setBcvRate(data.promedio);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchGlobalBcvRate();
+  }, []);
 
   // Modal para registrar nuevo Administrador DENTRO del sistema
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -123,7 +140,7 @@ export default function App() {
     setAdminRegisterLoading(true);
     try {
       await registerApi(newAdminName, newAdminEmail, newAdminPassword);
-      alert(`✅ ¡Nuevo Administrador "${newAdminName}" registrado con éxito en la Base de Datos SQLite!`);
+      alert(`✅ ¡Nuevo Administrador "${newAdminName}" registrado con éxito!`);
       setShowAdminModal(false);
       setNewAdminName('');
       setNewAdminEmail('');
@@ -143,7 +160,7 @@ export default function App() {
     try {
       await executeProcedureApi(patientId, procObj.id, doctorName);
       await loadDbData();
-      alert(`✅ ¡Procedimiento "${procObj.name}" ejecutado! Insumos descontados y datos guardados de forma permanente en SQLite.`);
+      alert(`✅ ¡Procedimiento "${procObj.name}" ejecutado! Insumos descontados y datos guardados de forma permanente.`);
     } catch (err) {
       const updatedInventory = [...inventory];
       procObj.materials.forEach(mat => {
@@ -226,16 +243,25 @@ export default function App() {
             <div className="flex items-center gap-2">
               <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{CLINIC_INFO.name}</h1>
               <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <Database className="w-3 h-3 text-emerald-600" /> DB SQLite
+                <Database className="w-3 h-3 text-emerald-600" /> DB Cloud Supabase
               </span>
             </div>
-            <span className={`text-[11px] font-mono font-semibold hidden sm:block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>RIF: {CLINIC_INFO.rif} • Servidor :3001</span>
+            <span className={`text-[11px] font-mono font-semibold hidden sm:block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>RIF: {CLINIC_INFO.rif}</span>
           </div>
         </div>
 
-        {/* User Admin Badge + Global Info Pills + Theme Toggle + Logout */}
+        {/* User Admin Badge + BCV Rate Badge + Global Info Pills + Theme Toggle + Logout */}
         <div className="flex items-center gap-2 sm:gap-4 text-xs">
           
+          {/* Live BCV DolarAPI Pill */}
+          <div className={`hidden md:flex px-3 py-1.5 rounded-xl border items-center gap-2 font-bold ${
+            isLight ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-[#0d1b3e] border-[#1e346b] text-blue-200'
+          }`}>
+            <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+            <span className="text-[11px] font-sans">BCV (DolarAPI):</span>
+            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{bcvRate.toFixed(2)} Bs</span>
+          </div>
+
           <div className={`hidden lg:flex px-3.5 py-1.5 rounded-xl border items-center gap-2 font-bold ${
             isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-[#0d162f] border-[#1e2d5a]'
           }`}>
@@ -343,7 +369,7 @@ export default function App() {
           }`}>
             <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v1.0</div>
             <p className="flex items-center gap-1 font-semibold text-emerald-700">
-              <Database className="w-3 h-3 text-emerald-600" /> Base de Datos SQLite
+              <Database className="w-3 h-3 text-emerald-600" /> DB Cloud Supabase
             </p>
           </div>
         </aside>
@@ -581,7 +607,7 @@ export default function App() {
                   disabled={adminRegisterLoading}
                   className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-lg shadow-sm"
                 >
-                  {adminRegisterLoading ? 'Guardando en DB...' : 'Guardar Administrador en SQLite'}
+                  {adminRegisterLoading ? 'Guardando en DB...' : 'Guardar Administrador'}
                 </button>
               </div>
             </form>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2, RefreshCw, Landmark } from 'lucide-react';
 
 export default function BillingCashModule({ transactions, setTransactions, patients, specialists, procedures, onRegisterPayment }) {
   const [activeTab, setActiveTab] = useState('register'); // 'register' | 'history' | 'closeout'
@@ -17,7 +17,33 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [paymentZelle, setPaymentZelle] = useState('0');
   const [paymentCashea, setPaymentCashea] = useState('0');
 
-  const bcvRate = 42.50; // Tasa BCV de referencia
+  // Tasa de Cambio BCV / DolarAPI
+  const [bcvRate, setBcvRate] = useState(42.50);
+  const [rateDate, setRateDate] = useState('');
+  const [loadingRate, setLoadingRate] = useState(false);
+
+  const fetchBcvRate = async () => {
+    setLoadingRate(true);
+    try {
+      const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      const data = await res.json();
+      if (data && data.promedio) {
+        setBcvRate(data.promedio);
+        if (data.fechaActualizacion) {
+          const dt = new Date(data.fechaActualizacion);
+          setRateDate(dt.toLocaleDateString('es-VE'));
+        }
+      }
+    } catch (err) {
+      console.log('Error al cargar la tasa BCV de DolarAPI:', err);
+    } finally {
+      setLoadingRate(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBcvRate();
+  }, []);
 
   const currentProc = procedures.find(p => p.id === selectedProcId);
   const totalAmount = currentProc ? currentProc.price : 0;
@@ -59,7 +85,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
     };
 
     onRegisterPayment(newTx);
-    alert('✅ ¡Cobro registrado con éxito en SQLite!');
+    alert('✅ ¡Cobro registrado con éxito en la Base de Datos!');
     setPaymentUsdCash('0');
     setPaymentBsPos('0');
     setPaymentBsMobile('0');
@@ -71,7 +97,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
@@ -79,13 +105,37 @@ export default function BillingCashModule({ transactions, setTransactions, patie
             Módulo de Caja, Cobranza Multi-Moneda & Presupuestos
           </h2>
           <p className="text-slate-600 text-sm mt-1 font-medium">
-            Cobro en Efectivo USD, Puntos de Venta Bs (Tasa BCV 42.50 Bs/$), Zelle, Pago Móvil y Cashea.
+            Cobro en Efectivo USD, Puntos de Venta (Bs), Pago Móvil (Bs), Zelle y Cashea.
           </p>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-300 px-4 py-2.5 rounded-xl text-right">
-          <span className="text-xs font-bold text-emerald-900 block">Total Recaudado en Caja:</span>
-          <span className="text-xl font-extrabold font-mono text-emerald-950">${totalCollectedToday.toFixed(2)} USD</span>
+        {/* Tasa BCV / DolarAPI Live Widget */}
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+          <div className="bg-blue-50 border border-blue-300 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
+            <Landmark className="w-5 h-5 text-blue-700 shrink-0" />
+            <div>
+              <div className="text-[10px] font-bold text-blue-900 flex items-center gap-1">
+                <span>Tasa Oficial BCV (DolarAPI):</span>
+                {rateDate && <span className="font-mono text-slate-500">({rateDate})</span>}
+              </div>
+              <div className="text-base font-extrabold font-mono text-blue-950 flex items-center gap-1.5">
+                <span>{bcvRate.toFixed(2)} Bs / USD</span>
+                <button
+                  type="button"
+                  onClick={fetchBcvRate}
+                  title="Actualizar tasa BCV"
+                  className="p-1 hover:bg-blue-100 rounded-lg text-blue-700 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingRate ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-emerald-50 border border-emerald-300 px-4 py-2.5 rounded-xl text-right">
+            <span className="text-xs font-bold text-emerald-900 block">Total Recaudado en Caja:</span>
+            <span className="text-xl font-extrabold font-mono text-emerald-950">${totalCollectedToday.toFixed(2)} USD</span>
+          </div>
         </div>
       </div>
 
@@ -143,7 +193,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Procedimiento Clinico</label>
+                <label className="block font-bold mb-1">Procedimiento Clínico</label>
                 <select
                   value={selectedProcId}
                   onChange={(e) => setSelectedProcId(e.target.value)}
@@ -182,9 +232,15 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-slate-700">Total a Cobrar:</span>
-                <span className="text-2xl font-extrabold font-mono text-emerald-900">${totalAmount.toFixed(2)} USD</span>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-700">Total a Cobrar en USD:</span>
+                  <span className="text-2xl font-extrabold font-mono text-emerald-900">${totalAmount.toFixed(2)} USD</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-xs">
+                  <span className="font-bold text-blue-900">Total equivalente a Tasa BCV ({bcvRate.toFixed(2)} Bs):</span>
+                  <span className="font-extrabold font-mono text-blue-950 text-sm">{(totalAmount * bcvRate).toFixed(2)} Bs</span>
+                </div>
               </div>
             </div>
           </div>
@@ -205,10 +261,16 @@ export default function BillingCashModule({ transactions, setTransactions, patie
               </div>
 
               <div>
-                <label className="block font-bold mb-1 text-slate-800">Punto de Venta Bs (Tasa BCV {bcvRate} Bs/$)</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-800">Punto de Venta Bs</label>
+                  <span className="text-[11px] font-mono text-blue-800 font-bold">
+                    Equivalente: ${((parseFloat(paymentBsPos)||0)/bcvRate).toFixed(2)} USD
+                  </span>
+                </div>
                 <input
                   type="number"
                   step="0.01"
+                  placeholder="Monto en Bolívares (Bs)"
                   value={paymentBsPos}
                   onChange={(e) => setPaymentBsPos(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
@@ -216,10 +278,16 @@ export default function BillingCashModule({ transactions, setTransactions, patie
               </div>
 
               <div>
-                <label className="block font-bold mb-1 text-slate-800">Pago Móvil Bs (Tasa BCV {bcvRate} Bs/$)</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-800">Pago Móvil Bs</label>
+                  <span className="text-[11px] font-mono text-blue-800 font-bold">
+                    Equivalente: ${((parseFloat(paymentBsMobile)||0)/bcvRate).toFixed(2)} USD
+                  </span>
+                </div>
                 <input
                   type="number"
                   step="0.01"
+                  placeholder="Monto en Bolívares (Bs)"
                   value={paymentBsMobile}
                   onChange={(e) => setPaymentBsMobile(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
