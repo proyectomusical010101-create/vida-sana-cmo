@@ -63,43 +63,73 @@
   background: #f8fafc;
 }
 
-/* Modo Oscuro Opcional */
+/* MODO OSCURO ELEGANTE & ULTRA NÍTIDO (DARK MEDICAL SAAS PALETTE) */
 .dark-theme {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #0b1329 !important;
+  color: #f8fafc !important;
 }
 
 .dark-theme .glass-panel {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background-color: #111c3a !important;
+  border-color: #1e2d5a !important;
+  color: #f8fafc !important;
 }
 
-.dark-theme .glass-card {
-  background: #1e293b;
-  border: 1px solid #334155;
+.dark-theme .bg-white {
+  background-color: #111c3a !important;
+  color: #f8fafc !important;
 }
 
-.dark-theme .card-subpanel {
-  background: #0f172a;
-  border: 1px solid #334155;
+.dark-theme .bg-slate-50 {
+  background-color: #0d162f !important;
+  color: #f8fafc !important;
 }
 
-.dark-theme .input-field {
-  background: #0f172a;
-  border: 1px solid #334155;
-  color: #ffffff;
+.dark-theme .bg-slate-100 {
+  background-color: #17254d !important;
+  color: #f8fafc !important;
 }
 
-.dark-theme .table-head {
-  background: #020617;
-  color: #cbd5e1;
-  border-bottom: 1px solid #334155;
+.dark-theme .text-slate-900,
+.dark-theme .text-slate-800,
+.dark-theme .text-slate-700 {
+  color: #f8fafc !important;
 }
 
-.dark-theme .table-row {
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
-  color: #f8fafc;
+.dark-theme .text-slate-600,
+.dark-theme .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+.dark-theme .border-slate-200,
+.dark-theme .border-slate-300 {
+  border-color: #1e2d5a !important;
+}
+
+.dark-theme input:not([type="submit"]):not([type="button"]),
+.dark-theme select,
+.dark-theme textarea {
+  background-color: #070d1e !important;
+  color: #ffffff !important;
+  border-color: #21356e !important;
+}
+
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark-theme .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark-theme .divide-slate-300 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e2d5a !important;
+}
+
+.dark-theme .hover\:bg-slate-50:hover {
+  background-color: #17254d !important;
+}
+
+.dark-theme .hover\:bg-slate-100:hover {
+  background-color: #1e2d5a !important;
 }
 
 /* Custom scrollbar */
