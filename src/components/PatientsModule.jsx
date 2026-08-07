@@ -142,7 +142,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       setShowAddPatientModal(false);
       
       if (savedPatient.isLocalFallback) {
-        alert(`⚠️ Paciente registrado LOCALMENTE en esta pantalla. (NOTA: Supabase no respondió, por lo que no se sincronizó en otros navegadores. Revisa tu conexión/Vercel).`);
+        alert(`⚠️ Registrado LOCALMENTE en esta pantalla.\n\nMotivo del fallo en Supabase:\n"${savedPatient.supabaseErrorMsg || 'Error desconocido'}"`);
       } else {
         alert(`✅ ¡Paciente ${savedPatient.name || savedPatient.full_name} guardado PERMANENTEMENTE en la Nube de Supabase!`);
       }
