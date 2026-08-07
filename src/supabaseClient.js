@@ -1,8 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+let rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+let rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
-export const supabase = (supabaseUrl && supabaseAnonKey)
-  ? createClient(supabaseUrl, supabaseAnonKey)
+// Sanitizar comillas o espacios accidentales puestos en Vercel
+rawUrl = rawUrl.replace(/^["']|["']$/g, '');
+rawKey = rawKey.replace(/^["']|["']$/g, '');
+
+// Si falta el protocolo https://, agregarlo automáticamente
+if (rawUrl && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+  rawUrl = `https://${rawUrl}`;
+}
+
+// Remover slash final si existe
+if (rawUrl.endsWith('/')) {
+  rawUrl = rawUrl.slice(0, -1);
+}
+
+export const supabase = (rawUrl && rawKey)
+  ? createClient(rawUrl, rawKey)
   : null;
