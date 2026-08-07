@@ -37,14 +37,8 @@ const safeNum = (val, fallback = 0) => {
 };
 
 export default function App() {
-  // Estado de sesión persistente y seguro (no regresa al login al recargar la página)
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('vidasana_user_v2');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return { name: 'Administrador Principal', role: 'Administrador' };
-  });
+  // Estado de sesión limpio: siempre abre la pantalla azul de Login primero
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
@@ -87,16 +81,10 @@ export default function App() {
 
   const handleLoginSuccess = (userObj) => {
     const validUser = userObj || { name: 'Administrador Principal', role: 'Administrador' };
-    try {
-      localStorage.setItem('vidasana_user_v2', JSON.stringify(validUser));
-    } catch (e) {}
     setCurrentUser(validUser);
   };
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem('vidasana_user_v2');
-    } catch (e) {}
     setCurrentUser(null);
   };
 
@@ -177,7 +165,7 @@ export default function App() {
     { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
   ];
 
-  // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN
+  // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN LIMPIA
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
