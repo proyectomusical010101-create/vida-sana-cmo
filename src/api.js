@@ -125,17 +125,7 @@ export async function registerApi(name, email, password) {
     }
   }
 
-  // Fallback API local
-  try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    if (res.ok) return data;
-  } catch (e) {}
-
+  // Fallback demo local
   return {
     success: true,
     user: {
@@ -143,9 +133,77 @@ export async function registerApi(name, email, password) {
       name: name.trim(),
       email: cleanEmail,
       role: 'Administrador',
-      token: `token-admin-${Date.now()}`
+      token: 'token-demo'
     }
   };
+}
+
+// 0.1 USER MANAGEMENT CRUD (SUPABASE INTEGRATED)
+export async function fetchUsersApi() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
+      if (!error && data) return data;
+    } catch (e) {}
+  }
+  return [
+    { id: 1, name: 'Administrador Principal', email: 'admin@vidasanacmo.com', role: 'Administrador', password_hash: 'admin123', created_at: new Date().toISOString() }
+  ];
+}
+
+export async function createUserApi(userData) {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('users').insert([{
+        name: userData.name,
+        email: userData.email.trim().toLowerCase(),
+        password_hash: userData.password,
+        role: userData.role || 'Administrador'
+      }]).select().single();
+      if (!error && data) return data;
+      if (error) throw new Error(error.message);
+    } catch (e) {
+      if (e.message.includes('unique') || e.message.includes('duplicate')) {
+        throw new Error('El correo ya se encuentra registrado en el sistema.');
+      }
+      throw e;
+    }
+  }
+  return { ...userData, id: Date.now() };
+}
+
+export async function updateUserApi(id, userData) {
+  if (supabase) {
+    try {
+      const updatePayload = {
+        name: userData.name,
+        email: userData.email.trim().toLowerCase(),
+        role: userData.role
+      };
+      if (userData.password) {
+        updatePayload.password_hash = userData.password;
+      }
+      const { data, error } = await supabase.from('users').update(updatePayload).eq('id', id).select().single();
+      if (!error && data) return data;
+      if (error) throw new Error(error.message);
+    } catch (e) {
+      throw e;
+    }
+  }
+  return { ...userData, id };
+}
+
+export async function deleteUserApi(id) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+      return true;
+    } catch (e) {
+      throw e;
+    }
+  }
+  return true;
 }
 
 // 1. PACIENTES
