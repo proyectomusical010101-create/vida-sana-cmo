@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { User, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, MessageSquare, AlertCircle, Edit, Trash2 } from 'lucide-react';
 
-export default function PatientsModule({ patients, setPatients, specialists, setSpecialists, procedures, onRegisterProcedure }) {
+export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
-  const [activeSubTab, setActiveSubTab] = useState('history'); // 'history' | 'odontogram' | 'consents' | 'unified-quote'
+  const [activeSubTab, setActiveSubTab] = useState('history');
 
   // Modal para agregar paciente
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
@@ -25,44 +25,47 @@ export default function PatientsModule({ patients, setPatients, specialists, set
   const [toothStatus, setToothStatus] = useState('Sano');
   const [toothNotes, setToothNotes] = useState('');
 
-  // Canvas para firma digital en Presupuesto Unificado
-  const canvasPatientRef = useRef(null);
-  const canvasDoctorRef = useRef(null);
-  const [isDrawingPatient, setIsDrawingPatient] = useState(false);
-  const [isDrawingDoctor, setIsDrawingDoctor] = useState(false);
-  const [photoTermsAccepted, setPhotoTermsAccepted] = useState(false);
-
   // Presupuesto Unificado - Baremos Seleccionados
   const [quoteProcedures, setQuoteProcedures] = useState([]);
   const [selectedProcToQuote, setSelectedProcToQuote] = useState(procedures[0]?.id || '');
+  const [photoTermsAccepted, setPhotoTermsAccepted] = useState(false);
 
-  const activePatient = patients.find(p => p.id === selectedPatientId) || patients[0];
+  const safePatients = Array.isArray(patients) ? patients : [];
+  const activePatient = safePatients.find(p => p.id === selectedPatientId) || safePatients[0] || null;
 
   // Cálculo Dinámico de Edad
   const calculateAge = (birthDateString) => {
     if (!birthDateString) return activePatient?.age || 30;
-    const today = new Date();
-    const birth = new Date(birthDateString);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      age--;
+    try {
+      const today = new Date();
+      const birth = new Date(birthDateString);
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return (isNaN(age) || age < 0) ? 0 : age;
+    } catch (e) {
+      return 30;
     }
-    return age < 0 ? 0 : age;
   };
 
   // Cálculo de Tiempo Activo en Tratamiento
   const calculateActiveTime = (startDateStr) => {
     if (!startDateStr) return 'Reciente';
-    const start = new Date(startDateStr);
-    const today = new Date();
-    const diffTime = Math.abs(today - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 30) return `${diffDays} Días`;
-    const months = Math.floor(diffDays / 30);
-    if (months < 12) return `${months} Meses`;
-    const years = (months / 12).toFixed(1);
-    return `${years} Años`;
+    try {
+      const start = new Date(startDateStr);
+      const today = new Date();
+      const diffTime = Math.abs(today - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (isNaN(diffDays) || diffDays < 30) return `${isNaN(diffDays)?0:diffDays} Días`;
+      const months = Math.floor(diffDays / 30);
+      if (months < 12) return `${months} Meses`;
+      const years = (months / 12).toFixed(1);
+      return `${years} Años`;
+    } catch (e) {
+      return 'Reciente';
+    }
   };
 
   // Guardar nuevo paciente
@@ -71,7 +74,7 @@ export default function PatientsModule({ patients, setPatients, specialists, set
     const computedAge = calculateAge(patientBirthDate);
 
     const newPatient = {
-      id: `100-${(patients.length + 1).toString().padStart(2, '0')}`,
+      id: `100-${(safePatients.length + 1).toString().padStart(2, '0')}`,
       name: patientName,
       documentId: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
       isMinor,
@@ -88,17 +91,21 @@ export default function PatientsModule({ patients, setPatients, specialists, set
       history: []
     };
 
-    setPatients([newPatient, ...patients]);
+    setPatients([newPatient, ...safePatients]);
     setSelectedPatientId(newPatient.id);
     setShowAddPatientModal(false);
     alert(`✅ ¡Paciente ${newPatient.name} registrado con éxito!`);
   };
 
-  const filteredPatients = patients.filter(p => {
+  const filteredPatients = safePatients.filter(p => {
+    if (!p) return false;
     const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.documentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const pName = p.name || '';
+    const pDoc = p.documentId || '';
+    const pId = p.id || '';
+    const matchesSearch = pName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          pDoc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          pId.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -182,13 +189,13 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                       #{p.id}
                     </span>
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
-                      {p.category}
+                      {p.category || 'Privado'}
                     </span>
                   </div>
 
                   <h4 className="font-extrabold text-xs text-slate-900 truncate">{p.name}</h4>
                   <p className="text-[11px] text-slate-600 font-mono mt-0.5">
-                    CI: {p.documentId} • {p.age} años
+                    CI: {p.documentId || 'N/A'} • {calculateAge(p.birthDate)} años
                   </p>
                   {p.isMinor && (
                     <span className="mt-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 block w-max">
@@ -202,14 +209,14 @@ export default function PatientsModule({ patients, setPatients, specialists, set
         </div>
 
         {/* Columna Derecha: Detalle del Expediente Clínico */}
-        {activePatient && (
+        {activePatient ? (
           <div className="lg:col-span-8 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-6">
 
             {/* Cabecera Ficha Paciente */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white font-extrabold flex items-center justify-center text-lg shadow-md shrink-0">
-                  {activePatient.name.slice(0, 2).toUpperCase()}
+                  {(activePatient.name || 'PA').slice(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -217,7 +224,7 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                     <span className="font-mono text-xs font-bold text-slate-500">Cod: {activePatient.id}</span>
                   </div>
                   <p className="text-xs text-slate-600 font-mono mt-0.5">
-                    Cédula: {activePatient.documentId} • Edad: {calculateAge(activePatient.birthDate)} Años • {activePatient.category}
+                    Cédula: {activePatient.documentId || 'N/A'} • Edad: {calculateAge(activePatient.birthDate)} Años • {activePatient.category}
                   </p>
                   {activePatient.isMinor && (
                     <p className="text-xs text-amber-900 font-bold mt-0.5">
@@ -228,14 +235,16 @@ export default function PatientsModule({ patients, setPatients, specialists, set
               </div>
 
               <div className="flex items-center gap-2">
-                <a
-                  href={`https://wa.me/${activePatient.phone.replace(/[^0-9]/g, '')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
-                >
-                  <Send className="w-3.5 h-3.5" /> WhatsApp Directo
-                </a>
+                {activePatient.phone && (
+                  <a
+                    href={`https://wa.me/${(activePatient.phone||'').replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  >
+                    <Send className="w-3.5 h-3.5" /> WhatsApp Directo
+                  </a>
+                )}
               </div>
             </div>
 
@@ -308,15 +317,15 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-                      {activePatient.history.map((h, i) => (
+                      {(activePatient.history || []).map((h, i) => (
                         <tr key={i} className="hover:bg-slate-50">
                           <td className="p-3 font-mono font-semibold">{h.date}</td>
                           <td className="p-3 font-extrabold text-slate-900">{h.procedure}</td>
                           <td className="p-3 text-slate-700">{h.doctor}</td>
-                          <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${h.cost.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(h.cost||0).toFixed(2)}</td>
                           <td className="p-3 text-center">
                             <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                              {h.status}
+                              {h.status || 'Completado'}
                             </span>
                           </td>
                         </tr>
@@ -397,7 +406,7 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                       className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900"
                     >
                       {procedures.map(pr => (
-                        <option key={pr.id} value={pr.id}>{pr.name} - ${pr.price.toFixed(2)} USD</option>
+                        <option key={pr.id} value={pr.id}>{pr.name} - ${(pr.price||0).toFixed(2)} USD</option>
                       ))}
                     </select>
                     <button
@@ -413,13 +422,13 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                       {quoteProcedures.map((qp, idx) => (
                         <div key={idx} className="flex justify-between items-center text-slate-900 font-bold">
                           <span>{qp.name}</span>
-                          <span className="font-mono text-emerald-900">${qp.price.toFixed(2)} USD</span>
+                          <span className="font-mono text-emerald-900">${(qp.price||0).toFixed(2)} USD</span>
                         </div>
                       ))}
                       <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-extrabold text-sm">
                         <span>Total Presupuesto:</span>
                         <span className="font-mono text-emerald-900">
-                          ${quoteProcedures.reduce((s, p) => s + p.price, 0).toFixed(2)} USD
+                          ${quoteProcedures.reduce((s, p) => s + (p.price||0), 0).toFixed(2)} USD
                         </span>
                       </div>
                     </div>
@@ -466,18 +475,24 @@ export default function PatientsModule({ patients, setPatients, specialists, set
                     <Printer className="w-4 h-4" /> Imprimir Recibo / PDF
                   </button>
 
-                  <a
-                    href={`https://wa.me/${activePatient.phone.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Send className="w-4 h-4" /> Enviar por WhatsApp
-                  </a>
+                  {activePatient.phone && (
+                    <a
+                      href={`https://wa.me/${(activePatient.phone||'').replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Send className="w-4 h-4" /> Enviar por WhatsApp
+                    </a>
+                  )}
                 </div>
               </div>
             )}
 
+          </div>
+        ) : (
+          <div className="lg:col-span-8 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl text-center text-slate-500 font-bold text-xs">
+            Seleccione un paciente de la lista de la izquierda para ver su expediente.
           </div>
         )}
 
