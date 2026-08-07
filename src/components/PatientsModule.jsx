@@ -148,13 +148,13 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
             <UserCheck className="text-teal-600 w-7 h-7" />
             Módulo de Pacientes & Expedientes Clínicos
           </h2>
-          <p className="text-slate-600 text-sm mt-1 font-medium">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 font-medium">
             Expedientes integrados con soporte para menores de edad, Odontograma 2D y Presupuesto Digital Unificado.
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Columna Izquierda: Buscador & Lista de Pacientes */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 shadow-sm p-5 rounded-2xl space-y-4">
+        <div className="lg:col-span-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-5 rounded-2xl space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -180,7 +180,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
               placeholder="Buscar por Nombre, Cédula o Expediente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-600"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white dark:text-white focus:outline-none focus:border-teal-600"
             />
           </div>
 
@@ -192,7 +192,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
                   selectedCategory === cat
                     ? 'bg-teal-600 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {cat === 'ALL' ? 'Todos' : cat}
@@ -212,21 +212,21 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                   onClick={() => setSelectedPatientId(p.id)}
                   className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-teal-50 border-teal-500 shadow-sm'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                      ? 'bg-teal-50 dark:bg-teal-900/30 border-teal-500 shadow-sm'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#17254d] dark:hover:bg-slate-700'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-slate-200 text-slate-800 rounded">
+                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded">
                       #{p.id}
                     </span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700">
                       {p.category || 'Privado'}
                     </span>
                   </div>
 
-                  <h4 className="font-extrabold text-xs text-slate-900 truncate">{nameDisplay}</h4>
-                  <p className="text-[11px] text-slate-600 font-mono mt-0.5">
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white truncate">{nameDisplay}</h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono mt-0.5">
                     CI: {docDisplay} • {ageDisplay} años
                   </p>
                   {p.isMinor && (
@@ -241,20 +241,20 @@ export default function PatientsModule({ patients = [], setPatients, specialists
         </div>
 
         {/* Columna Derecha: Detalle del Expediente Clínico */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-6">
+        <div className="lg:col-span-8 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-6">
 
           {/* Cabecera Ficha Paciente */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-[#1e2d5a]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white font-extrabold flex items-center justify-center text-lg shadow-md shrink-0">
                 {pName.slice(0, 2).toUpperCase()}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-extrabold text-slate-900">{pName}</h3>
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">{pName}</h3>
                   <span className="font-mono text-xs font-bold text-slate-500">Cod: {activePatient?.id || '100-01'}</span>
                 </div>
-                <p className="text-xs text-slate-600 font-mono mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-0.5">
                   Cédula: {pDoc} • Edad: {calculateAge(pBirthDate)} Años • {pCategory}
                 </p>
                 {activePatient?.isMinor && (
@@ -281,34 +281,34 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           {/* Indicadores Clínicos y Seguimiento (Métricas Cabecera) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-              <span className="text-[11px] font-bold text-slate-600 block">Inicio de Tratamiento:</span>
-              <span className="text-sm font-extrabold font-mono text-slate-900">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">Inicio de Tratamiento:</span>
+              <span className="text-sm font-extrabold font-mono text-slate-900 dark:text-white">
                 {pStartDate}
               </span>
             </div>
 
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-              <span className="text-[11px] font-bold text-slate-600 block">Último Control / Consulta:</span>
-              <span className="text-sm font-extrabold font-mono text-slate-900">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block">Último Control / Consulta:</span>
+              <span className="text-sm font-extrabold font-mono text-slate-900 dark:text-white">
                 {pLastControl}
               </span>
             </div>
 
-            <div className="p-3.5 bg-teal-50 border border-teal-200 rounded-xl">
-              <span className="text-[11px] font-bold text-teal-900 block">Tiempo Activo en Tratamiento:</span>
-              <span className="text-sm font-extrabold font-mono text-teal-950">
+            <div className="p-3.5 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl">
+              <span className="text-[11px] font-bold text-teal-900 dark:text-teal-300 block">Tiempo Activo en Tratamiento:</span>
+              <span className="text-sm font-extrabold font-mono text-teal-950 dark:text-teal-100">
                 {calculateActiveTime(pStartDate)}
               </span>
             </div>
           </div>
 
           {/* Sub-Navegación de Ficha */}
-          <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-2">
             <button
               onClick={() => setActiveSubTab('history')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'history' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                activeSubTab === 'history' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <FileText className="w-3.5 h-3.5" /> 1. Historial Clínico
@@ -317,7 +317,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             <button
               onClick={() => setActiveSubTab('odontogram')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'odontogram' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                activeSubTab === 'odontogram' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <Stethoscope className="w-3.5 h-3.5" /> 2. Odontograma 2D
@@ -326,7 +326,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             <button
               onClick={() => setActiveSubTab('unified-quote')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'unified-quote' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                activeSubTab === 'unified-quote' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <Printer className="w-3.5 h-3.5" /> 3. Presupuesto & Firma Digital
@@ -338,7 +338,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+                  <thead className="bg-slate-100 dark:bg-[#0d162f] text-slate-800 dark:text-slate-200 font-bold border-b border-slate-300 dark:border-[#1e2d5a]">
                     <tr>
                       <th className="p-3">Fecha</th>
                       <th className="p-3">Procedimiento Ejecutado</th>
@@ -347,15 +347,15 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                       <th className="p-3 text-center">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
+                  <tbody className="divide-y divide-slate-200 dark:divide-[#1e2d5a] text-slate-900 dark:text-slate-300 font-medium">
                     {pHistory.map((h, i) => (
-                      <tr key={i} className="hover:bg-slate-50">
+                      <tr key={i} className="hover:bg-slate-50 dark:hover:bg-[#17254d]">
                         <td className="p-3 font-mono font-semibold">{String(h?.date || h?.created_at || '2026-07-28')}</td>
                         <td className="p-3 font-extrabold text-slate-900">{String(h?.procedure || h?.procedure_name || 'Consulta')}</td>
                         <td className="p-3 text-slate-700">{String(h?.doctor || h?.doctor_name || 'Dr. Carlos Mendoza')}</td>
                         <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${parseFloat(h?.cost || h?.amount || 45).toFixed(2)}</td>
                         <td className="p-3 text-center">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                             {String(h?.status || 'Completado')}
                           </span>
                         </td>
@@ -369,15 +369,15 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           {/* TAB 2: ODONTOGRAMA 2D INTERACTIVO */}
           {activeSubTab === 'odontogram' && (
-            <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-              <h4 className="font-extrabold text-sm text-slate-900">Odontograma 2D Interactivo por Diente</h4>
+            <div className="p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Odontograma 2D Interactivo por Diente</h4>
               <div className="grid grid-cols-8 gap-2">
                 {[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map(t => (
                   <button
                     key={t}
                     onClick={() => setSelectedTooth(t)}
                     className={`p-3 rounded-xl border text-center font-mono font-bold transition-all ${
-                      selectedTooth === t ? 'bg-teal-600 text-white shadow-md' : 'bg-white text-slate-800 hover:bg-slate-100 border-slate-300'
+                      selectedTooth === t ? 'bg-teal-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700'
                     }`}
                   >
                     {t}
@@ -386,15 +386,15 @@ export default function PatientsModule({ patients = [], setPatients, specialists
               </div>
 
               {selectedTooth && (
-                <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 text-xs">
-                  <span className="font-bold text-slate-900">Pieza Dental Seleccionada: #{selectedTooth}</span>
+                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-3 text-xs">
+                  <span className="font-bold text-slate-900 dark:text-white">Pieza Dental Seleccionada: #{selectedTooth}</span>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block font-bold mb-1">Estado de la Pieza</label>
                       <select
                         value={toothStatus}
                         onChange={(e) => setToothStatus(e.target.value)}
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                        className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
                       >
                         <option value="Sano">Sano / Sin Afección</option>
                         <option value="Caries">Caries Activa</option>
@@ -422,8 +422,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           {/* TAB 3: PRESUPUESTO Y FIRMA DIGITAL UNIFICADA */}
           {activeSubTab === 'unified-quote' && (
-            <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-6">
-              <h4 className="font-extrabold text-sm text-slate-900 pb-2 border-b border-slate-200">
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-6">
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white pb-2 border-b border-slate-200 dark:border-[#1e2d5a]">
                 Generación de Presupuesto Clínico & Firma Digital Unificada
               </h4>
 
@@ -434,7 +434,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                   <select
                     value={selectedProcToQuote}
                     onChange={(e) => setSelectedProcToQuote(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 dark:text-white"
                   >
                     {(procedures || []).map(pr => (
                       <option key={pr.id} value={pr.id}>{pr.name} - ${(pr.price||0).toFixed(2)} USD</option>
@@ -467,7 +467,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
               </div>
 
               {/* Checkbox Aceptación de Términos Fotográficos */}
-              <div className="p-4 bg-white border border-slate-200 rounded-xl flex items-center gap-3">
+              <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center gap-3">
                 <input
                   type="checkbox"
                   id="photoTerms"
@@ -482,14 +482,14 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
               {/* Canvas de Firma Digital (Médico & Paciente) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
                   <span className="font-bold text-xs text-slate-800 block">Firma del Médico Tratante</span>
                   <div className="h-28 border border-slate-300 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-mono text-xs">
                     [ Canvas Firma Médico ]
                   </div>
                 </div>
 
-                <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
+                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
                   <span className="font-bold text-xs text-slate-800 block">Firma del Paciente / Representante</span>
                   <div className="h-28 border border-slate-300 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-mono text-xs">
                     [ Canvas Firma Paciente ]
@@ -528,7 +528,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       {showAddPatientModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white text-slate-900 w-full max-w-lg p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">
-            <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200">
+            <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200 dark:border-[#1e2d5a]">
               Registrar Nuevo Paciente (Expediente Clínico)
             </h3>
 
@@ -553,7 +553,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                   placeholder="Ej: Santiago Andrés Peña"
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
                 />
               </div>
 
@@ -566,11 +566,11 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     placeholder="Ej: V-25.148.963"
                     value={docId}
                     onChange={(e) => setDocId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
                   />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
                   <div>
                     <label className="block font-bold mb-1">Cédula del Representante Legal</label>
                     <input
@@ -579,7 +579,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                       placeholder="Ej: V-15.632.147"
                       value={repDocId}
                       onChange={(e) => setRepDocId(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -591,7 +591,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                       placeholder="Ej: Marcos Antonio Peña"
                       value={repName}
                       onChange={(e) => setRepName(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900"
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -605,7 +605,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     required
                     value={patientBirthDate}
                     onChange={(e) => setPatientBirthDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
                   />
                 </div>
 
@@ -626,7 +626,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     placeholder="+584123456789"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
                   />
                 </div>
 
@@ -635,7 +635,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                   <select
                     value={patientCategory}
                     onChange={(e) => setPatientCategory(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
                   >
                     <option value="Privado">Privado</option>
                     <option value="Funcionario">Funcionario</option>
