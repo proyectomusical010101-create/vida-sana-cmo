@@ -3,7 +3,7 @@ import { ShieldCheck, Lock, Mail, Eye, EyeOff, Activity, CheckCircle2, ArrowRigh
 
 export default function LoginScreen({ onLoginSuccess }) {
   // Login State
-  const [email, setEmail] = useState('admin@vidasana.com');
+  const [email, setEmail] = useState('admin@vidasanacmo.com');
   const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -16,16 +16,21 @@ export default function LoginScreen({ onLoginSuccess }) {
     setErrorMsg('');
     setLoading(true);
 
-    // Acceso instantáneo en 150ms con indicador visual dinámico
+    // Validación estricta de credenciales
     setTimeout(() => {
-      onLoginSuccess({
-        id: 1,
-        name: 'Administrador Principal',
-        email: email || 'admin@vidasana.com',
-        role: 'Administrador',
-        token: 'token-instant'
-      });
-    }, 150);
+      if (email === 'admin@vidasanacmo.com' && password === 'admin123') {
+        onLoginSuccess({
+          id: 1,
+          name: 'Administrador Principal',
+          email: email,
+          role: 'Administrador',
+          token: 'token-secure'
+        });
+      } else {
+        setErrorMsg('Credenciales inválidas. Por favor verifique su correo y contraseña.');
+        setLoading(false);
+      }
+    }, 800);
   };
 
   return (
