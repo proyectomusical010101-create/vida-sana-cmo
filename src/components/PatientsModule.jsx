@@ -105,7 +105,10 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     setIsSaving(true);
     const computedAge = calculateAge(patientBirthDate);
 
+    const patientId = `100-${Date.now().toString().slice(-4)}`;
+
     const patientPayload = {
+      id: patientId,
       name: patientName,
       document_id: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
       is_minor: isMinor,
@@ -117,23 +120,32 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       category: patientCategory,
       assigned_specialist: patientSpecialist,
       treatment_start_date: new Date().toISOString().slice(0, 10),
-      last_control_date: new Date().toISOString().slice(0, 10),
-      // Mapeos adicionales para mantener compatibilidad con el UI
-      documentId: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
-      isMinor: isMinor,
-      birthDate: patientBirthDate,
-      history: []
+      last_control_date: new Date().toISOString().slice(0, 10)
     };
 
     try {
       // 1. Guardar en Base de Datos (Supabase)
       const savedPatient = await createPatientApi(patientPayload);
       
+      // Mapeos adicionales para compatibilidad local de la interfaz
+      const uiPatient = {
+        ...savedPatient,
+        documentId: savedPatient.document_id || savedPatient.documentId,
+        isMinor: savedPatient.is_minor || savedPatient.isMinor,
+        birthDate: savedPatient.birth_date || savedPatient.birthDate,
+        history: []
+      };
+
       // 2. Actualizar UI Local
-      setPatients([savedPatient, ...safePatients]);
-      setSelectedPatientId(savedPatient.id);
+      setPatients([uiPatient, ...safePatients]);
+      setSelectedPatientId(uiPatient.id);
       setShowAddPatientModal(false);
-      alert(`✅ ¡Paciente ${savedPatient.name || savedPatient.full_name} registrado con éxito en la Nube!`);
+      
+      if (savedPatient.isLocalFallback) {
+        alert(`⚠️ Paciente registrado LOCALMENTE en esta pantalla. (NOTA: Supabase no respondió, por lo que no se sincronizó en otros navegadores. Revisa tu conexión/Vercel).`);
+      } else {
+        alert(`✅ ¡Paciente ${savedPatient.name || savedPatient.full_name} guardado PERMANENTEMENTE en la Nube de Supabase!`);
+      }
     } catch (error) {
       alert(`❌ Error al guardar el paciente: ${error.message}`);
     } finally {

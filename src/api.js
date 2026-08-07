@@ -168,16 +168,19 @@ export async function createPatientApi(patientData) {
     try {
       const { data, error } = await supabase.from('patients').insert([patientData]).select().single();
       if (!error && data) return data;
-      console.warn("Supabase no pudo guardar el paciente, usando respaldo local:", error);
+      console.warn("⚠️ Supabase devolvió un error:", error?.message || error);
     } catch (e) {
-      console.warn("Error de conexión Supabase:", e);
+      console.warn("⚠️ Fallo crítico de conexión a Supabase:", e);
     }
+  } else {
+    console.warn("⚠️ Supabase no está inicializado (Llaves ausentes o inválidas).");
   }
   
-  // Respaldo elegante local si falla la red o Supabase
+  // Respaldo local si Supabase no está conectado o falla
   return { 
     ...patientData, 
-    id: `100-${Math.floor(Math.random() * 1000).toString().padStart(2, '0')}` 
+    id: patientData.id || `100-${Math.floor(Math.random() * 1000).toString().padStart(2, '0')}`,
+    isLocalFallback: true 
   };
 }
 
