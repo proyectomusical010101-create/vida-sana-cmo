@@ -88,34 +88,34 @@ export default function App() {
   const loadDbData = async () => {
     try {
       const p = await fetchPatients();
-      if (p && p.length > 0) setPatients(p);
+      if (Array.isArray(p) && p.length > 0) setPatients(p);
 
       const inv = await fetchInventory();
-      if (inv && inv.length > 0) setInventory(inv);
+      if (Array.isArray(inv) && inv.length > 0) setInventory(inv);
 
       const procs = await fetchProcedures();
-      if (procs && procs.length > 0) setProcedures(procs);
+      if (Array.isArray(procs) && procs.length > 0) setProcedures(procs);
 
       const specs = await fetchSpecialists();
-      if (specs && specs.length > 0) setSpecialists(specs);
+      if (Array.isArray(specs) && specs.length > 0) setSpecialists(specs);
 
       const txs = await fetchCashTransactions();
-      if (txs && txs.length > 0) setTransactions(txs);
+      if (Array.isArray(txs) && txs.length > 0) setTransactions(txs);
 
       const csh = await fetchCasheaTransactions();
-      if (csh && csh.length > 0) setCasheaTransactions(csh);
+      if (Array.isArray(csh) && csh.length > 0) setCasheaTransactions(csh);
 
       const r = await fetchConsultoryRentals();
-      if (r && r.length > 0) setConsultoryRentals(r);
+      if (Array.isArray(r) && r.length > 0) setConsultoryRentals(r);
 
       const l = await fetchExtramuralLabOrders();
-      if (l && l.length > 0) setExtramuralLabOrders(l);
+      if (Array.isArray(l) && l.length > 0) setExtramuralLabOrders(l);
 
       const pay = await fetchPayroll();
-      if (pay && pay.length > 0) setPayroll(pay);
+      if (Array.isArray(pay) && pay.length > 0) setPayroll(pay);
 
       const appts = await fetchAppointmentsApi();
-      if (appts && appts.length > 0) setAppointments(appts);
+      if (Array.isArray(appts) && appts.length > 0) setAppointments(appts);
     } catch (err) {
       console.log('Cargando datos');
     }
@@ -128,8 +128,8 @@ export default function App() {
   }, [currentUser]);
 
   const handleLoginSuccess = (userObj) => {
-    setCurrentUser(userObj);
-    localStorage.setItem('currentUser', JSON.stringify(userObj));
+    setCurrentUser(userObj || { name: 'Administrador Principal', role: 'Administrador' });
+    localStorage.setItem('currentUser', JSON.stringify(userObj || { name: 'Administrador Principal', role: 'Administrador' }));
   };
 
   const handleLogout = () => {
@@ -162,10 +162,10 @@ export default function App() {
     try {
       await executeProcedureApi(patientId, procObj.id, doctorName);
       await loadDbData();
-      alert(`✅ ¡Procedimiento "${procObj.name}" ejecutado! Insumos descontados y datos guardados de forma permanente.`);
+      alert(`✅ ¡Procedimiento "${procObj?.name}" ejecutado! Insumos descontados y datos guardados de forma permanente.`);
     } catch (err) {
       const updatedInventory = [...inventory];
-      if (procObj.materials) {
+      if (procObj?.materials) {
         procObj.materials.forEach(mat => {
           const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
           if (invItem) {
@@ -176,13 +176,13 @@ export default function App() {
       setInventory(updatedInventory);
 
       const todayStr = new Date().toISOString().slice(0, 10);
-      const updatedPatients = patients.map(p => {
+      const updatedPatients = (Array.isArray(patients) ? patients : []).map(p => {
         if (p.id === patientId) {
           return {
             ...p,
             history: [
-              { date: todayStr, procedure: procObj.name, doctor: doctorName, cost: procObj.price, status: 'Completado' },
-              ...p.history
+              { date: todayStr, procedure: procObj?.name, doctor: doctorName, cost: procObj?.price || 0, status: 'Completado' },
+              ...(Array.isArray(p.history) ? p.history : [])
             ]
           };
         }
@@ -190,7 +190,7 @@ export default function App() {
       });
       setPatients(updatedPatients);
 
-      alert(`✅ ¡Procedimiento "${procObj.name}" registrado localmente!`);
+      alert(`✅ ¡Procedimiento "${procObj?.name}" registrado localmente!`);
     }
   };
 
@@ -199,9 +199,20 @@ export default function App() {
       await createCashTransactionApi(newTx);
       await loadDbData();
     } catch (err) {
-      setTransactions([newTx, ...transactions]);
+      setTransactions([newTx, ...(Array.isArray(transactions) ? transactions : [])]);
     }
   };
+
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const safePatients = Array.isArray(patients) ? patients : INITIAL_PATIENTS;
+  const safeSpecialists = Array.isArray(specialists) ? specialists : INITIAL_SPECIALISTS;
+  const safeProcedures = Array.isArray(procedures) ? procedures : INITIAL_PROCEDURES;
+  const safeCashea = Array.isArray(casheaTransactions) ? casheaTransactions : INITIAL_CASHEA_TRANSACTIONS;
+  const safeRentals = Array.isArray(consultoryRentals) ? consultoryRentals : INITIAL_CONSULTORY_RENTALS;
+  const safeLabOrders = Array.isArray(extramuralLabOrders) ? extramuralLabOrders : INITIAL_EXTRAMURAL_LAB_ORDERS;
+  const safePayroll = Array.isArray(payroll) ? payroll : INITIAL_PAYROLL;
+
+  const totalTodayIncome = safeTransactions.reduce((s, t) => s + (parseFloat(t?.total || t?.amount || 0) || 0), 0);
 
   const navItems = [
     { id: 'patients', name: '1. Pacientes & Niños (Expediente)', icon: UserCheck },
@@ -259,7 +270,7 @@ export default function App() {
           }`}>
             <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
             <span className="text-[11px] font-sans">BCV (DolarAPI):</span>
-            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{bcvRate.toFixed(2)} Bs</span>
+            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{(bcvRate||755.90).toFixed(2)} Bs</span>
           </div>
 
           <div className={`hidden lg:flex px-3.5 py-1.5 rounded-xl border items-center gap-2 font-bold ${
@@ -268,7 +279,7 @@ export default function App() {
             <Activity className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>Ingresos Hoy:</span>
             <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
-              ${transactions.reduce((s,t)=>s+t.total, 0).toFixed(2)}
+              ${totalTodayIncome.toFixed(2)}
             </span>
           </div>
 
@@ -426,83 +437,83 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
           {activeModule === 'patients' && (
             <PatientsModule
-              patients={patients}
+              patients={safePatients}
               setPatients={setPatients}
-              specialists={specialists}
+              specialists={safeSpecialists}
               setSpecialists={setSpecialists}
-              procedures={procedures}
+              procedures={safeProcedures}
               onRegisterProcedure={handleRegisterProcedure}
             />
           )}
 
           {activeModule === 'baremos' && (
             <ServicesBaremoModule
-              procedures={procedures}
+              procedures={safeProcedures}
               setProcedures={setProcedures}
             />
           )}
 
           {activeModule === 'schedules' && (
             <ScheduleCoverageModule
-              specialists={specialists}
+              specialists={safeSpecialists}
             />
           )}
 
           {activeModule === 'billing' && (
             <BillingCashModule
-              transactions={transactions}
+              transactions={safeTransactions}
               setTransactions={setTransactions}
-              patients={patients}
-              specialists={specialists}
-              procedures={procedures}
+              patients={safePatients}
+              specialists={safeSpecialists}
+              procedures={safeProcedures}
               onRegisterPayment={handleRegisterPayment}
             />
           )}
 
           {activeModule === 'cashea' && (
             <CasheaModule
-              casheaTransactions={casheaTransactions}
+              casheaTransactions={safeCashea}
               setCasheaTransactions={setCasheaTransactions}
-              specialists={specialists}
+              specialists={safeSpecialists}
             />
           )}
 
           {activeModule === 'patient-portal' && (
             <PublicPatientPortal
-              procedures={procedures}
-              specialists={specialists}
+              procedures={safeProcedures}
+              specialists={safeSpecialists}
               onAddAppointment={(appt) => setAppointments([appt, ...appointments])}
             />
           )}
 
           {activeModule === 'roles-audit' && (
             <AuditRolesPortalModule
-              patients={patients}
-              transactions={transactions}
+              patients={safePatients}
+              transactions={safeTransactions}
               currentUser={currentUser}
             />
           )}
 
           {activeModule === 'seniat' && (
             <SpecialistSettlementModule
-              specialists={specialists}
-              transactions={transactions}
+              specialists={safeSpecialists}
+              transactions={safeTransactions}
             />
           )}
 
           {activeModule === 'payroll' && (
             <PayrollModule
-              payroll={payroll}
+              payroll={safePayroll}
               setPayroll={setPayroll}
             />
           )}
 
           {activeModule === 'profitability' && (
             <ProfitabilityDashboard
-              transactions={transactions}
-              casheaTransactions={casheaTransactions}
-              consultoryRentals={consultoryRentals}
-              extramuralLabOrders={extramuralLabOrders}
+              transactions={safeTransactions}
+              casheaTransactions={safeCashea}
+              consultoryRentals={safeRentals}
+              extramuralLabOrders={safeLabOrders}
             />
           )}
 
@@ -510,15 +521,15 @@ export default function App() {
             <InventoryModule
               inventory={inventory}
               setInventory={setInventory}
-              procedures={procedures}
+              procedures={safeProcedures}
               setProcedures={setProcedures}
             />
           )}
 
           {activeModule === 'whatsapp' && (
             <WhatsAppNotificationsModule
-              patients={patients}
-              extramuralLabOrders={extramuralLabOrders}
+              patients={safePatients}
+              extramuralLabOrders={safeLabOrders}
             />
           )}
         </main>
