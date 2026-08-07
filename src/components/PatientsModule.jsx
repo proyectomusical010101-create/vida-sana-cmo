@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit } from 'lucide-react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit } from 'lucide-react';
 
 export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
