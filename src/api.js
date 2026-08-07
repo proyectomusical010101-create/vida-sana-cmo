@@ -164,16 +164,17 @@ export async function fetchPatients() {
 }
 
 export async function createPatientApi(patientData) {
-  let lastError = 'No se encontraron las llaves VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en Vercel';
+  const currentUrl = (import.meta.env.VITE_SUPABASE_URL || 'URL_NO_DEFINIDA').trim();
+  let lastError = `No se encontraron las llaves VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en Vercel (URL: ${currentUrl})`;
   
   if (supabase) {
     try {
       const { data, error } = await supabase.from('patients').insert([patientData]).select().single();
       if (!error && data) return data;
-      lastError = error ? (error.message || JSON.stringify(error)) : 'Respuesta vacía de Supabase';
+      lastError = error ? `${error.message || JSON.stringify(error)} (Intentando conectar a: ${currentUrl})` : 'Respuesta vacía de Supabase';
       console.warn("⚠️ Supabase devolvió un error:", lastError);
     } catch (e) {
-      lastError = e?.message || String(e);
+      lastError = `${e?.message || String(e)} (URL: ${currentUrl})`;
       console.warn("⚠️ Fallo crítico de conexión a Supabase:", e);
     }
   }
