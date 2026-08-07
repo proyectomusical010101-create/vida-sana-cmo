@@ -37,9 +37,7 @@ const safeNum = (val, fallback = 0) => {
 };
 
 export default function App() {
-  // Estado de sesión limpio: siempre abre la pantalla azul de Login primero
   const [currentUser, setCurrentUser] = useState(null);
-
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -165,7 +163,75 @@ export default function App() {
     { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
   ];
 
-  // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN LIMPIA
+  // Renderizado seguro por módulo
+  const renderActiveModule = () => {
+    try {
+      switch (activeModule) {
+        case 'patients':
+          return (
+            <PatientsModule
+              patients={safePatients}
+              setPatients={setPatients}
+              specialists={safeSpecialists}
+              setSpecialists={setSpecialists}
+              procedures={safeProcedures}
+              onRegisterProcedure={handleRegisterProcedure}
+            />
+          );
+        case 'baremos':
+          return <ServicesBaremoModule procedures={safeProcedures} setProcedures={setProcedures} />;
+        case 'schedules':
+          return <ScheduleCoverageModule specialists={safeSpecialists} />;
+        case 'billing':
+          return (
+            <BillingCashModule
+              transactions={safeTransactions}
+              setTransactions={setTransactions}
+              patients={safePatients}
+              specialists={safeSpecialists}
+              procedures={safeProcedures}
+              onRegisterPayment={handleRegisterPayment}
+            />
+          );
+        case 'cashea':
+          return <CasheaModule casheaTransactions={safeCashea} setCasheaTransactions={setCasheaTransactions} specialists={safeSpecialists} />;
+        case 'patient-portal':
+          return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
+        case 'roles-audit':
+          return <AuditRolesPortalModule patients={safePatients} transactions={safeTransactions} currentUser={currentUser} />;
+        case 'seniat':
+          return <SpecialistSettlementModule specialists={safeSpecialists} transactions={safeTransactions} />;
+        case 'payroll':
+          return <PayrollModule payroll={safePayroll} setPayroll={setPayroll} />;
+        case 'profitability':
+          return <ProfitabilityDashboard transactions={safeTransactions} casheaTransactions={safeCashea} consultoryRentals={safeRentals} extramuralLabOrders={safeLabOrders} />;
+        case 'inventory':
+          return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
+        case 'whatsapp':
+          return <WhatsAppNotificationsModule patients={safePatients} extramuralLabOrders={safeLabOrders} />;
+        default:
+          return (
+            <PatientsModule
+              patients={safePatients}
+              setPatients={setPatients}
+              specialists={safeSpecialists}
+              setSpecialists={setSpecialists}
+              procedures={safeProcedures}
+              onRegisterProcedure={handleRegisterProcedure}
+            />
+          );
+      }
+    } catch (e) {
+      return (
+        <div className="p-6 bg-white border border-slate-200 rounded-2xl text-center space-y-2">
+          <h3 className="text-base font-extrabold text-slate-900">Módulo Seleccionado</h3>
+          <p className="text-xs text-slate-600">Haz clic en cualquiera de los 12 módulos del menú lateral para continuar navegando.</p>
+        </div>
+      );
+    }
+  };
+
+  // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
@@ -371,103 +437,7 @@ export default function App() {
 
         {/* Dynamic Module Content View */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
-          {activeModule === 'patients' && (
-            <PatientsModule
-              patients={safePatients}
-              setPatients={setPatients}
-              specialists={safeSpecialists}
-              setSpecialists={setSpecialists}
-              procedures={safeProcedures}
-              onRegisterProcedure={handleRegisterProcedure}
-            />
-          )}
-
-          {activeModule === 'baremos' && (
-            <ServicesBaremoModule
-              procedures={safeProcedures}
-              setProcedures={setProcedures}
-            />
-          )}
-
-          {activeModule === 'schedules' && (
-            <ScheduleCoverageModule
-              specialists={safeSpecialists}
-            />
-          )}
-
-          {activeModule === 'billing' && (
-            <BillingCashModule
-              transactions={safeTransactions}
-              setTransactions={setTransactions}
-              patients={safePatients}
-              specialists={safeSpecialists}
-              procedures={safeProcedures}
-              onRegisterPayment={handleRegisterPayment}
-            />
-          )}
-
-          {activeModule === 'cashea' && (
-            <CasheaModule
-              casheaTransactions={safeCashea}
-              setCasheaTransactions={setCasheaTransactions}
-              specialists={safeSpecialists}
-            />
-          )}
-
-          {activeModule === 'patient-portal' && (
-            <PublicPatientPortal
-              procedures={safeProcedures}
-              specialists={safeSpecialists}
-              onAddAppointment={(appt) => setAppointments([appt, ...appointments])}
-            />
-          )}
-
-          {activeModule === 'roles-audit' && (
-            <AuditRolesPortalModule
-              patients={safePatients}
-              transactions={safeTransactions}
-              currentUser={currentUser}
-            />
-          )}
-
-          {activeModule === 'seniat' && (
-            <SpecialistSettlementModule
-              specialists={safeSpecialists}
-              transactions={safeTransactions}
-            />
-          )}
-
-          {activeModule === 'payroll' && (
-            <PayrollModule
-              payroll={safePayroll}
-              setPayroll={setPayroll}
-            />
-          )}
-
-          {activeModule === 'profitability' && (
-            <ProfitabilityDashboard
-              transactions={safeTransactions}
-              casheaTransactions={safeCashea}
-              consultoryRentals={safeRentals}
-              extramuralLabOrders={safeLabOrders}
-            />
-          )}
-
-          {activeModule === 'inventory' && (
-            <InventoryModule
-              inventory={inventory}
-              setInventory={setInventory}
-              procedures={safeProcedures}
-              setProcedures={setProcedures}
-            />
-          )}
-
-          {activeModule === 'whatsapp' && (
-            <WhatsAppNotificationsModule
-              patients={safePatients}
-              extramuralLabOrders={safeLabOrders}
-            />
-          )}
+          {renderActiveModule()}
         </main>
 
       </div>
