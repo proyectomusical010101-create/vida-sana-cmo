@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2, RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2, RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, Trash2, Edit, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function BillingCashModule({ transactions, setTransactions, patients, specialists, procedures, onRegisterPayment }) {
   const [activeTab, setActiveTab] = useState('register'); // 'register' | 'history' | 'closeout' | 'expenses'
@@ -33,9 +34,10 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [expFeePercent, setExpFeePercent] = useState('1.5');
   const [expNote, setExpNote] = useState('');
 
-  // Filtros Combinados de Cierre
+  // Filtros Combinados de Cierre y Buscador
   const [filterDivision, setFilterDivision] = useState('ALL');
   const [filterShift, setFilterShift] = useState('ALL');
+  const [txSearchTerm, setTxSearchTerm] = useState('');
 
   const activeRate = currencyMode === 'USD_BCV' ? bcvRateUsd : bcvRateEur;
 
@@ -105,12 +107,48 @@ export default function BillingCashModule({ transactions, setTransactions, patie
     };
 
     onRegisterPayment(newTx);
-    alert('✅ ¡Cobro registrado con éxito en la Base de Datos!');
+    Swal.fire('¡Cobro Registrado!', `Transacción ${newTx.id} ingresada con éxito por $${totalAmount.toFixed(2)} USD.`, 'success');
     setPaymentUsdCash('0');
     setPaymentBsPos('0');
     setPaymentBsMobile('0');
     setPaymentZelle('0');
     setPaymentCashea('0');
+  };
+
+  const handleDeleteTransaction = (tx) => {
+    Swal.fire({
+      title: '¿Eliminar Transacción de Caja?',
+      text: `¿Deseas anular y eliminar la transacción ${tx.id} de $${tx.total.toFixed(2)} USD?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Anular y Borrar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setTransactions(transactions.filter(t => t.id !== tx.id));
+        Swal.fire('Anulada', `La transacción ${tx.id} fue eliminada de la caja.`, 'success');
+      }
+    });
+  };
+
+  const handleDeleteExpense = (exp) => {
+    Swal.fire({
+      title: '¿Eliminar Registro de Egreso?',
+      text: `¿Eliminar egreso ${exp.id} de Bs ${exp.amountBs}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Borrar Egreso',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setExpenses(expenses.filter(e => e.id !== exp.id));
+        Swal.fire('Eliminado', `El egreso fue eliminado.`, 'success');
+      }
+    });
   };
 
   const handleAddExpenseSubmit = (e) => {
@@ -133,7 +171,13 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const filteredTransactions = transactions.filter(t => {
     const matchesDiv = filterDivision === 'ALL' || t.division === filterDivision;
     const matchesShift = filterShift === 'ALL' || t.shift === filterShift;
-    return matchesDiv && matchesShift;
+    const search = txSearchTerm.toLowerCase();
+    const matchesSearch = !search ||
+      (t.patient && t.patient.toLowerCase().includes(search)) ||
+      (t.procedure && t.procedure.toLowerCase().includes(search)) ||
+      (t.id && t.id.toLowerCase().includes(search)) ||
+      (t.doctor && t.doctor.toLowerCase().includes(search));
+    return matchesDiv && matchesShift && matchesSearch;
   });
 
   const totalCollectedFiltered = filteredTransactions.reduce((acc, t) => acc + t.total, 0);
@@ -443,19 +487,29 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                   <th className="p-3">Procedimiento</th>
                   <th className="p-3">Turno</th>
                   <th className="p-3 text-right">Monto ($)</th>
+                  <th className="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-                {filteredTransactions.map(t => (
-                  <tr key={t.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-mono font-bold text-slate-700">{t.id}</td>
-                    <td className="p-3 font-mono text-slate-600">{t.date}</td>
-                    <td className="p-3 font-extrabold text-slate-900">{t.patient}</td>
-                    <td className="p-3 font-semibold text-slate-800">{t.procedure}</td>
-                    <td className="p-3 text-slate-700">{t.shift}</td>
-                    <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${t.total.toFixed(2)}</td>
-                  </tr>
-                ))}
+                  {filteredTransactions.map(t => (
+                    <tr key={t.id} className="hover:bg-slate-50">
+                      <td className="p-3 font-mono font-bold text-slate-700">{t.id}</td>
+                      <td className="p-3 font-mono text-slate-600">{t.date}</td>
+                      <td className="p-3 font-extrabold text-slate-900">{t.patient}</td>
+                      <td className="p-3 font-semibold text-slate-800">{t.procedure}</td>
+                      <td className="p-3 text-slate-700">{t.shift}</td>
+                      <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${t.total.toFixed(2)}</td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => handleDeleteTransaction(t)}
+                          className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-600 transition-all"
+                          title="Anular Transacción"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

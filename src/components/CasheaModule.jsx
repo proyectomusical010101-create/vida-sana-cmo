@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Smartphone, ShieldCheck, CheckCircle2, Calculator, AlertCircle, RefreshCw } from 'lucide-react';
+import { Smartphone, ShieldCheck, CheckCircle2, Calculator, AlertCircle, RefreshCw, Trash2, Search } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { reconcileCasheaApi } from '../api';
 
 export default function CasheaModule({ casheaTransactions, setCasheaTransactions, specialists }) {
@@ -10,6 +11,9 @@ export default function CasheaModule({ casheaTransactions, setCasheaTransactions
   const [simAmount, setSimAmount] = useState('200');
   const [simScheme, setSimScheme] = useState('Opción A'); // Opción A (Clínica asume MDR) | Opción B (Especialista asume MDR)
   const [simCommissionRate, setSimCommissionRate] = useState('50');
+
+  // Buscador de Transacciones Cashea
+  const [casheaSearchTerm, setCasheaSearchTerm] = useState('');
 
   const handleReconcileBatch = async () => {
     const pendingInBatch = casheaTransactions.filter(t => t.batchCode === selectedBatchCode && t.status === 'Pendiente Por Banco');
@@ -32,7 +36,25 @@ export default function CasheaModule({ casheaTransactions, setCasheaTransactions
     });
 
     setCasheaTransactions(updated);
-    alert(`✅ ¡Lote ${selectedBatchCode} conciliado masivamente con el extracto bancario!`);
+    Swal.fire('¡Lote Conciliado!', `Se conciliaron masivamente las transacciones del lote ${selectedBatchCode}.`, 'success');
+  };
+
+  const handleDeleteCasheaTx = (tx) => {
+    Swal.fire({
+      title: '¿Eliminar Transacción Cashea?',
+      text: `¿Estás seguro de que deseas anular el contrato de Cashea ${tx.id} de "${tx.patientName}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Eliminar Registro',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setCasheaTransactions(casheaTransactions.filter(item => item.id !== tx.id));
+        Swal.fire('Eliminado', `La transacción de Cashea ${tx.id} fue eliminada.`, 'success');
+      }
+    });
   };
 
   // Calculations for Simulator
@@ -115,7 +137,19 @@ export default function CasheaModule({ casheaTransactions, setCasheaTransactions
       {/* TAB 1: TRANSACCIONES */}
       {activeTab === 'transactions' && (
         <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm p-6 space-y-4">
-          <h3 className="font-extrabold text-slate-900 text-base">Registro Doble Cashea (Inicial + Financiado)</h3>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-slate-200">
+            <h3 className="font-extrabold text-slate-900 text-base">Registro Doble Cashea (Inicial + Financiado)</h3>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar paciente o tratamiento..."
+                value={casheaSearchTerm}
+                onChange={(e) => setCasheaSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-600"
+              />
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
@@ -129,10 +163,19 @@ export default function CasheaModule({ casheaTransactions, setCasheaTransactions
                   <th className="p-3 text-right">MDR (8%) + IVA</th>
                   <th className="p-3 text-right">Neto Banco ($)</th>
                   <th className="p-3 text-center">Estado</th>
+                  <th className="p-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-900">
-                {casheaTransactions.map(t => (
+                {casheaTransactions
+                  .filter(t => {
+                    const search = casheaSearchTerm.toLowerCase();
+                    return !search ||
+                      (t.patientName && t.patientName.toLowerCase().includes(search)) ||
+                      (t.treatment && t.treatment.toLowerCase().includes(search)) ||
+                      (t.id && t.id.toLowerCase().includes(search));
+                  })
+                  .map(t => (
                   <tr key={t.id} className="hover:bg-slate-50">
                     <td className="p-3 font-mono font-bold text-slate-700">{t.id}</td>
                     <td className="p-3 font-extrabold text-slate-900">{t.patientName}</td>
@@ -150,6 +193,15 @@ export default function CasheaModule({ casheaTransactions, setCasheaTransactions
                       }`}>
                         {t.status}
                       </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => handleDeleteCasheaTx(t)}
+                        className="p-1 hover:bg-rose-100 rounded text-rose-600 transition-all"
+                        title="Eliminar Registro Cashea"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

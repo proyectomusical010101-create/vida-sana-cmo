@@ -246,6 +246,32 @@ export async function createPatientApi(patientData) {
   };
 }
 
+export async function updatePatientApi(patientId, patientData) {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('patients').update(patientData).eq('id', patientId).select().single();
+      if (!error && data) return data;
+      if (error) throw new Error(error.message);
+    } catch (e) {
+      console.warn("Error al actualizar paciente en Supabase:", e);
+    }
+  }
+  return { ...patientData, id: patientId };
+}
+
+export async function deletePatientApi(patientId) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('patients').delete().eq('id', patientId);
+      if (error) throw new Error(error.message);
+      return true;
+    } catch (e) {
+      console.warn("Error al eliminar paciente en Supabase:", e);
+    }
+  }
+  return true;
+}
+
 export async function executeProcedureApi(patientId, procId, doctorName) {
   try {
     const res = await fetch(`${API_BASE}/patients/${patientId}/execute-procedure`, {

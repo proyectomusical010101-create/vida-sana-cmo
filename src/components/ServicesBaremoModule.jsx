@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Layers, FileSpreadsheet, Upload, Download, Plus, Search, Filter, Stethoscope, Activity, Eye, ShieldAlert, CheckCircle, Edit, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { MEDICAL_DIVISIONS } from '../mockData';
 
 export default function ServicesBaremoModule({ procedures, setProcedures }) {
@@ -144,12 +145,32 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
 
     if (editingProc) {
       setProcedures(procedures.map(p => p.id === editingProc.id ? procObj : p));
+      Swal.fire('¡Servicio Actualizado!', `Se modificaron los datos de "${procObj.name}".`, 'success');
     } else {
       setProcedures([procObj, ...procedures]);
+      Swal.fire('¡Servicio Registrado!', `El servicio "${procObj.name}" fue agregado al baremo.`, 'success');
     }
 
     setShowModal(false);
     setEditingProc(null);
+  };
+
+  const handleDeleteProcedure = (proc) => {
+    Swal.fire({
+      title: '¿Eliminar Servicio del Baremo?',
+      text: `¿Estás seguro de que deseas eliminar permanentemente "${proc.name}" (${proc.code})?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Eliminar Servicio',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setProcedures(procedures.filter(p => p.id !== proc.id));
+        Swal.fire('Eliminado', `El servicio "${proc.name}" ha sido eliminado del baremo.`, 'success');
+      }
+    });
   };
 
   return (
@@ -281,26 +302,35 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                       {proc.division || 'ODONTOLOGIA'}
                     </span>
                   </td>
-                  <td className="p-3 text-slate-700 font-semibold">{proc.category || 'General'}</td>
-                  <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(proc.price||0).toFixed(2)} USD</td>
-                  <td className="p-3 text-right font-mono font-bold text-teal-800">{proc.doctorCommissionPercent||50}%</td>
-                  <td className="p-3 text-right font-mono text-slate-600">${(proc.estimatedMaterialsCost||0).toFixed(2)}</td>
-                  <td className="p-3 text-center">
+                  <td className="p-3 text-slate-700 font-semibold">{p.category || 'General'}</td>
+                  <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(p.price||0).toFixed(2)} USD</td>
+                  <td className="p-3 text-right font-mono font-bold text-teal-800">{p.doctorCommissionPercent||50}%</td>
+                  <td className="p-3 text-right font-mono text-slate-600">${(p.estimatedMaterialsCost||0).toFixed(2)}</td>
+                  <td className="p-3 text-center space-x-1">
                     <button
                       onClick={() => {
-                        setEditingProc(proc);
-                        setFormCode(proc.code || '');
-                        setFormName(proc.name || '');
-                        setFormDivision(proc.division || 'ODONTOLOGIA');
-                        setFormCategory(proc.category || 'General');
-                        setFormPrice((proc.price||0).toString());
-                        setFormCommission((proc.doctorCommissionPercent||50).toString());
-                        setFormMaterialsCost((proc.estimatedMaterialsCost||0).toString());
+                        setEditingProc(p);
+                        setFormCode(p.code || '');
+                        setFormName(p.name || '');
+                        setFormDivision(p.division || 'ODONTOLOGIA');
+                        setFormCategory(p.category || 'Odontología General');
+                        setFormPrice(p.price?.toString() || '45');
+                        setFormCommission(p.doctorCommissionPercent?.toString() || '50');
+                        setFormMaterialsCost(p.estimatedMaterialsCost?.toString() || '5');
                         setShowModal(true);
                       }}
-                      className="p-1.5 hover:bg-slate-200 rounded text-slate-700"
+                      className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block"
+                      title="Editar Servicio"
                     >
-                      <Edit className="w-4 h-4 text-teal-700" />
+                      <Edit className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteProcedure(p)}
+                      className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-700 dark:text-rose-400 transition-all inline-block"
+                      title="Eliminar Servicio"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-600" />
                     </button>
                   </td>
                 </tr>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2 } from 'lucide-react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { createPatientApi } from '../api';
+import { createPatientApi, updatePatientApi, deletePatientApi } from '../api';
 
 export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -22,6 +22,18 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [patientCategory, setPatientCategory] = useState('Privado');
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Modal y estado para EDITAR Paciente
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
+  const [editPatientForm, setEditPatientForm] = useState({
+    name: '',
+    documentId: '',
+    phone: '',
+    email: '',
+    category: 'Privado',
+    assignedSpecialist: '',
+    birthDate: ''
+  });
 
   // Odontograma Estado Pieza
   const [selectedTooth, setSelectedTooth] = useState(null);
@@ -171,6 +183,108 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     }
   };
 
+  // Abrir Modal Editar Paciente
+  const handleOpenEditModal = () => {
+    if (!activePatient) return;
+    setEditPatientForm({
+      name: activePatient.name || activePatient.full_name || '',
+      documentId: activePatient.documentId || activePatient.document_id || '',
+      phone: activePatient.phone || '',
+      email: activePatient.email || '',
+      category: activePatient.category || 'Privado',
+      assignedSpecialist: activePatient.assignedSpecialist || activePatient.assigned_specialist || 'Dr. Carlos Mendoza',
+      birthDate: activePatient.birthDate || activePatient.birth_date || '1995-06-15'
+    });
+    setShowEditPatientModal(true);
+  };
+
+  // Guardar Cambios Editar Paciente
+  const handleUpdatePatientSubmit = async (e) => {
+    e.preventDefault();
+    if (!activePatient) return;
+    setIsSaving(true);
+
+    const updatePayload = {
+      name: editPatientForm.name,
+      document_id: editPatientForm.documentId,
+      phone: editPatientForm.phone,
+      email: editPatientForm.email,
+      category: editPatientForm.category,
+      assigned_specialist: editPatientForm.assignedSpecialist,
+      birth_date: editPatientForm.birthDate
+    };
+
+    try {
+      await updatePatientApi(activePatient.id, updatePayload);
+
+      const updatedPatients = safePatients.map(p => {
+        if (String(p.id) === String(activePatient.id)) {
+          return {
+            ...p,
+            ...updatePayload,
+            documentId: editPatientForm.documentId,
+            birthDate: editPatientForm.birthDate,
+            assignedSpecialist: editPatientForm.assignedSpecialist
+          };
+        }
+        return p;
+      });
+
+      setPatients(updatedPatients);
+      setShowEditPatientModal(false);
+
+      Swal.fire({
+        title: '¡Expediente Actualizado!',
+        text: `Se modificaron exitosamente los datos del paciente ${editPatientForm.name}.`,
+        icon: 'success',
+        confirmButtonColor: '#0d9488'
+      });
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ELIMINAR PACIENTE PERMANENTEMENTE
+  const handleDeletePatient = async () => {
+    if (!activePatient) return;
+
+    const nameDisplay = activePatient.name || activePatient.full_name || 'este paciente';
+
+    const confirm = await Swal.fire({
+      title: '¿Eliminar Expediente Médico?',
+      text: `¿Estás seguro de que deseas eliminar permanentemente el expediente de "${nameDisplay}"? Esta acción se borrará de la nube y no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Borrar Expediente',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await deletePatientApi(activePatient.id);
+        const remaining = safePatients.filter(p => String(p.id) !== String(activePatient.id));
+        setPatients(remaining);
+
+        if (remaining.length > 0) {
+          setSelectedPatientId(remaining[0].id);
+        }
+
+        Swal.fire({
+          title: 'Expediente Borrado',
+          text: `El expediente de ${nameDisplay} ha sido eliminado con éxito.`,
+          icon: 'success',
+          confirmButtonColor: '#0d9488'
+        });
+      } catch (error) {
+        Swal.fire('Error', error.message, 'error');
+      }
+    }
+  };
+
   const filteredPatients = safePatients.filter(p => {
     if (!p) return false;
     const matchesCategory = selectedCategory === 'ALL' || (p.category || 'Privado') === selectedCategory;
@@ -310,17 +424,31 @@ export default function PatientsModule({ patients = [], setPatients, specialists
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {pPhone && (
                 <a
                   href={`https://wa.me/${pPhone.replace(/[^0-9]/g, '')}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
                 >
-                  <Send className="w-3.5 h-3.5" /> WhatsApp Directo
+                  <Send className="w-3.5 h-3.5" /> WhatsApp
                 </a>
               )}
+
+              <button
+                onClick={handleOpenEditModal}
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-600 shadow-sm transition-all"
+              >
+                <Edit className="w-3.5 h-3.5 text-teal-600" /> Editar
+              </button>
+
+              <button
+                onClick={handleDeletePatient}
+                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-rose-200 dark:border-rose-800 shadow-sm transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Borrar
+              </button>
             </div>
           </div>
 
@@ -712,6 +840,116 @@ export default function PatientsModule({ patients = [], setPatients, specialists
         </div>
       )}
 
+      {/* MODAL EDITAR PACIENTE */}
+      {showEditPatientModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <Edit className="w-5 h-5 text-teal-600" />
+              Editar Expediente Clínico #{activePatient?.id}
+            </h3>
+
+            <form onSubmit={handleUpdatePatientSubmit} className="space-y-4 text-xs font-bold">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  value={editPatientForm.name}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, name: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Cédula / Documento</label>
+                  <input
+                    type="text"
+                    required
+                    value={editPatientForm.documentId}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, documentId: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Fecha de Nacimiento</label>
+                  <input
+                    type="date"
+                    required
+                    value={editPatientForm.birthDate}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, birthDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Teléfono (WhatsApp)</label>
+                  <input
+                    type="text"
+                    value={editPatientForm.phone}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
+                  <select
+                    value={editPatientForm.category}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, category: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
+                  >
+                    <option value="Privado">Privado</option>
+                    <option value="Funcionario">Funcionario</option>
+                    <option value="Convenio">Convenio Empresarial</option>
+                    <option value="Asegurado">Asegurado (Póliza)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Especialista Asignado</label>
+                <select
+                  value={editPatientForm.assignedSpecialist}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, assignedSpecialist: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
+                >
+                  {specialists.length > 0 ? (
+                    specialists.map(s => <option key={s.id} value={s.name}>{s.name} ({s.specialty})</option>)
+                  ) : (
+                    <>
+                      <option value="Dr. Carlos Mendoza">Dr. Carlos Mendoza (Odontología General)</option>
+                      <option value="Dra. Vanessa Rivas">Dra. Vanessa Rivas (Ortodoncia)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-[#1e2d5a]">
+                <button
+                  type="button"
+                  onClick={() => setShowEditPatientModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center gap-2"
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

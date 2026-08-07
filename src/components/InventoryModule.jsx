@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer } from 'lucide-react';
+import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer, Edit, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { createInventoryApi, adjustStockApi } from '../api';
 
 export default function InventoryModule({ inventory = [], setInventory, procedures = [], setProcedures }) {
@@ -20,15 +21,15 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
   const [adjustType, setAdjustType] = useState('entrada');
   const [adjustQty, setAdjustQty] = useState('10');
 
-  // New Item Modal
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [newItem, setNewItem] = useState({
+  // Edit Item Modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedEditItem, setSelectedEditItem] = useState(null);
+  const [editItemForm, setEditItemForm] = useState({
     name: '',
     unit: 'Unidad',
     unitCost: '1.50',
     currentStock: '50',
     minStock: '20',
-    expDate: '2027-12-31',
     category: 'Odontología'
   });
 
@@ -76,6 +77,62 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
       setInventory([...inventory, { id: newId, ...newItem, unitCost: parseFloat(newItem.unitCost), currentStock: parseFloat(newItem.currentStock), minStock: parseFloat(newItem.minStock) }]);
     }
     setShowNewModal(false);
+    Swal.fire('¡Insumo Registrado!', `El producto "${newItem.name}" fue agregado al inventario.`, 'success');
+  };
+
+  const handleOpenEditItemModal = (item) => {
+    setSelectedEditItem(item);
+    setEditItemForm({
+      name: item.name || '',
+      unit: item.unit || 'Unidad',
+      unitCost: getCost(item).toString(),
+      currentStock: getStock(item).toString(),
+      minStock: getMinStock(item).toString(),
+      category: item.category || 'Odontología'
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditItemSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedEditItem) return;
+
+    const updated = inventory.map(item => {
+      if (item.id === selectedEditItem.id) {
+        return {
+          ...item,
+          name: editItemForm.name,
+          unit: editItemForm.unit,
+          unitCost: parseFloat(editItemForm.unitCost) || 0,
+          currentStock: parseFloat(editItemForm.currentStock) || 0,
+          minStock: parseFloat(editItemForm.minStock) || 0,
+          category: editItemForm.category
+        };
+      }
+      return item;
+    });
+
+    setInventory(updated);
+    setShowEditModal(false);
+    Swal.fire('¡Insumo Actualizado!', `Se modificaron los datos de "${editItemForm.name}".`, 'success');
+  };
+
+  const handleDeleteInventoryItem = (item) => {
+    Swal.fire({
+      title: '¿Eliminar Insumo de Inventario?',
+      text: `¿Estás seguro de que deseas eliminar "${item.name}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Borrar Insumo',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setInventory(inventory.filter(i => i.id !== item.id));
+        Swal.fire('Eliminado', `El insumo "${item.name}" ha sido borrado del inventario.`, 'success');
+      }
+    });
   };
 
   // Generate Purchase Order PDF preview
@@ -204,15 +261,32 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
                           {isLow ? '🚨 CRÍTICO' : '✅ OPTIMO'}
                         </span>
                       </td>
-                      <td className="p-3 text-center">
+                      <td className="p-3 text-center space-x-1">
                         <button
                           onClick={() => {
                             setAdjustItem(item);
                             setShowAdjustModal(true);
                           }}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded font-bold text-[11px]"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded font-bold text-[11px] inline-block"
+                          title="Ajustar Stock"
                         >
-                          Ajustar Stock
+                          Stock
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenEditItemModal(item)}
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-teal-700 dark:text-teal-400 transition-all inline-block"
+                          title="Editar Insumo"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteInventoryItem(item)}
+                          className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-600 transition-all inline-block"
+                          title="Eliminar Insumo"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -485,7 +559,7 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
                   type="submit"
                   className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-md"
                 >
-                  Guardar en SQLite
+                  Guardar Material
                 </button>
               </div>
             </form>
@@ -493,6 +567,95 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
         </div>
       )}
 
+      {/* Modal Editar Insumo */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-[#1e2d5a] shadow-2xl space-y-4">
+            <h3 className="text-lg font-black flex items-center gap-2">
+              <Edit className="w-5 h-5 text-teal-600" />
+              Editar Insumo #{selectedEditItem?.id}
+            </h3>
+
+            <form onSubmit={handleEditItemSubmit} className="space-y-3 text-xs font-bold">
+              <div>
+                <label className="block mb-1">Nombre del Material</label>
+                <input
+                  type="text"
+                  required
+                  value={editItemForm.name}
+                  onChange={(e) => setEditItemForm({ ...editItemForm, name: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1">Unidad de Medida</label>
+                  <input
+                    type="text"
+                    required
+                    value={editItemForm.unit}
+                    onChange={(e) => setEditItemForm({ ...editItemForm, unit: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1">Costo Unitario ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editItemForm.unitCost}
+                    onChange={(e) => setEditItemForm({ ...editItemForm, unitCost: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-lg font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1">Stock Actual</label>
+                  <input
+                    type="number"
+                    required
+                    value={editItemForm.currentStock}
+                    onChange={(e) => setEditItemForm({ ...editItemForm, currentStock: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-lg font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1">Stock Mínimo</label>
+                  <input
+                    type="number"
+                    required
+                    value={editItemForm.minStock}
+                    onChange={(e) => setEditItemForm({ ...editItemForm, minStock: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-lg font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-lg font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-md"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
