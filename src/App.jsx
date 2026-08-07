@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key
 } from 'lucide-react';
 
 import {
@@ -31,6 +31,11 @@ import PayrollModule from './components/PayrollModule';
 import WhatsAppNotificationsModule from './components/WhatsAppNotificationsModule';
 import AppointmentsModule from './components/AppointmentsModule';
 
+import ServicesBaremoModule from './components/ServicesBaremoModule';
+import ScheduleCoverageModule from './components/ScheduleCoverageModule';
+import PublicPatientPortal from './components/PublicPatientPortal';
+import AuditRolesPortalModule from './components/AuditRolesPortalModule';
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -46,7 +51,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Tasa de cambio BCV / DolarAPI
-  const [bcvRate, setBcvRate] = useState(42.50);
+  const [bcvRate, setBcvRate] = useState(755.90);
 
   const fetchGlobalBcvRate = async () => {
     try {
@@ -160,12 +165,14 @@ export default function App() {
       alert(`✅ ¡Procedimiento "${procObj.name}" ejecutado! Insumos descontados y datos guardados de forma permanente.`);
     } catch (err) {
       const updatedInventory = [...inventory];
-      procObj.materials.forEach(mat => {
-        const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
-        if (invItem) {
-          invItem.currentStock = Math.max(0, parseFloat((invItem.currentStock - mat.quantity).toFixed(2)));
-        }
-      });
+      if (procObj.materials) {
+        procObj.materials.forEach(mat => {
+          const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
+          if (invItem) {
+            invItem.currentStock = Math.max(0, parseFloat((invItem.currentStock - mat.quantity).toFixed(2)));
+          }
+        });
+      }
       setInventory(updatedInventory);
 
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -197,17 +204,18 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'patients', name: '1. Pacientes & Expedientes', icon: UserCheck, phase: 'Fase 1' },
-    { id: 'appointments', name: '2. Agenda Citas & Turnos', icon: Clock, phase: 'Fase 1' },
-    { id: 'inventory', name: '3. Descargo Inventario & O.C.', icon: Package, phase: 'Fase 1', badge: 'Primordial' },
-    { id: 'billing', name: '4. Caja & Cobranza Multi-moneda', icon: DollarSign, phase: 'Fase 1' },
-    { id: 'cashea', name: '5. Módulo Cashea', icon: Smartphone, phase: 'Fase 1' },
-    { id: 'profitability', name: '6. Dashboard Rentabilidad', icon: TrendingUp, phase: 'Fase 1' },
-    { id: 'consultory', name: '7. Alquiler Consultorios', icon: Calendar, phase: 'Fase 2' },
-    { id: 'lab', name: '8. Laboratorio Extramuros', icon: Truck, phase: 'Fase 2' },
-    { id: 'seniat', name: '9. Liquidaciones & SENIAT', icon: FileCheck, phase: 'Fase 2' },
-    { id: 'payroll', name: '10. Nómina & Bonificaciones', icon: Users, phase: 'Fase 2' },
-    { id: 'whatsapp', name: '11. Notificaciones WhatsApp', icon: MessageSquare, phase: 'Fase 2' },
+    { id: 'patients', name: '1. Pacientes & Niños (Expediente)', icon: UserCheck },
+    { id: 'baremos', name: '2. Baremos & Carga Excel', icon: Layers, badge: 'v2.0' },
+    { id: 'schedules', name: '3. Horarios & Sustitutos', icon: Calendar, badge: 'v2.0' },
+    { id: 'billing', name: '4. Caja, BCV & Euro', icon: DollarSign },
+    { id: 'cashea', name: '5. Módulo Cashea', icon: Smartphone },
+    { id: 'patient-portal', name: '6. Portal Citas Público', icon: Globe, badge: 'v2.0' },
+    { id: 'roles-audit', name: '7. Roles, Portal Médico & Audit', icon: ShieldCheck, badge: 'v2.0' },
+    { id: 'seniat', name: '8. Retenciones 1% & SENIAT', icon: FileCheck },
+    { id: 'payroll', name: '9. Nómina & Antigüedad', icon: Users },
+    { id: 'profitability', name: '10. Rentabilidad, ROI & 10 Años', icon: TrendingUp },
+    { id: 'inventory', name: '11. Inventario & O.C.', icon: Package },
+    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
   ];
 
   // IF NOT LOGGED IN -> RENDER LOGIN SCREEN FIRST
@@ -264,7 +272,7 @@ export default function App() {
             </span>
           </div>
 
-          {/* Botón Registrar Nuevo Administrador (DENTRO DEL SISTEMA) */}
+          {/* Botón Registrar Nuevo Administrador */}
           <button
             onClick={() => setShowAdminModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 font-extrabold rounded-xl border border-teal-300 text-xs shadow-sm transition-all"
@@ -319,7 +327,7 @@ export default function App() {
         }`}>
           <div className="space-y-1">
             <div className={`text-[11px] font-extrabold uppercase tracking-wider px-3 mb-2 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Módulos del Sistema
+              Módulos del Sistema v2.0
             </div>
 
             {navItems.map((item) => {
@@ -329,7 +337,7 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveModule(item.id)}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
+                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
                     isActive
                       ? 'bg-teal-600 text-white shadow-md'
                       : isLight
@@ -345,8 +353,8 @@ export default function App() {
                   {item.badge && (
                     <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border ${
                       isActive
-                        ? 'bg-rose-500 text-white border-rose-600'
-                        : 'bg-rose-100 text-rose-800 border-rose-300'
+                        ? 'bg-amber-400 text-slate-950 border-amber-500'
+                        : 'bg-amber-100 text-amber-900 border-amber-300'
                     }`}>
                       {item.badge}
                     </span>
@@ -359,7 +367,8 @@ export default function App() {
           <div className={`p-3 rounded-xl border text-[11px] space-y-1 ${
             isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0d162f] border-[#1e2d5a] text-slate-300'
           }`}>
-            <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v1.0</div>
+            <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v2.0</div>
+            <p className="text-[10px] text-teal-700 font-semibold">Sistema Multidisciplinario</p>
           </div>
         </aside>
 
@@ -386,7 +395,7 @@ export default function App() {
                           setActiveModule(item.id);
                           setMobileMenuOpen(false);
                         }}
-                        className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
+                        className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
                           isActive
                             ? 'bg-teal-600 text-white shadow-md'
                             : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -426,22 +435,16 @@ export default function App() {
             />
           )}
 
-          {activeModule === 'appointments' && (
-            <AppointmentsModule
-              appointments={appointments}
-              setAppointments={setAppointments}
-              patients={patients}
-              specialists={specialists}
+          {activeModule === 'baremos' && (
+            <ServicesBaremoModule
               procedures={procedures}
+              setProcedures={setProcedures}
             />
           )}
 
-          {activeModule === 'inventory' && (
-            <InventoryModule
-              inventory={inventory}
-              setInventory={setInventory}
-              procedures={procedures}
-              setProcedures={setProcedures}
+          {activeModule === 'schedules' && (
+            <ScheduleCoverageModule
+              specialists={specialists}
             />
           )}
 
@@ -464,28 +467,19 @@ export default function App() {
             />
           )}
 
-          {activeModule === 'profitability' && (
-            <ProfitabilityDashboard
-              transactions={transactions}
-              casheaTransactions={casheaTransactions}
-              consultoryRentals={consultoryRentals}
-              extramuralLabOrders={extramuralLabOrders}
-            />
-          )}
-
-          {activeModule === 'consultory' && (
-            <ConsultoryRentModule
-              consultoryRentals={consultoryRentals}
-              setConsultoryRentals={setConsultoryRentals}
-            />
-          )}
-
-          {activeModule === 'lab' && (
-            <ExtramuralLabModule
-              extramuralLabOrders={extramuralLabOrders}
-              setExtramuralLabOrders={setExtramuralLabOrders}
-              patients={patients}
+          {activeModule === 'patient-portal' && (
+            <PublicPatientPortal
+              procedures={procedures}
               specialists={specialists}
+              onAddAppointment={(appt) => setAppointments([appt, ...appointments])}
+            />
+          )}
+
+          {activeModule === 'roles-audit' && (
+            <AuditRolesPortalModule
+              patients={patients}
+              transactions={transactions}
+              currentUser={currentUser}
             />
           )}
 
@@ -503,6 +497,24 @@ export default function App() {
             />
           )}
 
+          {activeModule === 'profitability' && (
+            <ProfitabilityDashboard
+              transactions={transactions}
+              casheaTransactions={casheaTransactions}
+              consultoryRentals={consultoryRentals}
+              extramuralLabOrders={extramuralLabOrders}
+            />
+          )}
+
+          {activeModule === 'inventory' && (
+            <InventoryModule
+              inventory={inventory}
+              setInventory={setInventory}
+              procedures={procedures}
+              setProcedures={setProcedures}
+            />
+          )}
+
           {activeModule === 'whatsapp' && (
             <WhatsAppNotificationsModule
               patients={patients}
@@ -513,7 +525,7 @@ export default function App() {
 
       </div>
 
-      {/* MODAL CREAR NUEVO ADMINISTRADOR (DENTRO DEL SISTEMA) */}
+      {/* MODAL CREAR NUEVO ADMINISTRADOR */}
       {showAdminModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white text-slate-900 w-full max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">

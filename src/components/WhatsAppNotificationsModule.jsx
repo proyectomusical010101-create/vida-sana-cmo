@@ -1,125 +1,125 @@
 import React, { useState } from 'react';
-import { MessageSquare, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { MessageSquare, Send, Bell, Cake, RefreshCcw, CheckCircle, Calendar, UserCheck } from 'lucide-react';
 
 export default function WhatsAppNotificationsModule({ patients, extramuralLabOrders }) {
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
-  const [templateType, setTemplateType] = useState('cita'); // 'cita' | 'laboratorio' | 'cashea'
-  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('birthday'); // 'birthday' | 'recurrence' | 'reminders'
 
-  const currentPatient = patients.find(p => p.id === selectedPatientId) || patients[0];
+  // Cumpleañeros del Día Mock / Escaneo BD
+  const todayBirthdayPatients = patients.filter(p => {
+    if (!p.birthDate) return false;
+    const bMonth = p.birthDate.slice(5, 7);
+    const todayMonth = new Date().toISOString().slice(5, 7);
+    return bMonth === todayMonth;
+  });
 
-  const getGeneratedMessage = () => {
-    if (!currentPatient) return '';
-
-    if (templateType === 'cita') {
-      return `Hola ${currentPatient.name}, le saludamos cordialmente del Centro Médico Odontológico Vida Sana CMO, C.A. Le recordamos su cita programada para mañana a las 09:00 AM con su especialista asignado (${currentPatient.assignedSpecialist}). Por favor confirmar asistencia respondiendo este mensaje.`;
-    }
-
-    if (templateType === 'laboratorio') {
-      return `Estimado(a) ${currentPatient.name}, le informamos que su trabajo de prótesis/laboratorio ya ha sido recibido en clínica por nuestro equipo. Puede comunicarse con nosotros para agendar la cita de instalación. Centro Médico Vida Sana.`;
-    }
-
-    return `Hola ${currentPatient.name}, su cuota de financiamiento Cashea para el tratamiento odontológico se encuentra al día. Agradecemos su preferencia por el Centro Médico Odontológico Vida Sana CMO, C.A.`;
-  };
-
-  const generatedMessage = getGeneratedMessage();
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedMessage);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const cleanPhone = currentPatient ? currentPatient.phone.replace(/[^0-9]/g, '') : '';
-  const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(generatedMessage)}`;
+  // Alertas de Control Semestral (Fidelización por Recurrencia)
+  const recurrenceAlerts = [
+    { patientName: 'Ana Sofía Rodríguez', phone: '+584123456789', lastService: 'Profilaxis Dental Profunda', monthsAgo: 6, suggestedService: 'Control Odontológico Semestral' },
+    { patientName: 'José Luis Márquez', phone: '+584149876543', lastService: 'Consulta Ginecología / Ecografía', monthsAgo: 6, suggestedService: 'Chequeo Preventivo Anual' },
+    { patientName: 'Valeria Coromoto Diaz', phone: '+584241239876', lastService: 'Control Ortodoncia Mensual', monthsAgo: 1, suggestedService: 'Ajuste Brackets Mensual' }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-            <MessageSquare className="text-emerald-700 w-7 h-7" />
-            Módulo de Notificaciones Directas WhatsApp
+            <MessageSquare className="text-teal-600 w-7 h-7" />
+            Notificaciones Automáticas, Cumpleaños & Fidelización WhatsApp
           </h2>
           <p className="text-slate-600 text-sm mt-1 font-medium">
-            Generador dinámico de plantillas de mensajería directa sin intermediarios mediante api wa.me.
+            Fidelización de pacientes mediante mensajes programados de cumpleaños y campañas de seguimiento por recurrencia a 6 meses.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left: Configuration */}
-        <div className="lg:col-span-6 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200">Parámetros del Mensaje</h3>
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab('birthday')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'birthday' ? 'bg-teal-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Cake className="w-4 h-4" />
+          1. Felicitaciones de Cumpleaños ({todayBirthdayPatients.length})
+        </button>
 
-          <div className="space-y-3 text-xs">
-            <div>
-              <label className="block font-bold mb-1">Seleccionar Paciente Destinatario</label>
-              <select
-                value={selectedPatientId}
-                onChange={(e) => setSelectedPatientId(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
-              >
-                {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold mb-1">Tipo de Notificación</label>
-              <select
-                value={templateType}
-                onChange={(e) => setTemplateType(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
-              >
-                <option value="cita">Recordatorio de Cita Médica / Consulta</option>
-                <option value="laboratorio">Prótesis Recibida de Laboratorio Extramuros</option>
-                <option value="cashea">Notificación Cuota / Financiamiento Cashea</option>
-              </select>
-            </div>
-
-            {currentPatient && (
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                <span className="text-[11px] text-slate-600 font-bold">Número de Teléfono Destino:</span>
-                <div className="font-mono text-slate-900 font-bold text-sm">{currentPatient.phone}</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Message Preview */}
-        <div className="lg:col-span-6 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
-          <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200">Vista Previa Mensaje WhatsApp</h3>
-
-          <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-300 text-xs font-medium text-emerald-950 leading-relaxed shadow-sm">
-            {generatedMessage}
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleCopy}
-              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs border border-slate-300 flex items-center justify-center gap-2 shadow-sm transition-all"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-700" /> : <Copy className="w-4 h-4 text-slate-700" />}
-              {copied ? '¡Copiado al Portapapeles!' : 'Copiar Texto'}
-            </button>
-
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all"
-            >
-              <Send className="w-4 h-4" />
-              Enviar por WhatsApp Directo
-            </a>
-          </div>
-        </div>
-
+        <button
+          onClick={() => setActiveTab('recurrence')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'recurrence' ? 'bg-teal-600 text-white shadow-sm' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <RefreshCcw className="w-4 h-4" />
+          2. Campañas de Fidelización (Recurrencia 6 Meses)
+        </button>
       </div>
+
+      {/* TAB 1: CUMPLEAÑOS */}
+      {activeTab === 'birthday' && (
+        <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
+          <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200 flex items-center gap-2">
+            <Cake className="w-5 h-5 text-amber-500" />
+            Pacientes Cumpleañeros (Mensajes Automáticos Diarios)
+          </h3>
+
+          <div className="space-y-3">
+            {todayBirthdayPatients.map(p => (
+              <div key={p.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <div className="font-extrabold text-sm text-slate-900">{p.name} 🎉</div>
+                  <div className="text-slate-600 font-mono">Teléfono: {p.phone} | Cédula: {p.documentId}</div>
+                  <p className="text-[11px] text-teal-800 font-semibold mt-1">
+                    "¡Feliz Cumpleaños de parte del equipo del Centro Médico Vida Sana CMO! Le deseamos salud y bienestar."
+                  </p>
+                </div>
+
+                <a
+                  href={`https://wa.me/${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${p.name}! 🎉 De parte de todo el equipo de Centro Médico Vida Sana CMO, C.A., le deseamos un muy Feliz Cumpleaños y un año lleno de salud.`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5" /> Enviar Felicitación WhatsApp
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: RECURRENCIA */}
+      {activeTab === 'recurrence' && (
+        <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
+          <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200 flex items-center gap-2">
+            <RefreshCcw className="w-5 h-5 text-teal-600" />
+            Recordatorios de Control Periódico (Fidelización a 6 Meses)
+          </h3>
+
+          <div className="space-y-3">
+            {recurrenceAlerts.map((rec, idx) => (
+              <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <div className="font-extrabold text-sm text-slate-900">{rec.patientName}</div>
+                  <div className="text-slate-600 font-medium">Último Tratamiento: <strong>{rec.lastService}</strong> ({rec.monthsAgo} meses transcurridos)</div>
+                  <div className="text-[11px] text-teal-900 font-bold mt-0.5">Sugerencia: {rec.suggestedService}</div>
+                </div>
+
+                <a
+                  href={`https://wa.me/${rec.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Estimado/a ${rec.patientName}, le saludamos de Centro Médico Vida Sana CMO. Ha transcurrido el tiempo sugerido para su ${rec.suggestedService}. ¿Desea agendar su cita esta semana?`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5" /> Agendar Control por WhatsApp
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );
