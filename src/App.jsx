@@ -285,8 +285,8 @@ export default function App() {
           <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl text-teal-900 font-bold">
             <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0" />
             <div className="text-left hidden sm:block">
-              <div className="text-xs leading-none font-extrabold text-slate-900">{currentUser.name}</div>
-              <div className="text-[10px] text-teal-700 font-semibold">{currentUser.role}</div>
+              <div className="text-xs leading-none font-extrabold text-slate-900">{currentUser?.name || 'Administrador Principal'}</div>
+              <div className="text-[10px] text-teal-700 font-semibold">{currentUser?.role || 'Administrador'}</div>
             </div>
           </div>
 
