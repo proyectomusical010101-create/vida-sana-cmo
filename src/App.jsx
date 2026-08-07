@@ -12,6 +12,19 @@ import {
   CLINIC_INFO
 } from './mockData';
 
+import {
+  fetchPatients,
+  fetchProcedures,
+  fetchSpecialists,
+  fetchCashTransactions,
+  fetchCasheaTransactions,
+  fetchConsultoryRentals,
+  fetchExtramuralLabOrders,
+  fetchPayroll,
+  fetchInventory,
+  fetchAppointmentsApi
+} from './api';
+
 import LoginScreen from './components/LoginScreen';
 import PatientsModule from './components/PatientsModule';
 import InventoryModule from './components/InventoryModule';
@@ -118,16 +131,61 @@ export default function App() {
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [adminRegisterLoading, setAdminRegisterLoading] = useState(false);
 
-  const [specialists, setSpecialists] = useState(INITIAL_SPECIALISTS);
-  const [patients, setPatients] = useState(INITIAL_PATIENTS);
-  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
-  const [procedures, setProcedures] = useState(INITIAL_PROCEDURES);
-  const [casheaTransactions, setCasheaTransactions] = useState(INITIAL_CASHEA_TRANSACTIONS);
-  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS_LOG);
-  const [consultoryRentals, setConsultoryRentals] = useState(INITIAL_CONSULTORY_RENTALS);
-  const [extramuralLabOrders, setExtramuralLabOrders] = useState(INITIAL_EXTRAMURAL_LAB_ORDERS);
-  const [payroll, setPayroll] = useState(INITIAL_PAYROLL);
+  const [specialists, setSpecialists] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [procedures, setProcedures] = useState([]);
+  const [casheaTransactions, setCasheaTransactions] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [consultoryRentals, setConsultoryRentals] = useState([]);
+  const [extramuralLabOrders, setExtramuralLabOrders] = useState([]);
+  const [payroll, setPayroll] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Cargar datos reales de Supabase (o mockData si falla la conexión)
+  const loadDatabaseData = async () => {
+    setIsLoadingData(true);
+    try {
+      const [
+        pts, procs, specs, cash, cashea,
+        rentals, lab, pay, inv, appts
+      ] = await Promise.all([
+        fetchPatients().catch(() => INITIAL_PATIENTS),
+        fetchProcedures().catch(() => INITIAL_PROCEDURES),
+        fetchSpecialists().catch(() => INITIAL_SPECIALISTS),
+        fetchCashTransactions().catch(() => INITIAL_TRANSACTIONS_LOG),
+        fetchCasheaTransactions().catch(() => INITIAL_CASHEA_TRANSACTIONS),
+        fetchConsultoryRentals().catch(() => INITIAL_CONSULTORY_RENTALS),
+        fetchExtramuralLabOrders().catch(() => INITIAL_EXTRAMURAL_LAB_ORDERS),
+        fetchPayroll().catch(() => INITIAL_PAYROLL),
+        fetchInventory().catch(() => INITIAL_INVENTORY),
+        fetchAppointmentsApi().catch(() => [])
+      ]);
+
+      setPatients(pts || INITIAL_PATIENTS);
+      setProcedures(procs || INITIAL_PROCEDURES);
+      setSpecialists(specs || INITIAL_SPECIALISTS);
+      setTransactions(cash || INITIAL_TRANSACTIONS_LOG);
+      setCasheaTransactions(cashea || INITIAL_CASHEA_TRANSACTIONS);
+      setConsultoryRentals(rentals || INITIAL_CONSULTORY_RENTALS);
+      setExtramuralLabOrders(lab || INITIAL_EXTRAMURAL_LAB_ORDERS);
+      setPayroll(pay || INITIAL_PAYROLL);
+      setInventory(inv || INITIAL_INVENTORY);
+      setAppointments(appts || []);
+    } catch (e) {
+      console.error("Error cargando base de datos:", e);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      loadDatabaseData();
+    }
+  }, [currentUser]);
 
   const handleLoginSuccess = (userObj) => {
     const validUser = userObj || { name: 'Administrador Principal', role: 'Administrador' };
@@ -294,29 +352,33 @@ export default function App() {
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${isLight ? 'light-theme bg-slate-100 text-slate-900' : 'dark-theme bg-[#0b1329] text-slate-100'}`}>
       
       {/* Top Navbar */}
-      <header className={`h-16 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 transition-colors ${
-        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#111c3a] border-[#1e2d5a]'
-      }`}>
-        <div className="flex items-center gap-3">
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-1.5 rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-
-          <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
-            VS
-          </div>
-          <div>
-            <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{CLINIC_INFO.name}</h1>
-            <span className={`text-[11px] font-mono font-semibold hidden sm:block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>RIF: {CLINIC_INFO.rif}</span>
+      <header className={`px-4 sm:px-6 py-3 border-b flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors z-30 relative ${isLight ? 'bg-white border-slate-200' : 'bg-[#111c3a] border-[#1e2d5a]'}`}>
+        <div className="flex items-center justify-between w-full sm:w-auto">
+          <div className="flex items-center gap-3">
+            <button 
+              className="sm:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-teal-500/20 shrink-0">
+              VS
+            </div>
+            <div>
+              <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{CLINIC_INFO.name}</h1>
+              <span className={`text-[10px] font-mono font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>RIF: {CLINIC_INFO.rif}</span>
+            </div>
           </div>
         </div>
 
-        {/* User Admin Badge + BCV Rate Badge + Global Info Pills + Theme Toggle + Logout */}
-        <div className="flex items-center gap-2 sm:gap-4 text-xs">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+          
+          {isLoadingData && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:border-amber-700/50 dark:text-amber-400 text-xs font-bold">
+              <div className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+              Sincronizando Base de Datos...
+            </div>
+          )}
           
           {/* Live BCV DolarAPI Pill */}
           <div className={`hidden md:flex px-3 py-1.5 rounded-xl border items-center gap-2 font-bold ${

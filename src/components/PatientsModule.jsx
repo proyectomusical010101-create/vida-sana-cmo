@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit } from 'lucide-react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2 } from 'lucide-react';
+import { createPatientApi } from '../api';
 
 export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -19,6 +20,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [patientEmail, setPatientEmail] = useState('');
   const [patientCategory, setPatientCategory] = useState('Privado');
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Odontograma Estado Pieza
   const [selectedTooth, setSelectedTooth] = useState(null);
@@ -98,32 +100,45 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   };
 
   // Guardar nuevo paciente
-  const handleSavePatientSubmit = (e) => {
+  const handleSavePatientSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     const computedAge = calculateAge(patientBirthDate);
 
-    const newPatient = {
-      id: `100-${(safePatients.length + 1).toString().padStart(2, '0')}`,
+    const patientPayload = {
       name: patientName,
-      documentId: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
-      isMinor,
-      representativeId: isMinor ? repDocId : '',
-      representativeName: isMinor ? repName : '',
-      birthDate: patientBirthDate,
+      document_id: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
+      is_minor: isMinor,
+      representative_id: isMinor ? repDocId : '',
+      representative_name: isMinor ? repName : '',
+      birth_date: patientBirthDate,
       phone: patientPhone,
       email: patientEmail,
-      age: computedAge,
       category: patientCategory,
-      assignedSpecialist: patientSpecialist,
-      treatmentStartDate: new Date().toISOString().slice(0, 10),
-      lastControlDate: new Date().toISOString().slice(0, 10),
+      assigned_specialist: patientSpecialist,
+      treatment_start_date: new Date().toISOString().slice(0, 10),
+      last_control_date: new Date().toISOString().slice(0, 10),
+      // Mapeos adicionales para mantener compatibilidad con el UI
+      documentId: isMinor ? `V-Menor (${repDocId || 'N/A'})` : docId,
+      isMinor: isMinor,
+      birthDate: patientBirthDate,
       history: []
     };
 
-    setPatients([newPatient, ...safePatients]);
-    setSelectedPatientId(newPatient.id);
-    setShowAddPatientModal(false);
-    alert(`✅ ¡Paciente ${newPatient.name} registrado con éxito!`);
+    try {
+      // 1. Guardar en Base de Datos (Supabase)
+      const savedPatient = await createPatientApi(patientPayload);
+      
+      // 2. Actualizar UI Local
+      setPatients([savedPatient, ...safePatients]);
+      setSelectedPatientId(savedPatient.id);
+      setShowAddPatientModal(false);
+      alert(`✅ ¡Paciente ${savedPatient.name || savedPatient.full_name} registrado con éxito en la Nube!`);
+    } catch (error) {
+      alert(`❌ Error al guardar el paciente: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const filteredPatients = safePatients.filter(p => {
@@ -653,11 +668,13 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                 >
                   Cancelar
                 </button>
-                <button
+                <button 
                   type="submit"
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-lg shadow-sm"
+                  disabled={isSaving}
+                  className="px-6 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                 >
-                  Guardar Expediente
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {isSaving ? 'Guardando en la Nube...' : 'Guardar Expediente Oficial'}
                 </button>
               </div>
             </form>

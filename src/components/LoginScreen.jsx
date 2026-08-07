@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Lock, Mail, Eye, EyeOff, Activity, CheckCircle2, ArrowRight, Stethoscope, Building2, Loader2 } from 'lucide-react';
+import { loginApi } from '../api';
 
 export default function LoginScreen({ onLoginSuccess }) {
   // Login State
@@ -16,21 +17,18 @@ export default function LoginScreen({ onLoginSuccess }) {
     setErrorMsg('');
     setLoading(true);
 
-    // Validación estricta de credenciales
-    setTimeout(() => {
-      if (email === 'admin@vidasanacmo.com' && password === 'admin123') {
-        onLoginSuccess({
-          id: 1,
-          name: 'Administrador Principal',
-          email: email,
-          role: 'Administrador',
-          token: 'token-secure'
-        });
-      } else {
-        setErrorMsg('Credenciales inválidas. Por favor verifique su correo y contraseña.');
+    // Validación estricta con API Backend / Supabase
+    setTimeout(async () => {
+      try {
+        const response = await loginApi(email, password);
+        if (response && response.success) {
+          onLoginSuccess(response.user);
+        }
+      } catch (error) {
+        setErrorMsg(error.message || 'Credenciales inválidas. Por favor verifique su correo y contraseña.');
         setLoading(false);
       }
-    }, 800);
+    }, 500);
   };
 
   return (
