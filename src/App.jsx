@@ -42,38 +42,6 @@ const safeNum = (val, fallback = 0) => {
   return isNaN(parsed) ? fallback : parsed;
 };
 
-// Componente para proteger cada módulo de errores individuales sin congelar la app
-class ModuleBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidCatch(err) {
-    console.error("Module error:", err);
-  }
-  componentDidUpdate(prevProps) {
-    if (prevProps.moduleKey !== this.props.moduleKey) {
-      this.setState({ hasError: false });
-    }
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-8 bg-white border border-slate-200 rounded-2xl space-y-3 text-center">
-          <h3 className="text-lg font-extrabold text-slate-900">Módulo Cargado</h3>
-          <p className="text-xs text-slate-600 font-medium">
-            Selecciona cualquier otro módulo en la barra izquierda para navegar por la plataforma.
-          </p>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeModule, setActiveModule] = useState('patients');
@@ -464,105 +432,103 @@ export default function App() {
 
         {/* Dynamic Module Content View */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
-          <ModuleBoundary moduleKey={activeModule}>
-            {activeModule === 'patients' && (
-              <PatientsModule
-                patients={safePatients}
-                setPatients={setPatients}
-                specialists={safeSpecialists}
-                setSpecialists={setSpecialists}
-                procedures={safeProcedures}
-                onRegisterProcedure={handleRegisterProcedure}
-              />
-            )}
+          {activeModule === 'patients' && (
+            <PatientsModule
+              patients={safePatients}
+              setPatients={setPatients}
+              specialists={safeSpecialists}
+              setSpecialists={setSpecialists}
+              procedures={safeProcedures}
+              onRegisterProcedure={handleRegisterProcedure}
+            />
+          )}
 
-            {activeModule === 'baremos' && (
-              <ServicesBaremoModule
-                procedures={safeProcedures}
-                setProcedures={setProcedures}
-              />
-            )}
+          {activeModule === 'baremos' && (
+            <ServicesBaremoModule
+              procedures={safeProcedures}
+              setProcedures={setProcedures}
+            />
+          )}
 
-            {activeModule === 'schedules' && (
-              <ScheduleCoverageModule
-                specialists={safeSpecialists}
-              />
-            )}
+          {activeModule === 'schedules' && (
+            <ScheduleCoverageModule
+              specialists={safeSpecialists}
+            />
+          )}
 
-            {activeModule === 'billing' && (
-              <BillingCashModule
-                transactions={safeTransactions}
-                setTransactions={setTransactions}
-                patients={safePatients}
-                specialists={safeSpecialists}
-                procedures={safeProcedures}
-                onRegisterPayment={handleRegisterPayment}
-              />
-            )}
+          {activeModule === 'billing' && (
+            <BillingCashModule
+              transactions={safeTransactions}
+              setTransactions={setTransactions}
+              patients={safePatients}
+              specialists={safeSpecialists}
+              procedures={safeProcedures}
+              onRegisterPayment={handleRegisterPayment}
+            />
+          )}
 
-            {activeModule === 'cashea' && (
-              <CasheaModule
-                casheaTransactions={safeCashea}
-                setCasheaTransactions={setCasheaTransactions}
-                specialists={safeSpecialists}
-              />
-            )}
+          {activeModule === 'cashea' && (
+            <CasheaModule
+              casheaTransactions={safeCashea}
+              setCasheaTransactions={setCasheaTransactions}
+              specialists={safeSpecialists}
+            />
+          )}
 
-            {activeModule === 'patient-portal' && (
-              <PublicPatientPortal
-                procedures={safeProcedures}
-                specialists={safeSpecialists}
-                onAddAppointment={(appt) => setAppointments([appt, ...appointments])}
-              />
-            )}
+          {activeModule === 'patient-portal' && (
+            <PublicPatientPortal
+              procedures={safeProcedures}
+              specialists={safeSpecialists}
+              onAddAppointment={(appt) => setAppointments([appt, ...appointments])}
+            />
+          )}
 
-            {activeModule === 'roles-audit' && (
-              <AuditRolesPortalModule
-                patients={safePatients}
-                transactions={safeTransactions}
-                currentUser={currentUser}
-              />
-            )}
+          {activeModule === 'roles-audit' && (
+            <AuditRolesPortalModule
+              patients={safePatients}
+              transactions={safeTransactions}
+              currentUser={currentUser}
+            />
+          )}
 
-            {activeModule === 'seniat' && (
-              <SpecialistSettlementModule
-                specialists={safeSpecialists}
-                transactions={safeTransactions}
-              />
-            )}
+          {activeModule === 'seniat' && (
+            <SpecialistSettlementModule
+              specialists={safeSpecialists}
+              transactions={safeTransactions}
+            />
+          )}
 
-            {activeModule === 'payroll' && (
-              <PayrollModule
-                payroll={safePayroll}
-                setPayroll={setPayroll}
-              />
-            )}
+          {activeModule === 'payroll' && (
+            <PayrollModule
+              payroll={safePayroll}
+              setPayroll={setPayroll}
+            />
+          )}
 
-            {activeModule === 'profitability' && (
-              <ProfitabilityDashboard
-                transactions={safeTransactions}
-                casheaTransactions={safeCashea}
-                consultoryRentals={safeRentals}
-                extramuralLabOrders={safeLabOrders}
-              />
-            )}
+          {activeModule === 'profitability' && (
+            <ProfitabilityDashboard
+              transactions={safeTransactions}
+              casheaTransactions={safeCashea}
+              consultoryRentals={safeRentals}
+              extramuralLabOrders={safeLabOrders}
+            />
+          )}
 
-            {activeModule === 'inventory' && (
-              <InventoryModule
-                inventory={inventory}
-                setInventory={setInventory}
-                procedures={safeProcedures}
-                setProcedures={setProcedures}
-              />
-            )}
+          {activeModule === 'inventory' && (
+            <InventoryModule
+              inventory={inventory}
+              setInventory={setInventory}
+              procedures={safeProcedures}
+              setProcedures={setProcedures}
+            />
+          )}
 
-            {activeModule === 'whatsapp' && (
-              <WhatsAppNotificationsModule
-                patients={safePatients}
-                extramuralLabOrders={safeLabOrders}
-              />
-            )}
-          </ModuleBoundary>
+          {activeModule === 'whatsapp' && (
+            <WhatsAppNotificationsModule
+              patients={safePatients}
+              extramuralLabOrders={safeLabOrders}
+            />
+          )}
         </main>
 
       </div>
