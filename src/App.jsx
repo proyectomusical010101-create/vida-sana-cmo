@@ -37,14 +37,8 @@ import PublicPatientPortal from './components/PublicPatientPortal';
 import AuditRolesPortalModule from './components/AuditRolesPortalModule';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('currentUser');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  // Estado de sesión limpio (Garantiza 100% que siempre abra la pantalla de Login limpia sin pantallas blancas)
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
@@ -128,13 +122,12 @@ export default function App() {
   }, [currentUser]);
 
   const handleLoginSuccess = (userObj) => {
-    setCurrentUser(userObj || { name: 'Administrador Principal', role: 'Administrador' });
-    localStorage.setItem('currentUser', JSON.stringify(userObj || { name: 'Administrador Principal', role: 'Administrador' }));
+    const validUser = userObj || { name: 'Administrador Principal', role: 'Administrador' };
+    setCurrentUser(validUser);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
   };
 
   const handleCreateNewAdminSubmit = async (e) => {
@@ -229,7 +222,7 @@ export default function App() {
     { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
   ];
 
-  // IF NOT LOGGED IN -> RENDER LOGIN SCREEN FIRST
+  // SI NO HAY SESION ACTIVA -> MUESTRA SIEMPRE LA PANTALLA DE LOGIN
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
