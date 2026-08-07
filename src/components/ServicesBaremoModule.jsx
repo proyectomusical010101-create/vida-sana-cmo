@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Layers, FileSpreadsheet, Upload, Download, Plus, Search, Filter, Stethoscope, Activity, Eye, ShieldAlert, CheckCircle, Edit, Trash2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import { MEDICAL_DIVISIONS } from '../mockData';
 
 export default function ServicesBaremoModule({ procedures, setProcedures }) {
@@ -29,54 +28,26 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     return matchesDivision && matchesCategory && matchesSearch;
   });
 
-  // Exportar / Descargar Plantilla Excel (.XLSX)
+  // Exportar / Descargar Plantilla Excel/CSV oficial
   const handleDownloadExcelTemplate = () => {
-    const templateData = [
-      {
-        Codigo: 'OD-101',
-        Servicio: 'Resina Fotocurada Superior',
-        Categoria: 'Odontología General',
-        Especialidad: 'Odontología General',
-        Precio_USD: 45.00,
-        Porcentaje_Medico: 50,
-        Costo_Insumos: 5.50
-      },
-      {
-        Codigo: 'MED-201',
-        Servicio: 'Consulta Pediátrica Integral',
-        Categoria: 'Medicina Especializada',
-        Especialidad: 'Pediatría',
-        Precio_USD: 40.00,
-        Porcentaje_Medico: 50,
-        Costo_Insumos: 2.00
-      },
-      {
-        Codigo: 'RX-301',
-        Servicio: 'Ecografía Abdominal',
-        Categoria: 'Imagenología',
-        Especialidad: 'Ecografía General',
-        Precio_USD: 60.00,
-        Porcentaje_Medico: 50,
-        Costo_Insumos: 4.50
-      },
-      {
-        Codigo: 'LAB-401',
-        Servicio: 'Perfil 20 Completo',
-        Categoria: 'Laboratorio Clínico',
-        Especialidad: 'Bionalista / Pruebas de Sangre',
-        Precio_USD: 35.00,
-        Porcentaje_Medico: 40,
-        Costo_Insumos: 7.00
-      }
-    ];
+    const headers = "Codigo,Servicio,Categoria,Especialidad,Precio_USD,Porcentaje_Medico,Costo_Insumos\n";
+    const sampleRows = [
+      "OD-101,Resina Fotocurada Superior,Odontología General,Odontología General,45.00,50,5.50",
+      "MED-201,Consulta Pediátrica Integral,Medicina Especializada,Pediatría,40.00,50,2.00",
+      "RX-301,Ecografía Abdominal,Imagenología,Ecografía General,60.00,50,4.50",
+      "LAB-401,Perfil 20 Completo,Laboratorio Clínico,Bionalista / Pruebas de Sangre,35.00,40,7.00"
+    ].join("\n");
 
-    const worksheet = XLSX.utils.json_to_sheet(templateData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'PlantillaBaremo');
-    XLSX.writeFile(workbook, 'Plantilla_Baremos_VidaSana.xlsx');
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(headers + sampleRows);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", csvContent);
+    downloadAnchor.setAttribute("download", "Plantilla_Baremos_VidaSana.csv");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
   };
 
-  // Parser de Importación Masiva Excel (.XLSX)
+  // Parser de Importación Masiva (CSV / Excel Text)
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -84,14 +55,10 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target.result;
-        const workbook = XLSX.read(bstr, { type: 'binary' });
-        const wsname = workbook.SheetNames[0];
-        const ws = workbook.Sheets[wsname];
-        const rawData = XLSX.utils.sheet_to_json(ws);
-
-        if (rawData.length === 0) {
-          alert('⚠️ El archivo Excel está vacío.');
+        const text = evt.target.result;
+        const lines = text.split(/\r\n|\n/);
+        if (lines.length <= 1) {
+          alert('⚠️ El archivo está vacío o no contiene datos.');
           return;
         }
 
@@ -99,14 +66,19 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
         let addedCount = 0;
         let updatedCount = 0;
 
-        rawData.forEach((row, idx) => {
-          const code = row.Codigo || row.codigo || `IMP-${idx + 1}`;
-          const name = row.Servicio || row.servicio || row.Nombre || row.nombre || 'Servicio Sin Nombre';
-          const category = row.Categoria || row.categoria || 'General';
-          const specialty = row.Especialidad || row.especialidad || 'General';
-          const price = parseFloat(row.Precio_USD || row.precio || 0);
-          const commission = parseFloat(row.Porcentaje_Medico || row.porcentaje || 50);
-          const materialsCost = parseFloat(row.Costo_Insumos || row.costo_insumos || 0);
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          const cols = line.split(',');
+          if (cols.length < 2) continue;
+
+          const code = cols[0]?.trim() || `IMP-${i}`;
+          const name = cols[1]?.trim() || 'Servicio Sin Nombre';
+          const category = cols[2]?.trim() || 'General';
+          const specialty = cols[3]?.trim() || 'General';
+          const price = parseFloat(cols[4]?.trim() || 0);
+          const commission = parseFloat(cols[5]?.trim() || 50);
+          const materialsCost = parseFloat(cols[6]?.trim() || 0);
 
           let division = 'MEDICINA';
           const catLower = (category + ' ' + specialty).toLowerCase();
@@ -131,7 +103,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
             updatedCount++;
           } else {
             newProcs.push({
-              id: `PROC-${Date.now()}-${idx}`,
+              id: `PROC-${Date.now()}-${i}`,
               code,
               name,
               division,
@@ -144,15 +116,15 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
             });
             addedCount++;
           }
-        });
+        }
 
         setProcedures(newProcs);
         alert(`✅ ¡Carga Masiva Exitosa! Se agregaron ${addedCount} servicios nuevos y se actualizaron ${updatedCount} existentes.`);
       } catch (err) {
-        alert(`⚠️ Error al leer el archivo Excel: ${err.message}`);
+        alert(`⚠️ Error al procesar archivo: ${err.message}`);
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsText(file);
   };
 
   const handleSaveProcSubmit = (e) => {
@@ -201,14 +173,14 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
           >
             <Download className="w-4 h-4 text-emerald-700" />
-            Descargar Plantilla Excel
+            Descargar Plantilla Excel / CSV
           </button>
 
           {/* Botón Cargar Excel */}
           <label className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
             <Upload className="w-4 h-4" />
-            Importar Baremo (.XLSX)
-            <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="hidden" />
+            Importar Baremo (.CSV / Excel)
+            <input type="file" accept=".csv, .txt, .xlsx" onChange={handleFileUpload} className="hidden" />
           </label>
 
           {/* Botón Nuevo Servicio */}
