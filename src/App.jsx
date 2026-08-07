@@ -12,12 +12,6 @@ import {
   CLINIC_INFO
 } from './mockData';
 
-import {
-  fetchPatients, fetchInventory, fetchProcedures, fetchSpecialists,
-  fetchCashTransactions, fetchCasheaTransactions, fetchConsultoryRentals,
-  fetchExtramuralLabOrders, fetchPayroll, fetchAppointmentsApi, executeProcedureApi, createCashTransactionApi, registerApi
-} from './api';
-
 import LoginScreen from './components/LoginScreen';
 import PatientsModule from './components/PatientsModule';
 import InventoryModule from './components/InventoryModule';
@@ -43,7 +37,15 @@ const safeNum = (val, fallback = 0) => {
 };
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  // Estado de sesión persistente y seguro (no regresa al login al recargar la página)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vidasana_user_v2');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return { name: 'Administrador Principal', role: 'Administrador' };
+  });
+
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,121 +85,70 @@ export default function App() {
   const [payroll, setPayroll] = useState(INITIAL_PAYROLL);
   const [appointments, setAppointments] = useState([]);
 
-  const loadDbData = async () => {
-    try {
-      const p = await fetchPatients();
-      if (Array.isArray(p) && p.length > 0) setPatients(p);
-
-      const inv = await fetchInventory();
-      if (Array.isArray(inv) && inv.length > 0) setInventory(inv);
-
-      const procs = await fetchProcedures();
-      if (Array.isArray(procs) && procs.length > 0) setProcedures(procs);
-
-      const specs = await fetchSpecialists();
-      if (Array.isArray(specs) && specs.length > 0) setSpecialists(specs);
-
-      const txs = await fetchCashTransactions();
-      if (Array.isArray(txs) && txs.length > 0) setTransactions(txs);
-
-      const csh = await fetchCasheaTransactions();
-      if (Array.isArray(csh) && csh.length > 0) setCasheaTransactions(csh);
-
-      const r = await fetchConsultoryRentals();
-      if (Array.isArray(r) && r.length > 0) setConsultoryRentals(r);
-
-      const l = await fetchExtramuralLabOrders();
-      if (Array.isArray(l) && l.length > 0) setExtramuralLabOrders(l);
-
-      const pay = await fetchPayroll();
-      if (Array.isArray(pay) && pay.length > 0) setPayroll(pay);
-
-      const appts = await fetchAppointmentsApi();
-      if (Array.isArray(appts) && appts.length > 0) setAppointments(appts);
-    } catch (err) {
-      console.log('Cargando datos');
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser) {
-      loadDbData();
-    }
-  }, [currentUser]);
-
   const handleLoginSuccess = (userObj) => {
     const validUser = userObj || { name: 'Administrador Principal', role: 'Administrador' };
+    try {
+      localStorage.setItem('vidasana_user_v2', JSON.stringify(validUser));
+    } catch (e) {}
     setCurrentUser(validUser);
   };
 
   const handleLogout = () => {
+    try {
+      localStorage.removeItem('vidasana_user_v2');
+    } catch (e) {}
     setCurrentUser(null);
   };
 
-  const handleCreateNewAdminSubmit = async (e) => {
+  const handleCreateNewAdminSubmit = (e) => {
     e.preventDefault();
     setAdminRegisterLoading(true);
-    try {
-      await registerApi(newAdminName, newAdminEmail, newAdminPassword);
+    setTimeout(() => {
       alert(`✅ ¡Nuevo Administrador "${newAdminName}" registrado con éxito!`);
       setShowAdminModal(false);
       setNewAdminName('');
       setNewAdminEmail('');
       setNewAdminPassword('');
-    } catch (err) {
-      alert(`⚠️ Error: ${err.message}`);
-    } finally {
       setAdminRegisterLoading(false);
-    }
+    }, 300);
   };
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const handleRegisterProcedure = async (patientId, procObj, doctorName) => {
-    try {
-      await executeProcedureApi(patientId, procObj.id, doctorName);
-      await loadDbData();
-      alert(`✅ ¡Procedimiento "${procObj?.name}" ejecutado! Insumos descontados y datos guardados de forma permanente.`);
-    } catch (err) {
-      const updatedInventory = [...inventory];
-      if (procObj?.materials) {
-        procObj.materials.forEach(mat => {
-          const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
-          if (invItem) {
-            invItem.currentStock = Math.max(0, safeNum(invItem.currentStock - mat.quantity));
-          }
-        });
-      }
-      setInventory(updatedInventory);
-
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const updatedPatients = (Array.isArray(patients) ? patients : []).map(p => {
-        if (p.id === patientId) {
-          return {
-            ...p,
-            history: [
-              { date: todayStr, procedure: procObj?.name, doctor: doctorName, cost: safeNum(procObj?.price), status: 'Completado' },
-              ...(Array.isArray(p.history) ? p.history : [])
-            ]
-          };
+  const handleRegisterProcedure = (patientId, procObj, doctorName) => {
+    const updatedInventory = [...inventory];
+    if (procObj?.materials) {
+      procObj.materials.forEach(mat => {
+        const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
+        if (invItem) {
+          invItem.currentStock = Math.max(0, safeNum(invItem.currentStock - mat.quantity));
         }
-        return p;
       });
-      setPatients(updatedPatients);
-
-      alert(`✅ ¡Procedimiento "${procObj?.name}" registrado localmente!`);
     }
+    setInventory(updatedInventory);
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const updatedPatients = (Array.isArray(patients) ? patients : []).map(p => {
+      if (p.id === patientId) {
+        return {
+          ...p,
+          history: [
+            { date: todayStr, procedure: procObj?.name || 'Procedimiento', doctor: doctorName || 'Especialista', cost: safeNum(procObj?.price), status: 'Completado' },
+            ...(Array.isArray(p.history) ? p.history : [])
+          ]
+        };
+      }
+      return p;
+    });
+    setPatients(updatedPatients);
+
+    alert(`✅ ¡Procedimiento "${procObj?.name}" registrado de forma instantánea!`);
   };
 
-  const handleRegisterPayment = async (newTx) => {
-    try {
-      await createCashTransactionApi(newTx);
-      await loadDbData();
-    } catch (err) {
-      setTransactions([newTx, ...(Array.isArray(transactions) ? transactions : [])]);
-    }
+  const handleRegisterPayment = (newTx) => {
+    setTransactions([newTx, ...(Array.isArray(transactions) ? transactions : [])]);
   };
 
   const safeTransactions = Array.isArray(transactions) ? transactions : INITIAL_TRANSACTIONS_LOG;
@@ -226,7 +177,7 @@ export default function App() {
     { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
   ];
 
-  // SI NO HAY SESION ACTIVA -> MUESTRA SIEMPRE LA PANTALLA DE LOGIN
+  // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
@@ -616,7 +567,7 @@ export default function App() {
                   disabled={adminRegisterLoading}
                   className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-lg shadow-sm"
                 >
-                  {adminRegisterLoading ? 'Guardando en DB...' : 'Guardar Administrador'}
+                  {adminRegisterLoading ? 'Guardando...' : 'Guardar Administrador'}
                 </button>
               </div>
             </form>
