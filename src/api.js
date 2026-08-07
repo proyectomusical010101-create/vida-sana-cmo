@@ -165,17 +165,25 @@ export async function fetchPatients() {
 
 export async function createPatientApi(patientData) {
   if (supabase) {
-    try {
-      const { data, error } = await supabase.from('patients').insert([patientData]).select().single();
-      if (!error && data) return data;
-    } catch (e) {}
+    const { data, error } = await supabase.from('patients').insert([patientData]).select().single();
+    if (error) {
+      throw new Error(`Error de Supabase: ${error.message} (Asegúrate de haber creado la tabla 'patients')`);
+    }
+    return data;
   }
-  const res = await fetch(`${API_BASE}/patients`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patientData)
-  });
-  return await res.json();
+  
+  // Si no hay Supabase, intentar API local, o retornar un mock si falla
+  try {
+    const res = await fetch(`${API_BASE}/patients`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patientData)
+    });
+    return await res.json();
+  } catch (err) {
+    // Modo Maqueta (Mock) si todo falla
+    return { ...patientData, id: `100-${Math.floor(Math.random()*1000)}` };
+  }
 }
 
 export async function executeProcedureApi(patientId, procId, doctorName) {
