@@ -2,10 +2,18 @@ import React, { useState } from 'react';
 import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer } from 'lucide-react';
 import { createInventoryApi, adjustStockApi } from '../api';
 
-export default function InventoryModule({ inventory, setInventory, procedures, setProcedures }) {
+export default function InventoryModule({ inventory = [], setInventory, procedures = [], setProcedures }) {
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'procedures' | 'purchaseOrder'
   const [searchTerm, setSearchTerm] = useState('');
   
+  const safeInventory = Array.isArray(inventory) ? inventory : [];
+  const safeProcedures = Array.isArray(procedures) ? procedures : [];
+
+  const getCost = (item) => Number(item?.unitCost ?? item?.unit_cost ?? 0);
+  const getPrice = (p) => Number(p?.price ?? 0);
+  const getStock = (item) => Number(item?.currentStock ?? item?.current_stock ?? 0);
+  const getMinStock = (item) => Number(item?.minStock ?? item?.min_stock ?? 0);
+
   // Stock adjustment modal
   const [showAdjustModal, setShowAdjustModal] = useState(false);
   const [adjustItem, setAdjustItem] = useState(null);
@@ -24,12 +32,15 @@ export default function InventoryModule({ inventory, setInventory, procedures, s
     category: 'Odontología'
   });
 
-  const lowStockItems = inventory.filter(item => item.currentStock <= item.minStock);
+  const lowStockItems = safeInventory.filter(item => getStock(item) <= getMinStock(item));
 
-  const filteredInventory = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInventory = safeInventory.filter(item => {
+    if (!item) return false;
+    const nameStr = String(item.name || '');
+    const catStr = String(item.category || '');
+    return nameStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           catStr.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleAdjustSubmit = async (e) => {
     e.preventDefault();
@@ -172,15 +183,18 @@ export default function InventoryModule({ inventory, setInventory, procedures, s
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-900">
                 {filteredInventory.map((item) => {
-                  const isLow = item.currentStock <= item.minStock;
+                  const stock = getStock(item);
+                  const minStock = getMinStock(item);
+                  const cost = getCost(item);
+                  const isLow = stock <= minStock;
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono font-bold text-slate-600">{item.id}</td>
-                      <td className="p-3 font-extrabold text-slate-900">{item.name} <span className="text-[10px] text-slate-400 font-normal">({item.unit})</span></td>
-                      <td className="p-3 text-slate-600 font-medium">{item.category}</td>
-                      <td className="p-3 text-right font-mono font-bold">${item.unitCost.toFixed(2)}</td>
-                      <td className="p-3 text-center font-mono font-extrabold text-sm text-slate-900">{item.currentStock}</td>
-                      <td className="p-3 text-center font-mono text-slate-500">{item.minStock}</td>
+                    <tr key={item.id || Math.random()} className="hover:bg-slate-50">
+                      <td className="p-3 font-mono font-bold text-slate-600">{item.id || 'N/A'}</td>
+                      <td className="p-3 font-extrabold text-slate-900">{item.name || 'Sin nombre'} <span className="text-[10px] text-slate-400 font-normal">({item.unit || 'U'})</span></td>
+                      <td className="p-3 text-slate-600 font-medium">{item.category || 'General'}</td>
+                      <td className="p-3 text-right font-mono font-bold">${cost.toFixed(2)}</td>
+                      <td className="p-3 text-center font-mono font-extrabold text-sm text-slate-900">{stock}</td>
+                      <td className="p-3 text-center font-mono text-slate-500">{minStock}</td>
                       <td className="p-3 text-center">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                           isLow 
@@ -213,31 +227,35 @@ export default function InventoryModule({ inventory, setInventory, procedures, s
       {/* TAB 2: RECETA / ESCANDALLO */}
       {activeTab === 'procedures' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {procedures.map((p) => (
-            <div key={p.id} className="bg-white border border-slate-200 shadow-sm rounded-xl p-5 space-y-4">
-              <div className="flex justify-between items-start pb-3 border-b border-slate-200">
-                <div>
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded uppercase">{p.category}</span>
-                  <h4 className="font-extrabold text-slate-900 text-base mt-1">{p.name}</h4>
+          {safeProcedures.map((p) => {
+            const price = getPrice(p);
+            const materials = Array.isArray(p.materials) ? p.materials : [];
+            return (
+              <div key={p.id || Math.random()} className="bg-white border border-slate-200 shadow-sm rounded-xl p-5 space-y-4">
+                <div className="flex justify-between items-start pb-3 border-b border-slate-200">
+                  <div>
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded uppercase">{p.category || 'General'}</span>
+                    <h4 className="font-extrabold text-slate-900 text-base mt-1">{p.name || 'Procedimiento'}</h4>
+                  </div>
+                  <span className="font-mono text-base font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
+                    ${price.toFixed(2)}
+                  </span>
                 </div>
-                <span className="font-mono text-base font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl">
-                  ${p.price.toFixed(2)}
-                </span>
-              </div>
 
-              <div className="space-y-2">
-                <span className="text-xs font-bold text-slate-700">Insumos asociados (Descargo automático por cita):</span>
-                <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 space-y-1 text-xs">
-                  {p.materials.map((m, idx) => (
-                    <div key={idx} className="flex justify-between items-center font-mono">
-                      <span className="font-medium text-slate-800">• {m.name}</span>
-                      <span className="font-bold text-rose-600">-{m.quantity} cant.</span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-700">Insumos asociados (Descargo automático por cita):</span>
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200 space-y-1 text-xs">
+                    {materials.map((m, idx) => (
+                      <div key={idx} className="flex justify-between items-center font-mono">
+                        <span className="font-medium text-slate-800">• {m.name || 'Material'}</span>
+                        <span className="font-bold text-rose-600">-{m.quantity || 1} cant.</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -294,15 +312,18 @@ export default function InventoryModule({ inventory, setInventory, procedures, s
                   </tr>
                 ) : (
                   lowStockItems.map(item => {
-                    const suggestedQty = (item.minStock * 3) - item.currentStock;
-                    const subtotal = suggestedQty * item.unitCost;
+                    const stock = getStock(item);
+                    const minStock = getMinStock(item);
+                    const cost = getCost(item);
+                    const suggestedQty = Math.max(1, (minStock * 3) - stock);
+                    const subtotal = suggestedQty * cost;
                     return (
-                      <tr key={item.id}>
-                        <td className="p-3 font-sans font-bold text-slate-900">{item.name} ({item.unit})</td>
-                        <td className="p-3 text-center text-rose-600 font-bold">{item.currentStock}</td>
-                        <td className="p-3 text-center">{item.minStock}</td>
+                      <tr key={item.id || Math.random()}>
+                        <td className="p-3 font-sans font-bold text-slate-900">{item.name || 'Insumo'} ({item.unit || 'U'})</td>
+                        <td className="p-3 text-center text-rose-600 font-bold">{stock}</td>
+                        <td className="p-3 text-center">{minStock}</td>
                         <td className="p-3 text-center font-extrabold text-teal-700 bg-teal-50">{suggestedQty}</td>
-                        <td className="p-3 text-right">${item.unitCost.toFixed(2)}</td>
+                        <td className="p-3 text-right">${cost.toFixed(2)}</td>
                         <td className="p-3 text-right font-bold text-emerald-700">${subtotal.toFixed(2)}</td>
                       </tr>
                     );
@@ -316,7 +337,12 @@ export default function InventoryModule({ inventory, setInventory, procedures, s
                 <div className="text-right space-y-1">
                   <span className="text-xs text-slate-500 font-bold">Monto Total Estimado de Compra:</span>
                   <div className="text-xl font-extrabold font-mono text-emerald-700">
-                    ${lowStockItems.reduce((acc, item) => acc + (((item.minStock * 3) - item.currentStock) * item.unitCost), 0).toFixed(2)} USD
+                    ${lowStockItems.reduce((acc, item) => {
+                      const stock = getStock(item);
+                      const minStock = getMinStock(item);
+                      const cost = getCost(item);
+                      return acc + (Math.max(1, (minStock * 3) - stock) * cost);
+                    }, 0).toFixed(2)} USD
                   </div>
                 </div>
               </div>

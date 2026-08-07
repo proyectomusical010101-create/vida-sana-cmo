@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { createPatientApi } from '../api';
 
 export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
@@ -142,12 +143,29 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       setShowAddPatientModal(false);
       
       if (savedPatient.isLocalFallback) {
-        alert(`⚠️ Registrado LOCALMENTE en esta pantalla.\n\nMotivo del fallo en Supabase:\n"${savedPatient.supabaseErrorMsg || 'Error desconocido'}"`);
+        Swal.fire({
+          title: 'Registro Temporal',
+          text: `El expediente se guardó localmente en esta pantalla. (Respuesta de red: ${savedPatient.supabaseErrorMsg || 'Sin conexión'}).`,
+          icon: 'warning',
+          confirmButtonColor: '#d97706',
+          confirmButtonText: 'Entendido'
+        });
       } else {
-        alert(`✅ ¡Paciente ${savedPatient.name || savedPatient.full_name} guardado PERMANENTEMENTE en la Nube de Supabase!`);
+        Swal.fire({
+          title: '¡Expediente Guardado!',
+          text: `El expediente clínico del paciente ${savedPatient.name || savedPatient.full_name} ha sido registrado exitosamente.`,
+          icon: 'success',
+          confirmButtonColor: '#0d9488',
+          confirmButtonText: 'Aceptar'
+        });
       }
     } catch (error) {
-      alert(`❌ Error al guardar el paciente: ${error.message}`);
+      Swal.fire({
+        title: 'Error al Guardar',
+        text: error.message,
+        icon: 'error',
+        confirmButtonColor: '#e11d48'
+      });
     } finally {
       setIsSaving(false);
     }
