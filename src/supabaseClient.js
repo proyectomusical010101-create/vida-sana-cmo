@@ -3,7 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 let rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 let rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
-// Sanitizar comillas o espacios accidentales puestos en Vercel
+// Eliminar cualquier espacio en blanco interno accidental (ej: 'https:// fmnf...')
+rawUrl = rawUrl.replace(/\s+/g, '');
+rawKey = rawKey.replace(/\s+/g, '');
+
+// Sanitizar comillas accidentales puestas en Vercel
 rawUrl = rawUrl.replace(/^["']|["']$/g, '');
 rawKey = rawKey.replace(/^["']|["']$/g, '');
 
