@@ -21,6 +21,18 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
   const [adjustType, setAdjustType] = useState('entrada');
   const [adjustQty, setAdjustQty] = useState('10');
 
+  // New Item Modal
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newItem, setNewItem] = useState({
+    name: '',
+    unit: 'Unidad',
+    unitCost: '1.50',
+    currentStock: '50',
+    minStock: '20',
+    expDate: '2027-12-31',
+    category: 'Odontología'
+  });
+
   // Edit Item Modal
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEditItem, setSelectedEditItem] = useState(null);
