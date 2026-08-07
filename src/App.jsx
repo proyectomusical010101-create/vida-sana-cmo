@@ -102,6 +102,15 @@ export default function App() {
     fetchGlobalBcvRate();
   }, []);
 
+  // Sincronizar el tema en el elemento html para Tailwind darkMode: 'class'
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   // Modal para registrar nuevo Administrador DENTRO del sistema
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [newAdminName, setNewAdminName] = useState('');
