@@ -36,6 +36,49 @@ const safeNum = (val, fallback = 0) => {
   return isNaN(parsed) ? fallback : parsed;
 };
 
+class ModuleBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({ error, errorInfo });
+    console.error("Module Crash:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl space-y-4">
+          <h3 className="text-lg font-extrabold text-rose-900 flex items-center gap-2">
+            ⚠️ Error Crítico en Módulo
+          </h3>
+          <p className="text-sm text-rose-700 font-medium">
+            Se ha producido un error al cargar este módulo. Por favor toma captura de pantalla de este código:
+          </p>
+          <pre className="p-4 bg-rose-950 text-rose-200 rounded-xl text-xs overflow-auto font-mono">
+            {String(this.state.error)}
+            {"\n\n"}
+            {String(this.state.errorInfo?.componentStack)}
+          </pre>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-sm transition-all"
+          >
+            Intentar Recargar Módulo
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeModule, setActiveModule] = useState('patients');
@@ -437,7 +480,9 @@ export default function App() {
 
         {/* Dynamic Module Content View */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
-          {renderActiveModule()}
+          <ModuleBoundary key={activeModule}>
+            {renderActiveModule()}
+          </ModuleBoundary>
         </main>
 
       </div>
