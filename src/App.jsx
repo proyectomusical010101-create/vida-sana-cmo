@@ -36,10 +36,14 @@ import ScheduleCoverageModule from './components/ScheduleCoverageModule';
 import PublicPatientPortal from './components/PublicPatientPortal';
 import AuditRolesPortalModule from './components/AuditRolesPortalModule';
 
-export default function App() {
-  // Estado de sesión limpio (Garantiza 100% que siempre abra la pantalla de Login limpia sin pantallas blancas)
-  const [currentUser, setCurrentUser] = useState(null);
+// Helper ultra-seguro para convertir cualquier número sin riesgo de crash
+const safeNum = (val, fallback = 0) => {
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? fallback : parsed;
+};
 
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,7 +56,7 @@ export default function App() {
       const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
       const data = await res.json();
       if (data && data.promedio) {
-        setBcvRate(data.promedio);
+        setBcvRate(safeNum(data.promedio, 755.90));
       }
     } catch (err) {}
   };
@@ -162,7 +166,7 @@ export default function App() {
         procObj.materials.forEach(mat => {
           const invItem = updatedInventory.find(i => i.id === mat.inventoryId || i.name === mat.name);
           if (invItem) {
-            invItem.currentStock = Math.max(0, parseFloat((invItem.currentStock - mat.quantity).toFixed(2)));
+            invItem.currentStock = Math.max(0, safeNum(invItem.currentStock - mat.quantity));
           }
         });
       }
@@ -174,7 +178,7 @@ export default function App() {
           return {
             ...p,
             history: [
-              { date: todayStr, procedure: procObj?.name, doctor: doctorName, cost: procObj?.price || 0, status: 'Completado' },
+              { date: todayStr, procedure: procObj?.name, doctor: doctorName, cost: safeNum(procObj?.price), status: 'Completado' },
               ...(Array.isArray(p.history) ? p.history : [])
             ]
           };
@@ -196,7 +200,7 @@ export default function App() {
     }
   };
 
-  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const safeTransactions = Array.isArray(transactions) ? transactions : INITIAL_TRANSACTIONS_LOG;
   const safePatients = Array.isArray(patients) ? patients : INITIAL_PATIENTS;
   const safeSpecialists = Array.isArray(specialists) ? specialists : INITIAL_SPECIALISTS;
   const safeProcedures = Array.isArray(procedures) ? procedures : INITIAL_PROCEDURES;
@@ -205,7 +209,7 @@ export default function App() {
   const safeLabOrders = Array.isArray(extramuralLabOrders) ? extramuralLabOrders : INITIAL_EXTRAMURAL_LAB_ORDERS;
   const safePayroll = Array.isArray(payroll) ? payroll : INITIAL_PAYROLL;
 
-  const totalTodayIncome = safeTransactions.reduce((s, t) => s + (parseFloat(t?.total || t?.amount || 0) || 0), 0);
+  const totalTodayIncome = safeTransactions.reduce((s, t) => s + safeNum(t?.total || t?.amount), 0);
 
   const navItems = [
     { id: 'patients', name: '1. Pacientes & Niños (Expediente)', icon: UserCheck },
@@ -263,7 +267,7 @@ export default function App() {
           }`}>
             <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
             <span className="text-[11px] font-sans">BCV (DolarAPI):</span>
-            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{(bcvRate||755.90).toFixed(2)} Bs</span>
+            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{safeNum(bcvRate, 755.90).toFixed(2)} Bs</span>
           </div>
 
           <div className={`hidden lg:flex px-3.5 py-1.5 rounded-xl border items-center gap-2 font-bold ${
@@ -272,7 +276,7 @@ export default function App() {
             <Activity className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>Ingresos Hoy:</span>
             <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
-              ${totalTodayIncome.toFixed(2)}
+              ${safeNum(totalTodayIncome, 0).toFixed(2)}
             </span>
           </div>
 
