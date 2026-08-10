@@ -477,32 +477,32 @@ export default function PatientsModule({ patients = [], setPatients, specialists
           </div>
 
           {/* Sub-Navegación de Ficha */}
-          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-2">
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-2 overflow-x-auto">
             <button
               onClick={() => setActiveSubTab('history')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeSubTab === 'history' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" /> 1. Historial Clínico
+              <FileText className="w-3.5 h-3.5" /> 1. Historial & Evolución
             </button>
 
             <button
-              onClick={() => setActiveSubTab('odontogram')}
+              onClick={() => setActiveSubTab('prescription')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'odontogram' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                activeSubTab === 'prescription' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <Stethoscope className="w-3.5 h-3.5" /> 2. Odontograma 2D
+              <Stethoscope className="w-3.5 h-3.5" /> 2. Receta Médica & Indicaciones
             </button>
 
             <button
-              onClick={() => setActiveSubTab('unified-quote')}
+              onClick={() => setActiveSubTab('exams')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'unified-quote' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                activeSubTab === 'exams' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-[#300] hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <Printer className="w-3.5 h-3.5" /> 3. Presupuesto & Firma Digital
+              <Printer className="w-3.5 h-3.5" /> 3. Solicitud de Exámenes & Rayos X
             </button>
           </div>
 
@@ -540,155 +540,80 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             </div>
           )}
 
-          {/* TAB 2: ODONTOGRAMA 2D INTERACTIVO */}
-          {activeSubTab === 'odontogram' && (
-            <div className="p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">Odontograma 2D Interactivo por Diente</h4>
-              <div className="grid grid-cols-8 gap-2">
-                {[18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28].map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setSelectedTooth(t)}
-                    className={`p-3 rounded-xl border text-center font-mono font-bold transition-all ${
-                      selectedTooth === t ? 'bg-teal-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+          {/* TAB 2: RECETA MÉDICA & INDICACIONES */}
+          {activeSubTab === 'prescription' && (
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-teal-600" /> Emisión de Recipe Médico & Tratamiento Farmacológico
+              </h4>
 
-              {selectedTooth && (
-                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-3 text-xs">
-                  <span className="font-bold text-slate-900 dark:text-white">Pieza Dental Seleccionada: #{selectedTooth}</span>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold mb-1">Estado de la Pieza</label>
-                      <select
-                        value={toothStatus}
-                        onChange={(e) => setToothStatus(e.target.value)}
-                        className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
-                      >
-                        <option value="Sano">Sano / Sin Afección</option>
-                        <option value="Caries">Caries Activa</option>
-                        <option value="Endodoncia">Endodoncia / Requerida</option>
-                        <option value="Exodoncia">Exodoncia Recomendada</option>
-                        <option value="Corona">Corona / Prótesis</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold mb-1">Observaciones</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Caries oclusal leve"
-                        value={toothNotes}
-                        onChange={(e) => setToothNotes(e.target.value)}
-                        className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900"
-                      />
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Medicamentos Prescritos</label>
+                  <textarea
+                    rows="3"
+                    placeholder="Ej: Amoxicilina 500mg cada 8 horas por 7 días. Ketoprofeno 100mg cada 12 horas en caso de dolor."
+                    defaultValue="1. Amoxicilina + Ácido Clavulánico 875mg (1 tab c/12h x 7 días)&#10;2. Ibuprofeno 600mg (1 tab c/8h si hay dolor)"
+                    className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                  ></textarea>
                 </div>
-              )}
+
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Indicaciones Generales para el Paciente</label>
+                  <textarea
+                    rows="2"
+                    placeholder="Indicaciones post-tratamiento, dieta blanda, aplicar frío local, etc."
+                    defaultValue="Dieta blanda y fría las primeras 24 horas. Evitar enjuagues bucales enérgicos y mantener buena higiene bucal."
+                    className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                  ></textarea>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => Swal.fire('Récipet Imprimible', 'Generando plantilla de récipet firmado en PDF.', 'success')}
+                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                  >
+                    <Printer className="w-4 h-4" /> Imprimir Recipe Digital
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* TAB 3: PRESUPUESTO Y FIRMA DIGITAL UNIFICADA */}
-          {activeSubTab === 'unified-quote' && (
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-6">
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white pb-2 border-b border-slate-200 dark:border-[#1e2d5a]">
-                Generación de Presupuesto Clínico & Firma Digital Unificada
+          {/* TAB 3: SOLICITUD DE EXÁMENES & RAYOS X */}
+          {activeSubTab === 'exams' && (
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Printer className="w-4 h-4 text-teal-600" /> Solicitud de Exámenes de Laboratorio e Imagenología
               </h4>
 
-              {/* Seleccionar Baremos */}
-              <div className="space-y-3 text-xs">
-                <span className="font-bold text-slate-800">1. Adición de Servicios desde Baremo Oficial</span>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedProcToQuote}
-                    onChange={(e) => setSelectedProcToQuote(e.target.value)}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 dark:text-white"
-                  >
-                    {(procedures || []).map(pr => (
-                      <option key={pr.id} value={pr.id}>{pr.name} - ${(pr.price||0).toFixed(2)} USD</option>
-                    ))}
-                  </select>
+              <div className="space-y-3">
+                <div>
+                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Estudios Solicitados</label>
+                  <div className="grid grid-cols-2 gap-2 p-3 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" defaultChecked className="w-4 h-4 text-teal-600 rounded" /> Radiografía Panorámica
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" defaultChecked className="w-4 h-4 text-teal-600 rounded" /> Periapical Seriada
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" /> Tomografía Cone Beam 3D
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" /> Perfil 20 Pre-operatorio
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
                   <button
-                    onClick={handleAddProcToQuote}
-                    className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs shrink-0"
+                    onClick={() => Swal.fire('Orden Enviada', 'Imprimiendo orden médica de laboratorio / rayos X.', 'success')}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
                   >
-                    + Agregar
+                    <Printer className="w-4 h-4 text-teal-400" /> Imprimir Solicitud Médica
                   </button>
                 </div>
-
-                {quoteProcedures.length > 0 && (
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
-                    {quoteProcedures.map((qp, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-slate-900 font-bold">
-                        <span>{qp.name}</span>
-                        <span className="font-mono text-emerald-900">${(qp.price||0).toFixed(2)} USD</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-extrabold text-sm">
-                      <span>Total Presupuesto:</span>
-                      <span className="font-mono text-emerald-900">
-                        ${quoteProcedures.reduce((s, p) => s + (p.price||0), 0).toFixed(2)} USD
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Checkbox Aceptación de Términos Fotográficos */}
-              <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="photoTerms"
-                  checked={photoTermsAccepted}
-                  onChange={(e) => setPhotoTermsAccepted(e.target.checked)}
-                  className="w-4 h-4 text-teal-600 rounded"
-                />
-                <label htmlFor="photoTerms" className="text-xs font-bold text-slate-800 cursor-pointer">
-                  Autorizo el uso de registros fotográficos y radiográficos durante mi tratamiento clínico en Vida Sana CMO.
-                </label>
-              </div>
-
-              {/* Canvas de Firma Digital (Médico & Paciente) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
-                  <span className="font-bold text-xs text-slate-800 block">Firma del Médico Tratante</span>
-                  <div className="h-28 border border-slate-300 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-mono text-xs">
-                    [ Canvas Firma Médico ]
-                  </div>
-                </div>
-
-                <div className="p-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
-                  <span className="font-bold text-xs text-slate-800 block">Firma del Paciente / Representante</span>
-                  <div className="h-28 border border-slate-300 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 font-mono text-xs">
-                    [ Canvas Firma Paciente ]
-                  </div>
-                </div>
-              </div>
-
-              {/* Acciones Independientes */}
-              <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-200">
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold rounded-xl text-xs flex items-center gap-1.5"
-                >
-                  <Printer className="w-4 h-4" /> Imprimir Recibo / PDF
-                </button>
-
-                {pPhone && (
-                  <a
-                    href={`https://wa.me/${pPhone.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Send className="w-4 h-4" /> Enviar por WhatsApp
-                  </a>
-                )}
               </div>
             </div>
           )}

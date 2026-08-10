@@ -302,21 +302,21 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                       {proc.division || 'ODONTOLOGIA'}
                     </span>
                   </td>
-                  <td className="p-3 text-slate-700 font-semibold">{p.category || 'General'}</td>
-                  <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(p.price||0).toFixed(2)} USD</td>
-                  <td className="p-3 text-right font-mono font-bold text-teal-800">{p.doctorCommissionPercent||50}%</td>
-                  <td className="p-3 text-right font-mono text-slate-600">${(p.estimatedMaterialsCost||0).toFixed(2)}</td>
+                  <td className="p-3 text-slate-700 font-semibold">{proc.category || 'General'}</td>
+                  <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(proc.price||0).toFixed(2)} USD</td>
+                  <td className="p-3 text-right font-mono font-bold text-teal-800">{proc.doctorCommissionPercent||50}%</td>
+                  <td className="p-3 text-right font-mono text-slate-600">${(proc.estimatedMaterialsCost||0).toFixed(2)}</td>
                   <td className="p-3 text-center space-x-1">
                     <button
                       onClick={() => {
-                        setEditingProc(p);
-                        setFormCode(p.code || '');
-                        setFormName(p.name || '');
-                        setFormDivision(p.division || 'ODONTOLOGIA');
-                        setFormCategory(p.category || 'Odontología General');
-                        setFormPrice(p.price?.toString() || '45');
-                        setFormCommission(p.doctorCommissionPercent?.toString() || '50');
-                        setFormMaterialsCost(p.estimatedMaterialsCost?.toString() || '5');
+                        setEditingProc(proc);
+                        setFormCode(proc.code || '');
+                        setFormName(proc.name || '');
+                        setFormDivision(proc.division || 'ODONTOLOGIA');
+                        setFormCategory(proc.category || 'Odontología General');
+                        setFormPrice(proc.price?.toString() || '45');
+                        setFormCommission(proc.doctorCommissionPercent?.toString() || '50');
+                        setFormMaterialsCost(proc.estimatedMaterialsCost?.toString() || '5');
                         setShowModal(true);
                       }}
                       className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block"
@@ -326,7 +326,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                     </button>
 
                     <button
-                      onClick={() => handleDeleteProcedure(p)}
+                      onClick={() => handleDeleteProcedure(proc)}
                       className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-700 dark:text-rose-400 transition-all inline-block"
                       title="Eliminar Servicio"
                     >
