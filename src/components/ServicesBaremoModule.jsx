@@ -20,12 +20,18 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
   const [formCommission, setFormCommission] = useState('50');
   const [formMaterialsCost, setFormMaterialsCost] = useState('5');
 
-  // Filtrado de procedimientos
-  const filteredProcedures = procedures.filter(p => {
-    const matchesDivision = selectedDivision === 'ALL' || p.division === selectedDivision;
-    const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filtrado ultra-seguro de procedimientos
+  const filteredProcedures = (procedures || []).filter(p => {
+    if (!p) return false;
+    const pName = String(p.name || '').toLowerCase();
+    const pCode = String(p.code || p.id || '').toLowerCase();
+    const pCat = String(p.category || '');
+    const pDiv = String(p.division || '');
+    const query = String(searchQuery || '').toLowerCase();
+
+    const matchesDivision = selectedDivision === 'ALL' || pDiv === selectedDivision;
+    const matchesCategory = selectedCategory === 'ALL' || pCat === selectedCategory;
+    const matchesSearch = pName.includes(query) || pCode.includes(query);
     return matchesDivision && matchesCategory && matchesSearch;
   });
 
