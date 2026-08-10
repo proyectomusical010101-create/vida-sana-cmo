@@ -177,7 +177,8 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
     { id: 'ROLE-01', name: 'Administrador (SuperAdmin)', permissions: { pacientes: true, citas: true, inventario: true, caja: true, cashea: true, rentabilidad: true, alquileres: true, laboratorio: true, seniat: true, nomina: true, auditoria: true } },
     { id: 'ROLE-02', name: 'Gerente Administrativo', permissions: { pacientes: true, citas: true, inventario: true, caja: true, cashea: true, rentabilidad: true, alquileres: true, laboratorio: true, seniat: true, nomina: true, auditoria: true } },
     { id: 'ROLE-03', name: 'Recepción & Atención', permissions: { pacientes: true, citas: true, inventario: false, caja: true, cashea: true, rentabilidad: false, alquileres: false, laboratorio: true, seniat: false, nomina: false, auditoria: false } },
-    { id: 'ROLE-04', name: 'Médico Especialista', permissions: { pacientes: true, citas: true, inventario: false, caja: false, cashea: false, rentabilidad: false, alquileres: false, laboratorio: true, seniat: false, nomina: false, auditoria: false } }
+    { id: 'ROLE-04', name: 'Asistente Dental', permissions: { pacientes: true, citas: true, inventario: true, caja: true, cashea: false, rentabilidad: false, alquileres: false, laboratorio: true, seniat: false, nomina: false, auditoria: false } },
+    { id: 'ROLE-05', name: 'Médico Especialista / Odontólogo', permissions: { pacientes: true, citas: true, inventario: false, caja: false, cashea: false, rentabilidad: false, alquileres: false, laboratorio: true, seniat: false, nomina: false, auditoria: false } }
   ]);
 
   // Buscador Portal Móvil
@@ -567,7 +568,8 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
                   <option value="Administrador">Administrador Principal (Acceso Total)</option>
                   <option value="Gerente Administrativo">Gerente Administrativo</option>
                   <option value="Recepción & Atención">Recepción & Atención al Cliente</option>
-                  <option value="Médico Especialista">Médico Especialista</option>
+                  <option value="Asistente Dental">Asistente Dental</option>
+                  <option value="Médico Especialista">Médico Especialista / Odontólogo</option>
                 </select>
               </div>
 
@@ -646,7 +648,8 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
                   <option value="Administrador">Administrador Principal (Acceso Total)</option>
                   <option value="Gerente Administrativo">Gerente Administrativo</option>
                   <option value="Recepción & Atención">Recepción & Atención al Cliente</option>
-                  <option value="Médico Especialista">Médico Especialista</option>
+                  <option value="Asistente Dental">Asistente Dental</option>
+                  <option value="Médico Especialista">Médico Especialista / Odontólogo</option>
                 </select>
               </div>
 

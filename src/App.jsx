@@ -42,6 +42,7 @@ import ServicesBaremoModule from './components/ServicesBaremoModule';
 import ScheduleCoverageModule from './components/ScheduleCoverageModule';
 import PublicPatientPortal from './components/PublicPatientPortal';
 import AuditRolesPortalModule from './components/AuditRolesPortalModule';
+import DentalBudgetOdontogramModule from './components/DentalBudgetOdontogramModule';
 
 // Helper ultra-seguro para convertir cualquier número sin riesgo de crash
 const safeNum = (val, fallback = 0) => {
@@ -270,7 +271,8 @@ export default function App() {
     { id: 'payroll', name: '9. Nómina & Antigüedad', icon: Users },
     { id: 'profitability', name: '10. Rentabilidad, ROI & 10 Años', icon: TrendingUp },
     { id: 'inventory', name: '11. Inventario & O.C.', icon: Package },
-    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare }
+    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare },
+    { id: 'odontogram-budget', name: '13. Odontograma, Presupuesto & Firma', icon: Stethoscope, badge: 'EXCLUSIVO' }
   ];
 
   // Renderizado seguro por módulo
@@ -319,6 +321,15 @@ export default function App() {
           return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
         case 'whatsapp':
           return <WhatsAppNotificationsModule patients={safePatients} extramuralLabOrders={safeLabOrders} />;
+        case 'odontogram-budget':
+          return (
+            <DentalBudgetOdontogramModule
+              patients={safePatients}
+              procedures={safeProcedures}
+              specialists={safeSpecialists}
+              bcvRate={safeNum(bcvRate, 755.90)}
+            />
+          );
         default:
           return (
             <PatientsModule
@@ -385,7 +396,7 @@ export default function App() {
             isLight ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-[#0d1b3e] border-[#1e346b] text-blue-200'
           }`}>
             <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-            <span className="text-[11px] font-sans">BCV (DolarAPI):</span>
+            <span className="text-[11px] font-sans">BCV (En vivo):</span>
             <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{safeNum(bcvRate, 755.90).toFixed(2)} Bs</span>
           </div>
 
