@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2 } from 'lucide-react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createPatientApi, updatePatientApi, deletePatientApi } from '../api';
 
