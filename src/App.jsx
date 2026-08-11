@@ -142,6 +142,8 @@ export default function App() {
   const [newUserDocId, setNewUserDocId] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('123456');
+  const [showUserPasswordText, setShowUserPasswordText] = useState(false);
   const [newUserRole, setNewUserRole] = useState('Administrador');
   const [newUserPermissions, setNewUserPermissions] = useState({
     patients: true, baremos: true, schedules: true, billing: true, cashea: true,
@@ -229,6 +231,7 @@ export default function App() {
       documentId: newUserDocId,
       phone: newUserPhone,
       email: newUserEmail,
+      password: newUserPassword || '123456',
       role: newUserRole,
       permissions: newUserPermissions
     };
@@ -242,7 +245,14 @@ export default function App() {
 
     Swal.fire({
       title: '¡Usuario Creado Con Éxito!',
-      text: `Se registró a ${newUserName} con rol "${newUserRole}" y permisos configurados.`,
+      html: `
+        <div class="text-left text-xs font-bold space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <p>👤 <strong>Usuario:</strong> ${newUserName}</p>
+          <p>📧 <strong>Correo:</strong> ${newUserEmail}</p>
+          <p>🔑 <strong>Contraseña:</strong> ${newUserPassword || '123456'}</p>
+          <p>💼 <strong>Rol:</strong> ${newUserRole}</p>
+        </div>
+      `,
       icon: 'success',
       confirmButtonColor: '#0d9488'
     });
@@ -251,6 +261,7 @@ export default function App() {
     setNewUserDocId('');
     setNewUserPhone('');
     setNewUserEmail('');
+    setNewUserPassword('123456');
     setNewUserRole('Administrador');
   };
 
@@ -720,8 +731,8 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Correo y Rol */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Correo, Contraseña y Rol */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 mb-1">Correo Electrónico</label>
                   <div className="relative">
@@ -734,6 +745,28 @@ export default function App() {
                       onChange={(e) => setNewUserEmail(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Contraseña de Acceso</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type={showUserPasswordText ? "text" : "password"}
+                      required
+                      placeholder="123456"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-mono font-bold"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowUserPasswordText(!showUserPasswordText)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showUserPasswordText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
                 </div>
 
