@@ -178,15 +178,53 @@ export default function PaperworkCustomizationModule({ paperworkSettings, setPap
             </div>
 
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1">URL del Logotipo</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white text-[11px] font-mono"
-                />
-                <img src={logoUrl} alt="Logo Prev" className="w-8 h-8 object-contain rounded border p-0.5 bg-white" />
+              <label className="block text-slate-700 dark:text-slate-300 mb-1">Logotipo Oficial de la Clínica</label>
+              
+              {/* Opción de Adjuntar Archivo o Ingresar URL */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
+                    <ImageIcon className="w-4 h-4" />
+                    📁 Adjuntar / Subir Imagen de Logo
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (evt) => {
+                            setLogoUrl(evt.target.result);
+                            Swal.fire({
+                              title: '¡Logo Adjuntado!',
+                              text: 'La imagen del logotipo fue cargada exitosamente.',
+                              icon: 'success',
+                              timer: 1500,
+                              showConfirmButton: false
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                  
+                  {logoUrl && (
+                    <img src={logoUrl} alt="Logo Prev" className="w-10 h-10 object-contain rounded-xl border-2 border-teal-500 p-1 bg-white shadow-sm shrink-0" />
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-slate-500 font-bold block mb-0.5">O ingresa la URL web de la imagen:</span>
+                  <input
+                    type="text"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="https://ejemplo.com/logo.png"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white text-[11px] font-mono"
+                  />
+                </div>
               </div>
             </div>
 
