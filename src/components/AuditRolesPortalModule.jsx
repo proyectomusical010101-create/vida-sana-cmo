@@ -203,13 +203,252 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
     }
   };
 
-  // Logs Auditoría
+  // State para Auditoría por Usuario
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditUserFilter, setAuditUserFilter] = useState('ALL');
+  const [auditRoleFilter, setAuditRoleFilter] = useState('ALL');
+  const [auditModuleFilter, setAuditModuleFilter] = useState('ALL');
+
+  // Logs Auditoría con todos los roles y usuarios
   const [auditLogs] = useState([
-    { id: 'LOG-8801', user: 'admin@vidasanacmo.com', role: 'SuperAdmin', action: 'Inició sesión en la plataforma', module: 'Autenticación', timestamp: '2026-08-07 10:14:22', ip: '190.202.45.12' },
-    { id: 'LOG-8802', user: 'admin@vidasanacmo.com', role: 'SuperAdmin', action: 'Ejecutó cobro de consulta $45.00 USD', module: 'Caja Multi-moneda', timestamp: '2026-08-07 10:20:15', ip: '190.202.45.12' },
-    { id: 'LOG-8803', user: 'admin@vidasanacmo.com', role: 'SuperAdmin', action: 'Registró nuevo expediente médico en Supabase', module: 'Pacientes & Expedientes', timestamp: '2026-08-07 11:05:01', ip: '190.202.45.12' },
-    { id: 'LOG-8804', user: 'admin@vidasanacmo.com', role: 'SuperAdmin', action: 'Actualizó permisos de usuarios en la nube', module: 'Gestión de Usuarios', timestamp: '2026-08-07 11:40:19', ip: '190.202.45.12' }
+    {
+      id: 'LOG-9115',
+      user: 'Dra. Vanessa Parra',
+      docId: 'V-18.420.100',
+      email: 'vanessa.parra@vidasanacmo.com',
+      role: 'Odontólogo',
+      action: 'Emisión y Firma Digital de Presupuesto Dental ($340.00 USD)',
+      module: 'Odontograma & Presupuesto',
+      detail: 'Piezas 18, 17 tratadas con Resina Estética + Limpieza Ultrasónica. Paciente: Carlos Mendoza.',
+      timestamp: '2026-08-11 16:45:12',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9114',
+      user: 'Lic. Mariana Silva',
+      docId: 'V-15.111.222',
+      email: 'mariana.silva@vidasanacmo.com',
+      role: 'Gerente',
+      action: 'Procesó Pago de Nómina y Bonificación Personalizada ($220.00 USD)',
+      module: 'Nómina & Antigüedad',
+      detail: 'Pago quincenal a Carlos Mendoza (Community Manager) con bono de $20 USD. Registrado automáticamente en Flujo de Caja.',
+      timestamp: '2026-08-11 16:30:05',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9113',
+      user: 'Dr. Gabriel Benítez',
+      docId: 'V-16.789.012',
+      email: 'gabriel.benitez@vidasanacmo.com',
+      role: 'Odontólogo',
+      action: 'Registro de Caso Ortodóncico & Control de Brackets',
+      module: 'Odontograma & Presupuesto',
+      detail: 'Ajuste de arco NiTi 0.16 e instalación de ligaduras elásticas superiores.',
+      timestamp: '2026-08-11 15:50:33',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9112',
+      user: 'Laura Vanessa Parra',
+      docId: 'V-20.333.444',
+      email: 'laura.recepcion@vidasanacmo.com',
+      role: 'Recepción',
+      action: 'Cobro de Consulta Odontológica General ($45.00 USD / 34,015.50 Bs)',
+      module: 'Caja Multi-moneda',
+      detail: 'Método: Pago Móvil Banesco (Bs). Tasa BCV: 755.90 Bs/$. Paciente: María Pérez.',
+      timestamp: '2026-08-11 15:10:44',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9111',
+      user: 'Ing. Roberto Suárez',
+      docId: 'V-17.654.321',
+      email: 'roberto.coordinador@vidasanacmo.com',
+      role: 'Coordinador',
+      action: 'Reasignación de Horario por Reemplazo Médico de Guardia',
+      module: 'Horarios & Sustitutos',
+      detail: 'Sustitución de turno vespertino del Dr. Benítez por la Dra. Vanessa Parra.',
+      timestamp: '2026-08-11 14:35:10',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9110',
+      user: 'Carlos Alberto Mendoza',
+      docId: 'V-25.123.456',
+      email: 'carlos.cm@vidasanacmo.com',
+      role: 'Community Manager',
+      action: 'Envío Masivo de Recordatorio de Citas por WhatsApp',
+      module: 'WhatsApp & Notificaciones',
+      detail: 'Enviadas 14 notificaciones de confirmación para pacientes agendados mañana.',
+      timestamp: '2026-08-11 14:05:22',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9109',
+      user: 'Dr. Alejandro Peña',
+      docId: 'V-14.888.999',
+      email: 'admin@vidasanacmo.com',
+      role: 'Administrador',
+      action: 'Creación de Nuevo Usuario con Permisos Personalizados',
+      module: 'Gestión de Usuarios',
+      detail: 'Registró a Ana María Gutiérrez (Recepción) con permisos seleccionados del sistema.',
+      timestamp: '2026-08-11 13:15:00',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9108-B',
+      user: 'Laura Vanessa Parra',
+      docId: 'V-20.333.444',
+      email: 'laura.recepcion@vidasanacmo.com',
+      role: 'Recepción',
+      action: 'Aprobación de Financiamiento Cashea (Pie Inicial 60%: $90.00 USD)',
+      module: 'Módulo Cashea',
+      detail: 'Plan 3 cuotas quincenales sin interés. Cliente: Juan Carlos Rodríguez.',
+      timestamp: '2026-08-11 12:45:18',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9107-B',
+      user: 'Dr. Alejandro Peña',
+      docId: 'V-14.888.999',
+      email: 'admin@vidasanacmo.com',
+      role: 'Administrador',
+      action: 'Actualización de Tarifario y Baremo de Precios (Carga Masiva Excel)',
+      module: 'Baremos & Servicios',
+      detail: 'Actualizados 28 procedimientos odontológicos y médicos generales.',
+      timestamp: '2026-08-11 12:20:19',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9106-B',
+      user: 'Patricia Rondón',
+      docId: 'V-22.777.888',
+      email: 'asistente.dental@vidasanacmo.com',
+      role: 'Asistente Dental',
+      action: 'Registro de Descontado de Inventario Quirúrgico',
+      module: 'Inventario & O.C.',
+      detail: 'Descontadas 5 unidades de Guantes Nitrilo M y 2 de Alveogyl.',
+      timestamp: '2026-08-11 11:15:02',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9105-B',
+      user: 'Lic. Andrés Torrealba',
+      docId: 'V-16.555.444',
+      email: 'analista.finanzas@vidasanacmo.com',
+      role: 'Analista',
+      action: 'Generación de Reporte Formulario SENIAT 1% IVA / ISLR',
+      module: 'SENIAT & Retenciones',
+      detail: 'Reporte generado correspondiente al comprobante comprobatorio fiscal No 202608-001.',
+      timestamp: '2026-08-11 09:40:10',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9104-B',
+      user: 'Lic. Mariana Silva',
+      docId: 'V-15.111.222',
+      email: 'mariana.silva@vidasanacmo.com',
+      role: 'Gerente',
+      action: 'Consulta de ROI & Proyecciones Financieras a 10 Años',
+      module: 'Rentabilidad & ROI',
+      detail: 'Exportación de métricas de margen de ganancia neta e ingresos acumulados.',
+      timestamp: '2026-08-11 09:10:00',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9103-B',
+      user: 'Laura Vanessa Parra',
+      docId: 'V-20.333.444',
+      email: 'laura.recepcion@vidasanacmo.com',
+      role: 'Recepción',
+      action: 'Registro de Nuevo Paciente (+Paciente) en Expediente',
+      module: 'Pacientes & Niños',
+      detail: 'Alta de historia clínica digital para Sofía Martínez (Categoría Pediátrica).',
+      timestamp: '2026-08-11 08:35:14',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9102-B',
+      user: 'Dr. Alejandro Peña',
+      docId: 'V-14.888.999',
+      email: 'admin@vidasanacmo.com',
+      role: 'Administrador',
+      action: 'Sincronización de Tasa Oficial BCV con DolarAPI (USD & EUR)',
+      module: 'Caja Multi-moneda',
+      detail: 'Tasa USD actualizada a 755.90 Bs, EUR a 879.35 Bs.',
+      timestamp: '2026-08-11 08:05:00',
+      ip: '190.202.45.12'
+    },
+    {
+      id: 'LOG-9101-B',
+      user: 'Dr. Alejandro Peña',
+      docId: 'V-14.888.999',
+      email: 'admin@vidasanacmo.com',
+      role: 'Administrador',
+      action: 'Inicio de Sesión en el Sistema Multidisciplinario',
+      module: 'Autenticación & Seguridad',
+      detail: 'Autenticación exitosa en la nube Vercel con token seguro JWT.',
+      timestamp: '2026-08-11 08:00:01',
+      ip: '190.202.45.12'
+    }
   ]);
+
+  // Lista única de usuarios para el filtro
+  const uniqueUsersList = Array.from(new Set(auditLogs.map(l => l.user)));
+  const uniqueRolesList = Array.from(new Set(auditLogs.map(l => l.role)));
+  const uniqueModulesList = Array.from(new Set(auditLogs.map(l => l.module)));
+
+  // Filtrado de Auditoría
+  const filteredAuditLogs = auditLogs.filter(log => {
+    const term = auditSearchTerm.toLowerCase();
+    const searchStr = `${log.user} ${log.action} ${log.detail} ${log.id} ${log.docId || ''} ${log.email || ''}`.toLowerCase();
+    const matchesSearch = searchStr.includes(term);
+    const matchesUser = auditUserFilter === 'ALL' || log.user === auditUserFilter;
+    const matchesRole = auditRoleFilter === 'ALL' || log.role === auditRoleFilter;
+    const matchesModule = auditModuleFilter === 'ALL' || log.module === auditModuleFilter;
+
+    return matchesSearch && matchesUser && matchesRole && matchesModule;
+  });
+
+  const getRoleBadgeStyle = (roleStr) => {
+    switch (roleStr) {
+      case 'Administrador':
+        return 'bg-purple-100 dark:bg-purple-900/40 text-purple-900 dark:text-purple-200 border-purple-300';
+      case 'Gerente':
+        return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 border-emerald-300';
+      case 'Coordinador':
+        return 'bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200 border-blue-300';
+      case 'Analista':
+        return 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-900 dark:text-indigo-200 border-indigo-300';
+      case 'Recepción':
+        return 'bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border-amber-300';
+      case 'Odontólogo':
+        return 'bg-teal-100 dark:bg-teal-900/40 text-teal-900 dark:text-teal-200 border-teal-300';
+      case 'Asistente Dental':
+        return 'bg-rose-100 dark:bg-rose-900/40 text-rose-900 dark:text-rose-200 border-rose-300';
+      default:
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300';
+    }
+  };
+
+  const handleShowLogDetails = (log) => {
+    Swal.fire({
+      title: `Auditoría: Evento ${log.id}`,
+      html: `
+        <div class="text-left text-xs font-bold space-y-2 p-4 bg-slate-50 dark:bg-[#0d162f] rounded-xl border border-slate-200">
+          <p>👤 <strong>Usuario:</strong> ${log.user} (${log.role})</p>
+          <p>📧 <strong>Correo / ID:</strong> ${log.email} • ${log.docId}</p>
+          <p>⚡ <strong>Acción:</strong> ${log.action}</p>
+          <p>📁 <strong>Módulo:</strong> ${log.module}</p>
+          <p>📝 <strong>Detalles Técnicos:</strong> ${log.detail}</p>
+          <p>⏰ <strong>Timestamp:</strong> ${log.timestamp}</p>
+          <p>🌐 <strong>IP de Origen:</strong> ${log.ip}</p>
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonColor: '#0d9488'
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -221,7 +460,7 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
             Gestión Completa de Usuarios, Roles & Auditoría
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 font-medium">
-            Panel oficial de administración: registra nuevos usuarios, edita claves/roles, revoca accesos e inspecciona registros de seguridad.
+            Panel oficial para Administradores y Gerentes: historial inmutable de acciones por usuario, trazabilidad y control de acceso.
           </p>
         </div>
 
@@ -273,7 +512,7 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
           }`}
         >
           <History className="w-4 h-4" />
-          4. Auditoría de Seguridad
+          4. Historial de Auditoría por Usuario ({auditLogs.length})
         </button>
       </div>
 
