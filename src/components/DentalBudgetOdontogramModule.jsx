@@ -7,22 +7,36 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
-  // SECCION 3 State: Estado del Odontograma por pieza (Número -> Objeto condición)
-  // Formato: { [toothNumber]: { status: 'Sano' | 'Caries' | 'Obturado' | 'Ausente' | 'Endodoncia' | 'Corona' | 'Extraccion', notes: '', procedureName: '', price: 0 } }
-  const [toothConditions, setToothConditions] = useState({
-    18: { status: 'Sano' }, 17: { status: 'Sano' }, 16: { status: 'Sano' }, 15: { status: 'Sano' },
-    14: { status: 'Sano' }, 13: { status: 'Sano' }, 12: { status: 'Sano' }, 11: { status: 'Sano' },
-    55: { status: 'Sano' }, 54: { status: 'Sano' }, 53: { status: 'Sano' }, 52: { status: 'Sano' }, 51: { status: 'Sano' },
-    21: { status: 'Sano' }, 22: { status: 'Sano' }, 23: { status: 'Sano' }, 24: { status: 'Sano' },
-    25: { status: 'Sano' }, 26: { status: 'Sano' }, 27: { status: 'Sano' }, 28: { status: 'Sano' },
-    61: { status: 'Sano' }, 62: { status: 'Sano' }, 63: { status: 'Sano' }, 64: { status: 'Sano' }, 65: { status: 'Sano' },
-    85: { status: 'Sano' }, 84: { status: 'Sano' }, 83: { status: 'Sano' }, 82: { status: 'Sano' }, 81: { status: 'Sano' },
-    48: { status: 'Sano' }, 47: { status: 'Sano' }, 46: { status: 'Sano' }, 45: { status: 'Sano' },
-    44: { status: 'Sano' }, 43: { status: 'Sano' }, 42: { status: 'Sano' }, 41: { status: 'Sano' },
-    71: { status: 'Sano' }, 72: { status: 'Sano' }, 73: { status: 'Sano' }, 74: { status: 'Sano' }, 75: { status: 'Sano' },
-    31: { status: 'Sano' }, 32: { status: 'Sano' }, 33: { status: 'Sano' }, 34: { status: 'Sano' },
-    35: { status: 'Sano' }, 36: { status: 'Sano' }, 37: { status: 'Sano' }, 38: { status: 'Sano' }
+  // SECCION 3 State: Odontograma Anatómico 5 Caras por Pieza
+  const [activeMarkMode, setActiveMarkMode] = useState('red'); // 'red' | 'blue' | 'green' | 'purple' | 'erase'
+  const [toothSurfaces, setToothSurfaces] = useState({
+    17: { top: 'red' }, // Ejemplo inicial de prueba
+    16: { center: 'blue' },
+    24: { left: 'green' }
   });
+
+  const handleFaceClick = (toothNum, faceKey) => {
+    setToothSurfaces(prev => {
+      const current = prev[toothNum] || {};
+      const newColor = activeMarkMode === 'erase' ? null : activeMarkMode;
+      return {
+        ...prev,
+        [toothNum]: {
+          ...current,
+          [faceKey]: newColor
+        }
+      };
+    });
+  };
+
+  const getFaceColorHex = (colorMode) => {
+    if (colorMode === 'red') return '#ef4444';
+    if (colorMode === 'blue') return '#2563eb';
+    if (colorMode === 'green') return '#16a34a';
+    if (colorMode === 'purple') return '#9333ea';
+    if (colorMode === 'yellow') return '#eab308';
+    return '#ffffff';
+  };
 
   // Tooth Condition Selection Modal
   const [selectedToothModal, setSelectedToothModal] = useState(null);
@@ -200,34 +214,83 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     });
   };
 
-  // Renderizador de Bloque de Dientes (Fila Exacta)
+  // Renderizador de Diente Anatómico 5 Caras (SVG Interactivo)
   const renderToothRow = (teethArray, label = '') => (
-    <div className="flex flex-wrap items-center justify-center gap-2 py-2">
+    <div className="flex flex-wrap items-center justify-center gap-4 py-2">
       {teethArray.map(toothNum => {
-        const cond = toothConditions[toothNum] || { status: 'Sano' };
-        const statusColors = {
-          Sano: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
-          Caries: 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border-rose-400 dark:border-rose-700 font-black',
-          Obturado: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700',
-          Ausente: 'bg-slate-200 dark:bg-slate-700 text-slate-500 border-slate-400 line-through',
-          Endodoncia: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-400 dark:border-purple-700',
-          Corona: 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300 border-amber-400 dark:border-amber-700',
-          Extraccion: 'bg-red-200 dark:bg-red-900/50 text-red-900 dark:text-red-200 border-red-500 font-extrabold'
-        };
+        const faces = toothSurfaces[toothNum] || {};
 
         return (
-          <button
-            key={toothNum}
-            onClick={() => handleOpenToothModal(toothNum)}
-            className={`w-12 h-14 rounded-xl border flex flex-col items-center justify-center transition-all transform hover:scale-105 shadow-sm ${statusColors[cond.status] || statusColors.Sano}`}
-            title={`Pieza #${toothNum}: ${cond.status}`}
-          >
-            <span className="text-[10px] font-mono font-black">{toothNum}</span>
-            <div className="w-5 h-5 rounded-full border border-current flex items-center justify-center my-0.5 text-[9px] font-bold">
-              {cond.status.slice(0, 1)}
+          <div key={toothNum} className="flex flex-col items-center gap-1 group">
+            <span
+              onClick={() => handleOpenToothModal(toothNum)}
+              className="text-[11px] font-mono font-black text-slate-700 dark:text-slate-300 hover:text-teal-600 cursor-pointer"
+              title={`Ver detalles de la pieza #${toothNum}`}
+            >
+              {toothNum}
+            </span>
+
+            {/* SVG Diente 5 Caras (40x40 px) */}
+            <div className="w-10 h-10 relative bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xs">
+              <svg viewBox="0 0 40 40" className="w-full h-full">
+                {/* Cuadro exterior */}
+                <rect x="0" y="0" width="40" height="40" fill="none" stroke="#cbd5e1" strokeWidth="1" />
+
+                {/* Cara Top (Vestibular / Superior) */}
+                <polygon
+                  points="0,0 40,0 28,12 12,12"
+                  fill={getFaceColorHex(faces.top)}
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                  onClick={() => handleFaceClick(toothNum, 'top')}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+
+                {/* Cara Right (Distal / Derecha) */}
+                <polygon
+                  points="40,0 40,40 28,28 28,12"
+                  fill={getFaceColorHex(faces.right)}
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                  onClick={() => handleFaceClick(toothNum, 'right')}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+
+                {/* Cara Bottom (Lingual / Inferior) */}
+                <polygon
+                  points="40,40 0,40 12,28 28,28"
+                  fill={getFaceColorHex(faces.bottom)}
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                  onClick={() => handleFaceClick(toothNum, 'bottom')}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+
+                {/* Cara Left (Mesial / Izquierda) */}
+                <polygon
+                  points="0,40 0,0 12,12 12,28"
+                  fill={getFaceColorHex(faces.left)}
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                  onClick={() => handleFaceClick(toothNum, 'left')}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+
+                {/* Cara Center (Oclusal / Centro) */}
+                <rect
+                  x="12"
+                  y="12"
+                  width="16"
+                  height="16"
+                  fill={getFaceColorHex(faces.center)}
+                  stroke="#94a3b8"
+                  strokeWidth="1"
+                  onClick={() => handleFaceClick(toothNum, 'center')}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </svg>
             </div>
-            <span className="text-[8px] font-extrabold truncate w-full text-center px-0.5">{cond.status}</span>
-          </button>
+          </div>
         );
       })}
     </div>
@@ -368,14 +431,77 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           <span className="text-xs font-bold text-slate-500">Haz clic sobre cualquier pieza dental para cambiar su diagnóstico.</span>
         </div>
 
-        {/* Leyenda de Colores */}
-        <div className="flex flex-wrap justify-center gap-3 p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-[11px] font-bold">
-          <span className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300"><span className="w-3 h-3 rounded bg-emerald-500"></span> Sano</span>
-          <span className="flex items-center gap-1.5 text-rose-800 dark:text-rose-300"><span className="w-3 h-3 rounded bg-rose-500"></span> Caries</span>
-          <span className="flex items-center gap-1.5 text-blue-800 dark:text-blue-300"><span className="w-3 h-3 rounded bg-blue-500"></span> Obturado</span>
-          <span className="flex items-center gap-1.5 text-slate-500"><span className="w-3 h-3 rounded bg-slate-400"></span> Ausente</span>
-          <span className="flex items-center gap-1.5 text-purple-800 dark:text-purple-300"><span className="w-3 h-3 rounded bg-purple-500"></span> Endodoncia</span>
-          <span className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300"><span className="w-3 h-3 rounded bg-amber-500"></span> Corona</span>
+        {/* Barra de Modo de Marcado (Selector de Herramienta por Color) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl text-xs font-bold shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-700 dark:text-slate-300 font-black uppercase text-[11px]">Modo de Marcado:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('red')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'red'
+                  ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-rose-400'
+              }`}
+            >
+              <span className="w-3 h-3 rounded-full bg-rose-500 border border-white"></span>
+              <span>❗ Patología (Rojo)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('blue')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'blue'
+                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-blue-400'
+              }`}
+            >
+              <span className="w-3 h-3 rounded-full bg-blue-500 border border-white"></span>
+              <span>✓ Tratado (Azul)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('green')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'green'
+                  ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-emerald-400'
+              }`}
+            >
+              <span className="w-3 h-3 rounded-full bg-emerald-500 border border-white"></span>
+              <span>➕ Plan Propuesto (Verde)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('purple')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'purple'
+                  ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-purple-400'
+              }`}
+            >
+              <span className="w-3 h-3 rounded-full bg-purple-500 border border-white"></span>
+              <span>🟣 Endodoncia / Corona</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('erase')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'erase'
+                  ? 'bg-slate-900 text-white shadow-md ring-2 ring-slate-500 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-slate-500'
+              }`}
+            >
+              <span>🧽 Borrar Cara</span>
+            </button>
+          </div>
         </div>
 
         {/* CONTENEDOR DEL ODONTOGRAMA CON EL ORDEN EXACTO DEL USUARIO */}
