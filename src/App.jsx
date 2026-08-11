@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff
 } from 'lucide-react';
 
 import {
