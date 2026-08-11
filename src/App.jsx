@@ -150,6 +150,15 @@ export default function App() {
     'patient-portal': true, 'roles-audit': true, seniat: true, payroll: true,
     profitability: true, inventory: true, whatsapp: true, 'odontogram-budget': true
   });
+  
+  // Campos adicionales para el Rol de Odontólogo / Médico
+  const [doctorSpecialty, setDoctorSpecialty] = useState('Odontología General');
+  const [doctorRif, setDoctorRif] = useState('V-18.420.100-0');
+  const [doctorShift, setDoctorShift] = useState('Mañana (8:00 AM - 1:00 PM)');
+  const [doctorCommissionRate, setDoctorCommissionRate] = useState('50');
+  const [doctorDays, setDoctorDays] = useState({ Lunes: true, Martes: true, Miercoles: true, Jueves: true, Viernes: true, Sabado: false });
+  const [assignedProcedures, setAssignedProcedures] = useState([]);
+  
   const [userRegisterLoading, setUserRegisterLoading] = useState(false);
 
   const [specialists, setSpecialists] = useState([]);
@@ -225,6 +234,8 @@ export default function App() {
     }
     setUserRegisterLoading(true);
 
+    const isDoctorRole = newUserRole.includes('Odontólogo') || newUserRole.includes('Médico');
+
     const newUserObj = {
       id: `USR-${Date.now().toString().slice(-4)}`,
       name: newUserName,
@@ -233,12 +244,36 @@ export default function App() {
       email: newUserEmail,
       password: newUserPassword || '123456',
       role: newUserRole,
-      permissions: newUserPermissions
+      permissions: newUserPermissions,
+      ...(isDoctorRole && {
+        specialty: doctorSpecialty,
+        rif: doctorRif,
+        shift: doctorShift,
+        days: Object.keys(doctorDays).filter(d => doctorDays[d]),
+        commissionRate: parseFloat(doctorCommissionRate) || 50,
+        assignedProcedures
+      })
     };
 
     try {
       await createUserApi(newUserObj);
     } catch (err) {}
+
+    // Si es médico, agregarlo automáticamente a la lista global de Especialistas (Módulo 8 - Liquidaciones)
+    if (isDoctorRole) {
+      const newSpecialist = {
+        id: `SP-${Date.now().toString().slice(-4)}`,
+        name: newUserName,
+        specialty: doctorSpecialty,
+        rIF: doctorRif || newUserDocId,
+        phone: newUserPhone,
+        email: newUserEmail,
+        commissionRates: { Privado: parseFloat(doctorCommissionRate) || 50, Seguros: 40 },
+        assignedServices: assignedProcedures,
+        shift: doctorShift
+      };
+      setSpecialists([newSpecialist, ...specialists]);
+    }
 
     setUserRegisterLoading(false);
     setShowUserModal(false);
@@ -251,6 +286,7 @@ export default function App() {
           <p>📧 <strong>Correo:</strong> ${newUserEmail}</p>
           <p>🔑 <strong>Contraseña:</strong> ${newUserPassword || '123456'}</p>
           <p>💼 <strong>Rol:</strong> ${newUserRole}</p>
+          ${isDoctorRole ? `<p>🩺 <strong>Especialidad:</strong> ${doctorSpecialty} (${doctorCommissionRate}% Ganancia)</p>` : ''}
         </div>
       `,
       icon: 'success',
@@ -787,6 +823,129 @@ export default function App() {
                   </select>
                 </div>
               </div>
+
+              {/* SECCIÓN CONDICIONAL: FICHA MÉDICA / ESPECIALISTA SI EL ROL ES ODONTÓLOGO */}
+              {(newUserRole.includes('Odontólogo') || newUserRole.includes('Médico')) && (
+                <div className="p-4 bg-teal-50/80 dark:bg-teal-900/30 border border-teal-300 dark:border-teal-700/60 rounded-2xl space-y-3.5">
+                  <div className="flex items-center gap-2 border-b border-teal-200 dark:border-teal-800 pb-2">
+                    <Stethoscope className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                    <h4 className="text-xs font-black text-teal-950 dark:text-teal-200 uppercase tracking-wider">
+                      Ficha Médica & Asignación de Servicios / Honorarios
+                    </h4>
+                  </div>
+
+                  {/* Especialidad y RIF */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Especialidad Odontológica / Médica</label>
+                      <select
+                        value={doctorSpecialty}
+                        onChange={(e) => setDoctorSpecialty(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-bold"
+                      >
+                        <option value="Odontología General">Odontología General</option>
+                        <option value="Ortodoncia & Ortopedia">Ortodoncia & Ortopedia</option>
+                        <option value="Endodoncia Avanzada">Endodoncia Avanzada</option>
+                        <option value="Periodoncia & Implantes">Periodoncia & Implantes</option>
+                        <option value="Cirugía Maxilofacial">Cirugía Maxilofacial</option>
+                        <option value="Odontopediatría">Odontopediatría</option>
+                        <option value="Estética & Diseño de Sonrisa">Estética & Diseño de Sonrisa</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">RIF / Reg. Colegio Médicos</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: J-40123456-0"
+                        value={doctorRif}
+                        onChange={(e) => setDoctorRif(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Horario, Turno y % Honorarios */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Turno Asignado</label>
+                      <select
+                        value={doctorShift}
+                        onChange={(e) => setDoctorShift(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-bold"
+                      >
+                        <option value="Mañana (8:00 AM - 1:00 PM)">Mañana (8:00 AM - 1:00 PM)</option>
+                        <option value="Tarde (1:00 PM - 6:00 PM)">Tarde (1:00 PM - 6:00 PM)</option>
+                        <option value="Jornada Completa (8:00 AM - 5:00 PM)">Jornada Completa (8:00 AM - 5:00 PM)</option>
+                        <option value="Guardias / Previa Cita">Guardias / Previa Cita</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">% Honorario / Ganancia Médico</label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          placeholder="50"
+                          value={doctorCommissionRate}
+                          onChange={(e) => setDoctorCommissionRate(e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-mono font-black"
+                        />
+                        <span className="font-mono font-black text-teal-700 dark:text-teal-300">%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Días Disponibles */}
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Días de Atención en Clínica</label>
+                    <div className="flex flex-wrap gap-3">
+                      {['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'].map(day => (
+                        <label key={day} className="flex items-center gap-1.5 cursor-pointer text-slate-800 dark:text-slate-200">
+                          <input
+                            type="checkbox"
+                            checked={!!doctorDays[day]}
+                            onChange={(e) => setDoctorDays({ ...doctorDays, [day]: e.target.checked })}
+                            className="w-3.5 h-3.5 text-teal-600 rounded"
+                          />
+                          <span>{day}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Asignar Servicios del Baremo */}
+                  <div className="space-y-1">
+                    <label className="block text-slate-700 dark:text-slate-300">
+                      Asignar Servicios Autorizados del Baremo (Multiselección)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl max-h-36 overflow-y-auto custom-scrollbar">
+                      {(Array.isArray(procedures) && procedures.length > 0 ? procedures : INITIAL_PROCEDURES).map(proc => {
+                        const procName = proc.name || proc.procedure;
+                        const isChecked = assignedProcedures.includes(procName);
+                        return (
+                          <label key={proc.id || procName} className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-800 dark:text-slate-200">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAssignedProcedures([...assignedProcedures, procName]);
+                                } else {
+                                  setAssignedProcedures(assignedProcedures.filter(p => p !== procName));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-teal-600 rounded"
+                            />
+                            <span className="truncate">{procName} (${proc.price || proc.priceUsd} USD)</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+              )}
 
               {/* MATRIZ SELECCIONABLE DE FUNCIONES / MODULOS DEL SISTEMA */}
               <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-[#1e2d5a]">
