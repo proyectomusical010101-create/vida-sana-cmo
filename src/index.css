@@ -150,18 +150,18 @@
 /* ESTILOS DE IMPRESIÓN LIMPIA & PDF PROFESIONAL */
 @media print {
   @page {
-    margin: 10mm;
+    margin: 8mm;
     size: auto;
   }
   
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-family: inherit;
+    font-family: system-ui, -apple-system, sans-serif;
   }
 
-  /* Ocultar elementos de interfaz web (Header, Sidebar, Botones de acción) */
-  header, aside, nav, button, .no-print, [role="banner"], [role="navigation"] {
+  /* Ocultar elementos de interfaz web (Header, Sidebar, Botones, Modales SweetAlert, Formularios web de edición) */
+  header, aside, nav, button, input, textarea, select, .no-print, [role="banner"], [role="navigation"], .swal2-container, .swal2-popup, .swal2-backdrop, .web-only-form {
     display: none !important;
   }
 
@@ -173,13 +173,16 @@
     overflow: visible !important;
   }
 
-  /* Estilos específicos para comprobantes e impresiones de papelería */
+  /* Mostrar exclusivamente los documentos impresos oficiales */
   .printable-paperwork, .printable-receipt {
+    display: block !important;
     border: none !important;
     box-shadow: none !important;
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 }

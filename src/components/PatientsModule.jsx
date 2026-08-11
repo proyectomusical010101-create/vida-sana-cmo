@@ -9,6 +9,11 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [selectedPatientId, setSelectedPatientId] = useState('100-01');
   const [activeSubTab, setActiveSubTab] = useState('history');
 
+  // Estado controlado para Recipe Imprimible & Solicitud de Exámenes
+  const [medsText, setMedsText] = useState('1. Amoxicilina + Ácido Clavulánico 875mg (1 tab c/12h x 7 días)\n2. Ibuprofeno 600mg (1 tab c/8h si hay dolor)');
+  const [medsNotes, setMedsNotes] = useState('Dieta blanda y fría las primeras 24 horas. Evitar enjuagues bucales enérgicos y mantener buena higiene bucal.');
+  const [selectedExams, setSelectedExams] = useState(['Radiografía Panorámica', 'Periapical Seriada']);
+
   // Modal para agregar paciente
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
   const [isMinor, setIsMinor] = useState(false);
@@ -542,56 +547,108 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           {/* TAB 2: RECETA MÉDICA & INDICACIONES */}
           {activeSubTab === 'prescription' && (
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-teal-600" /> Emisión de Recipe Médico & Tratamiento Farmacológico
-              </h4>
+            <div>
+              {/* Formulario Web de Edición (Oculto en Impresión) */}
+              <div className="web-only-form p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Stethoscope className="w-4 h-4 text-teal-600" /> Emisión de Recipe Médico & Tratamiento Farmacológico
+                </h4>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Medicamentos Prescritos</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Ej: Amoxicilina 500mg cada 8 horas por 7 días. Ketoprofeno 100mg cada 12 horas en caso de dolor."
-                    defaultValue="1. Amoxicilina + Ácido Clavulánico 875mg (1 tab c/12h x 7 días)&#10;2. Ibuprofeno 600mg (1 tab c/8h si hay dolor)"
-                    className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
-                  ></textarea>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Medicamentos Prescritos</label>
+                    <textarea
+                      rows="3"
+                      value={medsText}
+                      onChange={(e) => setMedsText(e.target.value)}
+                      placeholder="Ej: Amoxicilina 500mg cada 8 horas por 7 días."
+                      className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-mono"
+                    ></textarea>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Indicaciones Generales para el Paciente</label>
+                    <textarea
+                      rows="2"
+                      value={medsNotes}
+                      onChange={(e) => setMedsNotes(e.target.value)}
+                      placeholder="Indicaciones post-tratamiento, dieta blanda, etc."
+                      className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                    ></textarea>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <Printer className="w-4 h-4 text-teal-400" /> Imprimir Recipe Digital
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        Swal.close();
+                        window.print();
+                      }}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <Download className="w-4 h-4" /> Descargar PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* PLANTILLA DE IMPRESIÓN OFICIAL RÉCIPET MÉDICO (SOLO VISIBLE EN PDF / IMPRESIÓN) */}
+              <div className="printable-paperwork hidden print:block bg-white text-slate-900 p-8 space-y-6 text-xs border border-slate-200">
+                {/* Membrete de la Clínica */}
+                <div className="flex justify-between items-start pb-4 border-b-2 border-slate-800">
+                  <div>
+                    <h1 className="text-lg font-black text-slate-900 uppercase">Centro Médico Odontológico Vida Sana, C.A.</h1>
+                    <p className="text-[11px] font-extrabold text-slate-600">RIF: J-50781755-5 | Odontología Especializada & Medicina Integral</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Av. Principal, Edif. Vida Sana, Piso 1, Consultorio 102 | Teléfs: +58 412-1234567 / +58 212-9876543</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-3 py-1 bg-teal-900 text-white font-black text-xs rounded uppercase">RÉCIPET MÉDICO</span>
+                    <p className="text-[10px] text-slate-500 font-mono mt-1">Fecha: {new Date().toLocaleDateString('es-VE')}</p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Indicaciones Generales para el Paciente</label>
-                  <textarea
-                    rows="2"
-                    placeholder="Indicaciones post-tratamiento, dieta blanda, aplicar frío local, etc."
-                    defaultValue="Dieta blanda y fría las primeras 24 horas. Evitar enjuagues bucales enérgicos y mantener buena higiene bucal."
-                    className="w-full p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
-                  ></textarea>
+                {/* Datos del Paciente */}
+                <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg grid grid-cols-2 gap-2 text-xs">
+                  <div><strong>Paciente:</strong> {selectedPatientObj?.name || 'Paciente'}</div>
+                  <div><strong>Cédula:</strong> {selectedPatientObj?.documentId || 'V-00000000'}</div>
+                  <div><strong>Categoría:</strong> {selectedPatientObj?.category || 'Privado'}</div>
+                  <div><strong>Especialista Tratante:</strong> {selectedPatientObj?.assignedSpecialist || 'Dr. Alejandro Peña'}</div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
-                  >
-                    <Printer className="w-4 h-4 text-teal-400" /> Imprimir Recipe Digital
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      Swal.fire({
-                        title: 'Descargando Recipe en PDF...',
-                        text: 'Se está preparando la orden farmacológica.',
-                        icon: 'info',
-                        timer: 1500,
-                        showConfirmButton: false
-                      });
-                      setTimeout(() => window.print(), 400);
-                    }}
-                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
-                  >
-                    <Download className="w-4 h-4" /> Descargar PDF
-                  </button>
+                {/* Prescripción Médica */}
+                <div className="space-y-4 pt-2">
+                  <div className="border-b pb-1 border-slate-400 font-extrabold text-sm uppercase text-slate-900">
+                    💊 RP / Prescripción Médica:
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg whitespace-pre-wrap font-mono text-xs font-bold leading-relaxed text-slate-900">
+                    {medsText}
+                  </div>
+
+                  <div className="border-b pb-1 border-slate-400 font-extrabold text-xs uppercase text-slate-900 pt-2">
+                    📋 Indicaciones Tratamiento:
+                  </div>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg whitespace-pre-wrap font-sans text-xs text-slate-800">
+                    {medsNotes}
+                  </div>
+                </div>
+
+                {/* Firma y Sello Médico */}
+                <div className="pt-16 grid grid-cols-2 gap-8 text-center">
+                  <div>
+                    <div className="border-t border-slate-800 pt-1 font-bold">Firma del Médico Especialista</div>
+                    <p className="text-[10px] text-slate-500">M.P.P.S. 84.920 | Colegio de Odontólogos N° 45.102</p>
+                  </div>
+                  <div>
+                    <div className="border-t border-slate-800 pt-1 font-bold">Sello Oficial Clínica Vida Sana</div>
+                    <p className="text-[10px] text-slate-500">Válido en cualquier farmacia a nivel nacional</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -599,54 +656,119 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           {/* TAB 3: SOLICITUD DE EXÁMENES & RAYOS X */}
           {activeSubTab === 'exams' && (
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <Printer className="w-4 h-4 text-teal-600" /> Solicitud de Exámenes de Laboratorio e Imagenología
-              </h4>
+            <div>
+              {/* Formulario Web de Edición (Oculto en Impresión) */}
+              <div className="web-only-form p-6 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 text-xs font-bold">
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-teal-600" /> Solicitud de Exámenes de Laboratorio e Imagenología
+                </h4>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block mb-1 text-slate-700 dark:text-slate-300">Estudios Solicitados</label>
-                  <div className="grid grid-cols-2 gap-2 p-3 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="w-4 h-4 text-teal-600 rounded" /> Radiografía Panorámica
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="w-4 h-4 text-teal-600 rounded" /> Periapical Seriada
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" /> Tomografía Cone Beam 3D
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4 text-teal-600 rounded" /> Perfil 20 Pre-operatorio
-                    </label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block mb-1 text-slate-700 dark:text-slate-300">Estudios Solicitados</label>
+                    <div className="grid grid-cols-2 gap-2 p-3 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl">
+                      {[
+                        'Radiografía Panorámica',
+                        'Periapical Seriada',
+                        'Tomografía Cone Beam 3D',
+                        'Perfil 20 Pre-operatorio',
+                        'Ecografía Abdominal / Cuello',
+                        'Cultivo & Antibiograma'
+                      ].map(exam => (
+                        <label key={exam} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedExams.includes(exam)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedExams([...selectedExams, exam]);
+                              } else {
+                                setSelectedExams(selectedExams.filter(x => x !== exam));
+                              }
+                            }}
+                            className="w-4 h-4 text-teal-600 rounded"
+                          />
+                          <span>{exam}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <Printer className="w-4 h-4 text-teal-400" /> Imprimir Solicitud Médica
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        Swal.close();
+                        window.print();
+                      }}
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                    >
+                      <Download className="w-4 h-4" /> Descargar PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* PLANTILLA DE IMPRESIÓN OFICIAL SOLICITUD DE EXÁMENES (SOLO VISIBLE EN PDF / IMPRESIÓN) */}
+              <div className="printable-paperwork hidden print:block bg-white text-slate-900 p-8 space-y-6 text-xs border border-slate-200">
+                {/* Membrete de la Clínica */}
+                <div className="flex justify-between items-start pb-4 border-b-2 border-slate-800">
+                  <div>
+                    <h1 className="text-lg font-black text-slate-900 uppercase">Centro Médico Odontológico Vida Sana, C.A.</h1>
+                    <p className="text-[11px] font-extrabold text-slate-600">RIF: J-50781755-5 | Odontología Especializada & Medicina Integral</p>
+                    <p className="text-[10px] text-slate-500 font-medium">Av. Principal, Edif. Vida Sana, Piso 1, Consultorio 102 | Teléfs: +58 412-1234567 / +58 212-9876543</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-3 py-1 bg-slate-900 text-white font-black text-xs rounded uppercase">SOLICITUD MÉDICA</span>
+                    <p className="text-[10px] text-slate-500 font-mono mt-1">Fecha: {new Date().toLocaleDateString('es-VE')}</p>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
-                  >
-                    <Printer className="w-4 h-4 text-teal-400" /> Imprimir Solicitud Médica
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      Swal.fire({
-                        title: 'Descargando Solicitud en PDF...',
-                        text: 'Se está generando la orden de estudio clínico.',
-                        icon: 'info',
-                        timer: 1500,
-                        showConfirmButton: false
-                      });
-                      setTimeout(() => window.print(), 400);
-                    }}
-                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
-                  >
-                    <Download className="w-4 h-4" /> Descargar PDF
-                  </button>
+                {/* Datos del Paciente */}
+                <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg grid grid-cols-2 gap-2 text-xs">
+                  <div><strong>Paciente:</strong> {selectedPatientObj?.name || 'Paciente'}</div>
+                  <div><strong>Cédula:</strong> {selectedPatientObj?.documentId || 'V-00000000'}</div>
+                  <div><strong>Categoría:</strong> {selectedPatientObj?.category || 'Privado'}</div>
+                  <div><strong>Especialista Solicitante:</strong> {selectedPatientObj?.assignedSpecialist || 'Dr. Alejandro Peña'}</div>
+                </div>
+
+                {/* Estudios Solicitados */}
+                <div className="space-y-3 pt-2">
+                  <div className="border-b pb-1 border-slate-400 font-extrabold text-sm uppercase text-slate-900">
+                    🔬 Estudios y Pruebas Solicitadas:
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2 font-bold text-xs">
+                    {selectedExams && selectedExams.length > 0 ? (
+                      selectedExams.map(ex => (
+                        <div key={ex} className="flex items-center gap-2">
+                          <span className="w-3 h-3 border-2 border-slate-800 bg-slate-800 text-white text-[9px] flex items-center justify-center font-black">✓</span>
+                          <span>{ex}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-slate-500 italic">No se especificaron estudios adicionales.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Firma y Sello Médico */}
+                <div className="pt-16 grid grid-cols-2 gap-8 text-center">
+                  <div>
+                    <div className="border-t border-slate-800 pt-1 font-bold">Firma del Odontólogo / Médico Solicitante</div>
+                    <p className="text-[10px] text-slate-500">M.P.P.S. 84.920 | Colegio de Odontólogos N° 45.102</p>
+                  </div>
+                  <div>
+                    <div className="border-t border-slate-800 pt-1 font-bold">Sello Oficial Centro Médico Vida Sana</div>
+                    <p className="text-[10px] text-slate-500">Documento de orden médica oficial</p>
+                  </div>
                 </div>
               </div>
             </div>
