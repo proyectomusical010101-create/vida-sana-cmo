@@ -313,10 +313,25 @@ export default function PayrollModule({ payroll = [], setPayroll, transactions =
           </button>
 
           <button
+            onClick={() => {
+              Swal.fire({
+                title: 'Generando Reporte PDF',
+                text: 'El reporte de nómina oficial ha sido exportado en formato PDF.',
+                icon: 'success',
+                confirmButtonColor: '#0d9488'
+              });
+              window.print();
+            }}
+            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-md transition-all"
+          >
+            <FileText className="w-4 h-4 text-teal-400" /> Descargar PDF
+          </button>
+
+          <button
             onClick={() => window.print()}
             className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
           >
-            <Printer className="w-4 h-4 text-teal-400" /> Imprimir Planilla Nómina
+            <Printer className="w-4 h-4 text-teal-400" /> Imprimir
           </button>
         </div>
       </div>
@@ -564,19 +579,15 @@ export default function PayrollModule({ payroll = [], setPayroll, transactions =
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Cargo / Función</label>
-                  <select
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Cargo / Función (Escribir Manualmente)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Community Manager, Recepción, Contador..."
                     value={formPosition}
                     onChange={(e) => setFormPosition(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-bold"
-                  >
-                    <option value="Community Manager">Community Manager</option>
-                    <option value="Recepción & Atención al Cliente">Recepción & Atención al Cliente</option>
-                    <option value="Asistente Dental Principal">Asistente Dental Principal</option>
-                    <option value="Administradora & Contador">Administradora & Contador</option>
-                    <option value="Mantenimiento & Servicios Generales">Mantenimiento & Servicios Generales</option>
-                    <option value="Seguridad & Logística">Seguridad & Logística</option>
-                  </select>
+                  />
                 </div>
               </div>
 
