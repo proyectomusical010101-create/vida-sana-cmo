@@ -320,10 +320,10 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
         <button
           onClick={() => setShowAddPatientModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs shadow-md transition-all shrink-0"
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
-          + Nuevo Expediente
+          +Paciente
         </button>
       </div>
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone
 } from 'lucide-react';
 
 import {
@@ -22,7 +23,8 @@ import {
   fetchExtramuralLabOrders,
   fetchPayroll,
   fetchInventory,
-  fetchAppointmentsApi
+  fetchAppointmentsApi,
+  createUserApi
 } from './api';
 
 import LoginScreen from './components/LoginScreen';
@@ -125,12 +127,19 @@ export default function App() {
     }
   }, [theme]);
 
-  // Modal para registrar nuevo Administrador DENTRO del sistema
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminPassword, setNewAdminPassword] = useState('');
-  const [adminRegisterLoading, setAdminRegisterLoading] = useState(false);
+  // Modal para Crear Usuario con Permisos en el menú izquierdo
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserDocId, setNewUserDocId] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState('Administrador');
+  const [newUserPermissions, setNewUserPermissions] = useState({
+    patients: true, baremos: true, schedules: true, billing: true, cashea: true,
+    'patient-portal': true, 'roles-audit': true, seniat: true, payroll: true,
+    profitability: true, inventory: true, whatsapp: true, 'odontogram-budget': true
+  });
+  const [userRegisterLoading, setUserRegisterLoading] = useState(false);
 
   const [specialists, setSpecialists] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -197,17 +206,43 @@ export default function App() {
     setCurrentUser(null);
   };
 
-  const handleCreateNewAdminSubmit = (e) => {
+  const handleCreateUserSubmit = async (e) => {
     e.preventDefault();
-    setAdminRegisterLoading(true);
-    setTimeout(() => {
-      alert(`✅ ¡Nuevo Administrador "${newAdminName}" registrado con éxito!`);
-      setShowAdminModal(false);
-      setNewAdminName('');
-      setNewAdminEmail('');
-      setNewAdminPassword('');
-      setAdminRegisterLoading(false);
-    }, 300);
+    if (!newUserName.trim() || !newUserEmail.trim()) {
+      Swal.fire('Atención', 'Por favor ingresa el nombre y correo del usuario.', 'warning');
+      return;
+    }
+    setUserRegisterLoading(true);
+
+    const newUserObj = {
+      id: `USR-${Date.now().toString().slice(-4)}`,
+      name: newUserName,
+      documentId: newUserDocId,
+      phone: newUserPhone,
+      email: newUserEmail,
+      role: newUserRole,
+      permissions: newUserPermissions
+    };
+
+    try {
+      await createUserApi(newUserObj);
+    } catch (err) {}
+
+    setUserRegisterLoading(false);
+    setShowUserModal(false);
+
+    Swal.fire({
+      title: '¡Usuario Creado Con Éxito!',
+      text: `Se registró a ${newUserName} con rol "${newUserRole}" y permisos configurados.`,
+      icon: 'success',
+      confirmButtonColor: '#0d9488'
+    });
+
+    setNewUserName('');
+    setNewUserDocId('');
+    setNewUserPhone('');
+    setNewUserEmail('');
+    setNewUserRole('Administrador');
   };
 
   const toggleTheme = () => {
@@ -375,8 +410,8 @@ export default function App() {
         <div className="flex items-center justify-between w-full sm:w-auto">
           <div className="flex items-center gap-3">
             <button 
-              className="sm:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -390,7 +425,8 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+        {/* ACCIONES EXCLUSIVAS DEL HEADER: La Tasa, +Cita, +Paciente, +Presupuesto + Theme & Logout */}
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
           
           {isLoadingData && (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:border-amber-700/50 dark:text-amber-400 text-xs font-bold">
@@ -399,67 +435,65 @@ export default function App() {
             </div>
           )}
           
-          {/* Live BCV DolarAPI Pill */}
-          <div className={`hidden md:flex px-3 py-1.5 rounded-xl border items-center gap-2 font-bold ${
+          {/* 1. LA TASA BCV */}
+          <div className={`flex px-3 py-1.5 rounded-xl border items-center gap-2 font-bold ${
             isLight ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-[#0d1b3e] border-[#1e346b] text-blue-200'
           }`}>
             <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-            <span className="text-[11px] font-sans">BCV (En vivo):</span>
+            <span className="text-[11px] font-sans">BCV:</span>
             <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{safeNum(bcvRate, 755.90).toFixed(2)} Bs</span>
           </div>
 
-          <div className={`hidden lg:flex px-3.5 py-1.5 rounded-xl border items-center gap-2 font-bold ${
-            isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-[#0d162f] border-[#1e2d5a]'
-          }`}>
-            <Activity className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-            <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>Ingresos Hoy:</span>
-            <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
-              ${safeNum(totalTodayIncome, 0).toFixed(2)}
-            </span>
-          </div>
-
-          {/* Botón Registrar Nuevo Administrador */}
+          {/* 2. +Cita */}
           <button
-            onClick={() => setShowAdminModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 font-extrabold rounded-xl border border-teal-300 text-xs shadow-sm transition-all"
+            onClick={() => setActiveModule('patient-portal')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
+            title="Ir a Agendamiento de Citas"
           >
-            <UserPlus className="w-4 h-4 text-teal-700" />
-            <span className="hidden md:inline">+ Registrar Administrador</span>
+            <Calendar className="w-4 h-4" />
+            <span>+Cita</span>
           </button>
 
-          {/* Logged User Badge */}
-          <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl text-teal-900 font-bold">
-            <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0" />
-            <div className="text-left hidden sm:block">
-              <div className="text-xs leading-none font-extrabold text-slate-900">{currentUser?.name || 'Administrador Principal'}</div>
-              <div className="text-[10px] text-teal-700 font-semibold">{currentUser?.role || 'Administrador'}</div>
-            </div>
-          </div>
+          {/* 3. +Paciente */}
+          <button
+            onClick={() => setActiveModule('patients')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
+            title="Ir al Registro de Pacientes"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>+Paciente</span>
+          </button>
+
+          {/* 4. +Presupuesto */}
+          <button
+            onClick={() => setActiveModule('odontogram-budget')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
+            title="Ir a Odontograma & Presupuesto"
+          >
+            <Stethoscope className="w-4 h-4" />
+            <span>+Presupuesto</span>
+          </button>
 
           {/* Theme Switcher Button */}
           <button
             onClick={toggleTheme}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold transition-all ${
+            className={`p-2 rounded-xl border font-bold transition-all ${
               isLight
                 ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
                 : 'bg-[#17254d] hover:bg-[#1e2d5a] text-amber-300 border-[#23376e]'
             }`}
+            title="Cambiar Modo Claro / Oscuro"
           >
-            {isLight ? (
-              <Moon className="w-4 h-4 text-slate-800" />
-            ) : (
-              <Sun className="w-4 h-4 text-amber-400" />
-            )}
+            {isLight ? <Moon className="w-4 h-4 text-slate-800" /> : <Sun className="w-4 h-4 text-amber-400" />}
           </button>
 
           {/* Logout Button */}
           <button
             onClick={handleLogout}
             title="Cerrar Sesión"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-extrabold text-xs shadow-sm transition-all"
+            className="p-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 font-extrabold text-xs shadow-sm transition-all"
           >
             <LogOut className="w-4 h-4 text-rose-700" />
-            <span className="hidden sm:inline">Salir</span>
           </button>
         </div>
       </header>
@@ -510,11 +544,25 @@ export default function App() {
             })}
           </div>
 
-          <div className={`p-3 rounded-xl border text-[11px] space-y-1 ${
-            isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0d162f] border-[#1e2d5a] text-slate-300'
-          }`}>
-            <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v2.0</div>
-            <p className="text-[10px] text-teal-700 font-semibold">Sistema Multidisciplinario</p>
+          <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
+            {/* BOTÓN CREAR USUARIO AL FINAL DEL MENÚ IZQUIERDO */}
+            <button
+              onClick={() => setShowUserModal(true)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-md transition-all flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-white" />
+                <span>Crear usuario</span>
+              </div>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">+</span>
+            </button>
+
+            <div className={`p-3 rounded-xl border text-[11px] space-y-1 ${
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0d162f] border-[#1e2d5a] text-slate-300'
+            }`}>
+              <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v2.0</div>
+              <p className="text-[10px] text-teal-700 font-semibold">Sistema Multidisciplinario</p>
+            </div>
           </div>
         </aside>
 
@@ -577,90 +625,161 @@ export default function App() {
 
       </div>
 
-      {/* MODAL CREAR NUEVO ADMINISTRADOR */}
-      {showAdminModal && (
+      {/* MODAL CREAR USUARIO CON PERMISOS INDIVIDUALES */}
+      {showUserModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white text-slate-900 w-full max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white w-full max-w-xl p-6 rounded-2xl border border-slate-200 dark:border-[#1e2d5a] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1e2d5a]">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-teal-600" />
-                Registrar Nuevo Usuario Administrador
+                Registrar Nuevo Usuario del Sistema
               </h3>
               <button
-                onClick={() => setShowAdminModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-800 rounded-lg text-xs"
+                onClick={() => setShowUserModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg text-xs"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateNewAdminSubmit} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateUserSubmit} className="space-y-4 text-xs font-bold">
+              
+              {/* Nombres y Apellidos */}
               <div>
-                <label className="block font-bold mb-1 text-slate-700">Nombre Completo del Administrador</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre y Apellido</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
                     required
-                    placeholder="Ej: Lic. Carlos Andrés Peña"
-                    value={newAdminName}
-                    onChange={(e) => setNewAdminName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-teal-600"
+                    placeholder="Ej: Ana María Gutiérrez"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold mb-1 text-slate-700">Correo Electrónico Corporativo</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              {/* Cédula y Teléfono */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Cédula de Identidad</label>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="nuevo.admin@vidasana.com"
-                    value={newAdminEmail}
-                    onChange={(e) => setNewAdminEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-teal-600"
+                    placeholder="Ej: V-19.876.543"
+                    value={newUserDocId}
+                    onChange={(e) => setNewUserDocId(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-mono"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Teléfono (WhatsApp)</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+58 412 1234567"
+                      value={newUserPhone}
+                      onChange={(e) => setNewUserPhone(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold mb-1 text-slate-700">Contraseña de Acceso</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={newAdminPassword}
-                    onChange={(e) => setNewAdminPassword(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-teal-600"
-                  />
+              {/* Correo y Rol */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Correo Electrónico</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="usuario@vidasanacmo.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Rol de Usuario</label>
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-bold"
+                  >
+                    <option value="Administrador">Administrador Principal</option>
+                    <option value="Gerente">Gerente Administrativo</option>
+                    <option value="Coordinador">Coordinador de Clínica</option>
+                    <option value="Analista">Analista de Sistemas / Finanzas</option>
+                    <option value="Recepción">Recepción & Atención</option>
+                    <option value="Odontólogo">Odontólogo / Especialista</option>
+                    <option value="Asistente Dental">Asistente Dental</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="p-3 bg-teal-50 rounded-xl border border-teal-200 flex items-center justify-between">
-                <span className="text-teal-900 font-bold">Rol Asignado:</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800 border border-teal-300">
-                  Administrador Principal
-                </span>
+              {/* MATRIZ SELECCIONABLE DE FUNCIONES / MODULOS DEL SISTEMA */}
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-[#1e2d5a]">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Funciones y Módulos Autorizados
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-normal">Marca las casillas que puede usar</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl max-h-48 overflow-y-auto custom-scrollbar">
+                  {[
+                    { id: 'patients', name: '1. Pacientes & Niños (Expediente)' },
+                    { id: 'baremos', name: '2. Baremos & Carga Excel' },
+                    { id: 'schedules', name: '3. Horarios & Sustitutos' },
+                    { id: 'billing', name: '4. Caja, BCV & Euro' },
+                    { id: 'cashea', name: '5. Módulo Cashea' },
+                    { id: 'patient-portal', name: '6. Portal Citas Público' },
+                    { id: 'roles-audit', name: '7. Roles, Portal Médico & Audit' },
+                    { id: 'seniat', name: '8. Retenciones 1% & SENIAT' },
+                    { id: 'payroll', name: '9. Nómina & Antigüedad' },
+                    { id: 'profitability', name: '10. Rentabilidad, ROI & 10 Años' },
+                    { id: 'inventory', name: '11. Inventario & O.C.' },
+                    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños' },
+                    { id: 'odontogram-budget', name: '13. Odontograma & Presupuesto' }
+                  ].map(mod => (
+                    <label key={mod.id} className="flex items-center gap-2 cursor-pointer text-slate-800 dark:text-slate-200 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={!!newUserPermissions[mod.id]}
+                        onChange={(e) => setNewUserPermissions({ ...newUserPermissions, [mod.id]: e.target.checked })}
+                        className="w-4 h-4 text-teal-600 rounded"
+                      />
+                      <span className="truncate">{mod.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              {/* BOTONES DE ACCION */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
                 <button
                   type="button"
-                  onClick={() => setShowAdminModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg"
+                  onClick={() => setShowUserModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={adminRegisterLoading}
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-lg shadow-sm"
+                  disabled={userRegisterLoading}
+                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl shadow-md transition-all flex items-center gap-1.5"
                 >
-                  {adminRegisterLoading ? 'Guardando...' : 'Guardar Administrador'}
+                  <UserPlus className="w-4 h-4" />
+                  {userRegisterLoading ? 'Guardando...' : 'Crear Usuario'}
                 </button>
               </div>
             </form>
