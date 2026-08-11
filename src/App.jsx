@@ -152,7 +152,7 @@ export default function App() {
   });
   
   // Campos adicionales para el Rol de Odontólogo / Médico
-  const [doctorSpecialty, setDoctorSpecialty] = useState('Odontología General');
+  const [doctorSpecialties, setDoctorSpecialties] = useState(['Odontología General']);
   const [doctorRif, setDoctorRif] = useState('V-18.420.100-0');
   const [doctorShift, setDoctorShift] = useState('Mañana (8:00 AM - 1:00 PM)');
   const [doctorCommissionRate, setDoctorCommissionRate] = useState('50');
@@ -235,6 +235,7 @@ export default function App() {
     setUserRegisterLoading(true);
 
     const isDoctorRole = newUserRole.includes('Odontólogo') || newUserRole.includes('Médico');
+    const specialtyStr = doctorSpecialties.length > 0 ? doctorSpecialties.join(', ') : 'Odontología General';
 
     const newUserObj = {
       id: `USR-${Date.now().toString().slice(-4)}`,
@@ -246,7 +247,7 @@ export default function App() {
       role: newUserRole,
       permissions: newUserPermissions,
       ...(isDoctorRole && {
-        specialty: doctorSpecialty,
+        specialty: specialtyStr,
         rif: doctorRif,
         shift: doctorShift,
         days: Object.keys(doctorDays).filter(d => doctorDays[d]),
@@ -264,7 +265,7 @@ export default function App() {
       const newSpecialist = {
         id: `SP-${Date.now().toString().slice(-4)}`,
         name: newUserName,
-        specialty: doctorSpecialty,
+        specialty: specialtyStr,
         rIF: doctorRif || newUserDocId,
         phone: newUserPhone,
         email: newUserEmail,
@@ -836,21 +837,38 @@ export default function App() {
 
                   {/* Especialidad y RIF */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Especialidad Odontológica / Médica</label>
-                      <select
-                        value={doctorSpecialty}
-                        onChange={(e) => setDoctorSpecialty(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white font-bold"
-                      >
-                        <option value="Odontología General">Odontología General</option>
-                        <option value="Ortodoncia & Ortopedia">Ortodoncia & Ortopedia</option>
-                        <option value="Endodoncia Avanzada">Endodoncia Avanzada</option>
-                        <option value="Periodoncia & Implantes">Periodoncia & Implantes</option>
-                        <option value="Cirugía Maxilofacial">Cirugía Maxilofacial</option>
-                        <option value="Odontopediatría">Odontopediatría</option>
-                        <option value="Estética & Diseño de Sonrisa">Estética & Diseño de Sonrisa</option>
-                      </select>
+                    <div className="space-y-1">
+                      <label className="block text-slate-700 dark:text-slate-300">
+                        Especialidades / Tipos de Servicio (Multiselección)
+                      </label>
+                      <div className="grid grid-cols-1 gap-1.5 p-2 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl max-h-32 overflow-y-auto custom-scrollbar">
+                        {[
+                          'Odontología General',
+                          'Ortodoncia & Ortopedia',
+                          'Endodoncia Avanzada',
+                          'Periodoncia & Implantes',
+                          'Cirugía Maxilofacial',
+                          'Odontopediatría',
+                          'Estética & Diseño de Sonrisa',
+                          'Medicina General & Evaluación'
+                        ].map(spec => (
+                          <label key={spec} className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-800 dark:text-slate-200">
+                            <input
+                              type="checkbox"
+                              checked={doctorSpecialties.includes(spec)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setDoctorSpecialties([...doctorSpecialties, spec]);
+                                } else {
+                                  setDoctorSpecialties(doctorSpecialties.filter(s => s !== spec));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-teal-600 rounded"
+                            />
+                            <span className="truncate">{spec}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div>
