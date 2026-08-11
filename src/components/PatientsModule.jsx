@@ -616,10 +616,10 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
                 {/* Datos del Paciente */}
                 <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg grid grid-cols-2 gap-2 text-xs">
-                  <div><strong>Paciente:</strong> {selectedPatientObj?.name || 'Paciente'}</div>
-                  <div><strong>Cédula:</strong> {selectedPatientObj?.documentId || 'V-00000000'}</div>
-                  <div><strong>Categoría:</strong> {selectedPatientObj?.category || 'Privado'}</div>
-                  <div><strong>Especialista Tratante:</strong> {selectedPatientObj?.assignedSpecialist || 'Dr. Alejandro Peña'}</div>
+                  <div><strong>Paciente:</strong> {pName}</div>
+                  <div><strong>Cédula:</strong> {pDoc}</div>
+                  <div><strong>Categoría:</strong> {pCategory}</div>
+                  <div><strong>Especialista Tratante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
                 </div>
 
                 {/* Prescripción Médica */}
@@ -733,10 +733,10 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
                 {/* Datos del Paciente */}
                 <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg grid grid-cols-2 gap-2 text-xs">
-                  <div><strong>Paciente:</strong> {selectedPatientObj?.name || 'Paciente'}</div>
-                  <div><strong>Cédula:</strong> {selectedPatientObj?.documentId || 'V-00000000'}</div>
-                  <div><strong>Categoría:</strong> {selectedPatientObj?.category || 'Privado'}</div>
-                  <div><strong>Especialista Solicitante:</strong> {selectedPatientObj?.assignedSpecialist || 'Dr. Alejandro Peña'}</div>
+                  <div><strong>Paciente:</strong> {pName}</div>
+                  <div><strong>Cédula:</strong> {pDoc}</div>
+                  <div><strong>Categoría:</strong> {pCategory}</div>
+                  <div><strong>Especialista Solicitante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
                 </div>
 
                 {/* Estudios Solicitados */}
