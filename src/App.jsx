@@ -101,15 +101,22 @@ export default function App() {
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Tasa de cambio BCV / DolarAPI
-  const [bcvRate, setBcvRate] = useState(755.90);
+  // Tasa de cambio BCV / DolarAPI (USD & EUR)
+  const [bcvRateUsd, setBcvRateUsd] = useState(755.90);
+  const [bcvRateEur, setBcvRateEur] = useState(879.35);
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
 
   const fetchGlobalBcvRate = async () => {
     try {
-      const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-      const data = await res.json();
-      if (data && data.promedio) {
-        setBcvRate(safeNum(data.promedio, 755.90));
+      const [resUsd, resEur] = await Promise.all([
+        fetch('https://ve.dolarapi.com/v1/dolares/oficial').then(r => r.json()).catch(() => null),
+        fetch('https://ve.dolarapi.com/v1/euros/oficial').then(r => r.json()).catch(() => null)
+      ]);
+      if (resUsd && resUsd.promedio) {
+        setBcvRateUsd(safeNum(resUsd.promedio, 755.90));
+      }
+      if (resEur && resEur.promedio) {
+        setBcvRateEur(safeNum(resEur.promedio, 879.35));
       }
     } catch (err) {}
   };
@@ -117,6 +124,8 @@ export default function App() {
   useEffect(() => {
     fetchGlobalBcvRate();
   }, []);
+
+  const bcvRate = selectedCurrency === 'USD' ? bcvRateUsd : bcvRateEur;
 
   // Sincronizar el tema en el elemento html para Tailwind darkMode: 'class'
   useEffect(() => {
@@ -435,13 +444,26 @@ export default function App() {
             </div>
           )}
           
-          {/* 1. LA TASA BCV */}
-          <div className={`flex px-3 py-1.5 rounded-xl border items-center gap-2 font-bold ${
+          {/* 1. LA TASA BCV (USD / EUR) */}
+          <div className={`flex px-3 py-1.5 rounded-xl border items-center gap-1.5 font-bold ${
             isLight ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-[#0d1b3e] border-[#1e346b] text-blue-200'
           }`}>
-            <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+            <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
             <span className="text-[11px] font-sans">BCV:</span>
-            <span className="font-mono font-extrabold text-blue-900 dark:text-blue-300 text-xs">{safeNum(bcvRate, 755.90).toFixed(2)} Bs</span>
+
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value)}
+              className="bg-blue-100/80 dark:bg-blue-900/60 font-black text-xs text-blue-900 dark:text-blue-200 rounded-lg px-1.5 py-0.5 border border-blue-300 dark:border-blue-700 outline-none cursor-pointer hover:bg-blue-200/80 transition-all"
+              title="Cambiar Moneda Oficial (USD Dólar / EUR Euro)"
+            >
+              <option value="USD" className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white">USD ($)</option>
+              <option value="EUR" className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white">EUR (€)</option>
+            </select>
+
+            <span className="font-mono font-black text-blue-900 dark:text-blue-300 text-xs">
+              {(selectedCurrency === 'USD' ? safeNum(bcvRateUsd, 755.90) : safeNum(bcvRateEur, 879.35)).toFixed(2)} Bs
+            </span>
           </div>
 
           {/* 2. +Cita */}
