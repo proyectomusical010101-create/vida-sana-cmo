@@ -524,8 +524,71 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
 
-        {/* CONTENEDOR DEL ODONTOGRAMA CON EL ORDEN EXACTO DEL USUARIO */}
-        <div className="p-4 bg-slate-50/50 dark:bg-[#0d162f]/40 border border-slate-200 dark:border-[#1e2d5a] rounded-2xl space-y-4">
+        {/* CONTENEDOR DEL ODONTOGRAMA */}
+        
+        {/* VISTA ESCRITORIO (4 Cuadrantes Clínicos Regulados en Cruz con Líneas Divisorias) */}
+        <div className="hidden lg:block p-6 bg-slate-50/50 dark:bg-[#0d162f]/40 border border-slate-200 dark:border-[#1e2d5a] rounded-2xl relative shadow-xs">
+          
+          {/* Título de Odontograma Impreso/Clínico */}
+          <div className="text-center pb-4 mb-2">
+            <span className="text-sm font-black tracking-widest text-slate-800 dark:text-slate-200 uppercase border-b-2 border-slate-800 dark:border-slate-300 pb-0.5">
+              ODONTOGRAMA
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6 relative">
+
+            {/* Línea Divisoria Vertical Central */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400 dark:bg-slate-600 -translate-x-1/2 z-10"></div>
+
+            {/* Línea Divisoria Horizontal Central */}
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400 dark:bg-slate-600 -translate-y-1/2 z-10"></div>
+
+            {/* CUADRANTE 1 (Superior Izquierdo de Pantalla / Superior Derecho del Paciente) */}
+            <div className="pr-4 pb-4 space-y-3">
+              {/* Fila 1 Adultos: 18 a 11 */}
+              {renderToothRow([18, 17, 16, 15, 14, 13, 12, 11])}
+              {/* Fila 2 Infantil: 55 a 51 (Alineado a la derecha debajo de 15-11) */}
+              <div className="flex justify-end pr-1">
+                {renderToothRow([55, 54, 53, 52, 51])}
+              </div>
+            </div>
+
+            {/* CUADRANTE 2 (Superior Derecho de Pantalla / Superior Izquierdo del Paciente) */}
+            <div className="pl-4 pb-4 space-y-3">
+              {/* Fila 1 Adultos: 21 a 28 */}
+              {renderToothRow([21, 22, 23, 24, 25, 26, 27, 28])}
+              {/* Fila 2 Infantil: 61 a 65 (Alineado a la izquierda debajo de 21-25) */}
+              <div className="flex justify-start pl-1">
+                {renderToothRow([61, 62, 63, 64, 65])}
+              </div>
+            </div>
+
+            {/* CUADRANTE 4 (Inferior Izquierdo de Pantalla / Inferior Derecho del Paciente) */}
+            <div className="pr-4 pt-4 space-y-3">
+              {/* Fila 1 Infantil: 85 a 81 (Alineado a la derecha arriba de 45-41) */}
+              <div className="flex justify-end pr-1">
+                {renderToothRow([85, 84, 83, 82, 81])}
+              </div>
+              {/* Fila 2 Adultos: 48 a 41 */}
+              {renderToothRow([48, 47, 46, 45, 44, 43, 42, 41])}
+            </div>
+
+            {/* CUADRANTE 3 (Inferior Derecho de Pantalla / Inferior Izquierdo del Paciente) */}
+            <div className="pl-4 pt-4 space-y-3">
+              {/* Fila 1 Infantil: 71 a 75 (Alineado a la izquierda arriba de 31-35) */}
+              <div className="flex justify-start pl-1">
+                {renderToothRow([71, 72, 73, 74, 75])}
+              </div>
+              {/* Fila 2 Adultos: 31 a 38 */}
+              {renderToothRow([31, 32, 33, 34, 35, 36, 37, 38])}
+            </div>
+
+          </div>
+        </div>
+
+        {/* VISTA MÓVIL (Intacta y Secuencial Vertical) */}
+        <div className="block lg:hidden p-4 bg-slate-50/50 dark:bg-[#0d162f]/40 border border-slate-200 dark:border-[#1e2d5a] rounded-2xl space-y-4">
 
           {/* 18, 17, 16, 15 */}
           {renderToothRow([18, 17, 16, 15], 'Superior Derecho Adultos (P1)')}
@@ -533,10 +596,9 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           {/* 14, 13, 12, 11 */}
           {renderToothRow([14, 13, 12, 11], 'Superior Derecho Adultos (P2)')}
 
-          {/* 55, 54, 53, 52, 51 (excepcion de 5) */}
-          {renderToothRow([55, 54, 53, 52, 51], 'Superior Derecho Infantil (5 piezas)')}
+          {/* 55, 54, 53, 52, 51 */}
+          {renderToothRow([55, 54, 53, 52, 51], 'Superior Derecho Infantil')}
 
-          {/* _________ SEPARADOR 1 */}
           <div className="border-t-2 border-dashed border-teal-500/50 my-3"></div>
 
           {/* 21, 22, 23, 24 */}
@@ -545,15 +607,13 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           {/* 25, 26, 27, 28 */}
           {renderToothRow([25, 26, 27, 28], 'Superior Izquierdo Adultos (P2)')}
 
-          {/* 61, 62, 63, 64, 65 (excepcion de 5) */}
-          {renderToothRow([61, 62, 63, 64, 65], 'Superior Izquierdo Infantil (5 piezas)')}
+          {/* 61, 62, 63, 64, 65 */}
+          {renderToothRow([61, 62, 63, 64, 65], 'Superior Izquierdo Infantil')}
 
-          {/* _________ _________ SEPARADOR DOBLE ENTRE ARCADAS */}
           <div className="border-t-4 border-teal-600 my-4"></div>
-          <div className="border-t-4 border-teal-600 -mt-2 mb-4"></div>
 
-          {/* 85, 84, 83, 82, 81 (excepcion de 5) */}
-          {renderToothRow([85, 84, 83, 82, 81], 'Inferior Izquierdo Infantil (5 piezas)')}
+          {/* 85, 84, 83, 82, 81 */}
+          {renderToothRow([85, 84, 83, 82, 81], 'Inferior Izquierdo Infantil')}
 
           {/* 48, 47, 46, 45 */}
           {renderToothRow([48, 47, 46, 45], 'Inferior Izquierdo Adultos (P1)')}
@@ -561,11 +621,10 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           {/* 44, 43, 42, 41 */}
           {renderToothRow([44, 43, 42, 41], 'Inferior Izquierdo Adultos (P2)')}
 
-          {/* _________ SEPARADOR 3 */}
           <div className="border-t-2 border-dashed border-teal-500/50 my-3"></div>
 
-          {/* 71, 72, 73, 74, 75 (excepcion de 5) */}
-          {renderToothRow([71, 72, 73, 74, 75], 'Inferior Derecho Infantil (5 piezas)')}
+          {/* 71, 72, 73, 74, 75 */}
+          {renderToothRow([71, 72, 73, 74, 75], 'Inferior Derecho Infantil')}
 
           {/* 31, 32, 33, 34 */}
           {renderToothRow([31, 32, 33, 34], 'Inferior Derecho Adultos (P1)')}
