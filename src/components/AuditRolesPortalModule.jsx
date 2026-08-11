@@ -3,7 +3,7 @@ import { ShieldCheck, Smartphone, History, Search, Key, UserCheck, CheckSquare, 
 import Swal from 'sweetalert2';
 import { fetchUsersApi, createUserApi, updateUserApi, deleteUserApi } from '../api';
 
-export default function AuditRolesPortalModule({ patients = [], transactions = [], currentUser }) {
+export default function AuditRolesPortalModule({ patients = [], transactions = [], currentUser, onOpenCreateUser }) {
   const [activeTab, setActiveTab] = useState('users'); // 'users' | 'roles' | 'doctor-portal' | 'audit'
 
   // Lista de Usuarios
@@ -43,6 +43,10 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
 
   // Abrir Modal de Creación
   const handleOpenCreateModal = () => {
+    if (typeof onOpenCreateUser === 'function') {
+      onOpenCreateUser();
+      return;
+    }
     setFormName('');
     setFormEmail('');
     setFormPassword('');
@@ -469,7 +473,7 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
           className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs shadow-md transition-all shrink-0"
         >
           <UserPlus className="w-4 h-4" />
-          + Registrar Nuevo Usuario
+          + Crear usuario
         </button>
       </div>
 

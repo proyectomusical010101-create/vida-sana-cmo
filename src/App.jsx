@@ -354,7 +354,14 @@ export default function App() {
         case 'patient-portal':
           return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
         case 'roles-audit':
-          return <AuditRolesPortalModule patients={safePatients} transactions={safeTransactions} currentUser={currentUser} />;
+          return (
+            <AuditRolesPortalModule
+              patients={safePatients}
+              transactions={safeTransactions}
+              currentUser={currentUser}
+              onOpenCreateUser={() => setShowUserModal(true)}
+            />
+          );
         case 'seniat':
           return <SpecialistSettlementModule specialists={safeSpecialists} transactions={safeTransactions} />;
         case 'payroll':
