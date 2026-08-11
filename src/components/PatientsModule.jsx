@@ -570,10 +570,27 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
                 <div className="flex justify-end gap-2 pt-2">
                   <button
-                    onClick={() => Swal.fire('Récipet Imprimible', 'Generando plantilla de récipet firmado en PDF.', 'success')}
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                  >
+                    <Printer className="w-4 h-4 text-teal-400" /> Imprimir Recipe Digital
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      Swal.fire({
+                        title: 'Descargando Recipe en PDF...',
+                        text: 'Se está preparando la orden farmacológica.',
+                        icon: 'info',
+                        timer: 1500,
+                        showConfirmButton: false
+                      });
+                      setTimeout(() => window.print(), 400);
+                    }}
                     className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
                   >
-                    <Printer className="w-4 h-4" /> Imprimir Recipe Digital
+                    <Download className="w-4 h-4" /> Descargar PDF
                   </button>
                 </div>
               </div>
@@ -608,10 +625,27 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
                 <div className="flex justify-end gap-2 pt-2">
                   <button
-                    onClick={() => Swal.fire('Orden Enviada', 'Imprimiendo orden médica de laboratorio / rayos X.', 'success')}
+                    type="button"
+                    onClick={() => window.print()}
                     className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
                   >
                     <Printer className="w-4 h-4 text-teal-400" /> Imprimir Solicitud Médica
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      Swal.fire({
+                        title: 'Descargando Solicitud en PDF...',
+                        text: 'Se está generando la orden de estudio clínico.',
+                        icon: 'info',
+                        timer: 1500,
+                        showConfirmButton: false
+                      });
+                      setTimeout(() => window.print(), 400);
+                    }}
+                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-sm flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" /> Descargar PDF
                   </button>
                 </div>
               </div>
