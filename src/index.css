@@ -146,3 +146,40 @@
   background: rgba(148, 163, 184, 0.4);
   border-radius: 9999px;
 }
+
+/* ESTILOS DE IMPRESIÓN LIMPIA & PDF PROFESIONAL */
+@media print {
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+  
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: inherit;
+  }
+
+  /* Ocultar elementos de interfaz web (Header, Sidebar, Botones de acción) */
+  header, aside, nav, button, .no-print, [role="banner"], [role="navigation"] {
+    display: none !important;
+  }
+
+  /* Expandir contenedor impreso */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Estilos específicos para comprobantes e impresiones de papelería */
+  .printable-paperwork, .printable-receipt {
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

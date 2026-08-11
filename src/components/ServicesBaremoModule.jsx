@@ -19,6 +19,21 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
   const [formPrice, setFormPrice] = useState('45');
   const [formCommission, setFormCommission] = useState('50');
   const [formMaterialsCost, setFormMaterialsCost] = useState('5');
+  const [formHygienistBonus, setFormHygienistBonus] = useState('5.00');
+
+  // Pestañas Módulo 2: 'services' | 'consultorios'
+  const [activeTab, setActiveTab] = useState('services');
+
+  // Estado de Consultorios
+  const [consultoriosList, setConsultoriosList] = useState([
+    { id: 'CONS-01', name: 'Consultorio 1 - Ortodoncia & Estética', location: 'Piso 1, Ala A', services: ['PRO-001', 'PRO-004'] },
+    { id: 'CONS-02', name: 'Consultorio 2 - Cirugía & Implantes', location: 'Piso 1, Ala B', services: ['PRO-002', 'PRO-003'] },
+    { id: 'CONS-03', name: 'Consultorio 3 - Pediatría & Odontología General', location: 'Piso 1, Ala C', services: ['PRO-001'] }
+  ]);
+  const [showConsultorioModal, setShowConsultorioModal] = useState(false);
+  const [consultorioName, setConsultorioName] = useState('');
+  const [consultorioLocation, setConsultorioLocation] = useState('Piso 1');
+  const [consultorioSelectedServices, setConsultorioSelectedServices] = useState([]);
 
   // Filtrado ultra-seguro de procedimientos
   const filteredProcedures = (procedures || []).filter(p => {
@@ -146,6 +161,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       price: parseFloat(formPrice) || 0,
       doctorCommissionPercent: parseFloat(formCommission) || 50,
       estimatedMaterialsCost: parseFloat(formMaterialsCost) || 0,
+      hygienistBonus: parseFloat(formHygienistBonus) || 0,
       materials: editingProc ? editingProc.materials : []
     };
 
@@ -159,6 +175,25 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
 
     setShowModal(false);
     setEditingProc(null);
+  };
+
+  const handleCreateConsultorioSubmit = (e) => {
+    e.preventDefault();
+    if (!consultorioName.trim()) {
+      Swal.fire('Atención', 'Ingresa el nombre del consultorio.', 'warning');
+      return;
+    }
+    const newCons = {
+      id: `CONS-${Date.now().toString().slice(-4)}`,
+      name: consultorioName,
+      location: consultorioLocation,
+      services: consultorioSelectedServices
+    };
+    setConsultoriosList([...consultoriosList, newCons]);
+    setShowConsultorioModal(false);
+    setConsultorioName('');
+    setConsultorioSelectedServices([]);
+    Swal.fire('¡Consultorio Creado!', `Se registró "${newCons.name}" con sus servicios asignados.`, 'success');
   };
 
   const handleDeleteProcedure = (proc) => {
@@ -200,15 +235,29 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
           >
             <Download className="w-4 h-4 text-emerald-700" />
-            Descargar Plantilla Excel / CSV
+            Descargar Plantilla Excel
           </button>
 
           {/* Botón Cargar Excel */}
           <label className="flex items-center gap-1.5 px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
             <Upload className="w-4 h-4" />
-            Importar Baremo (.CSV / Excel)
+            Importar Baremo
             <input type="file" accept=".csv, .txt, .xlsx" onChange={handleFileUpload} className="hidden" />
           </label>
+
+          {/* Botón Crear Consultorio (NUEVO) */}
+          <button
+            onClick={() => {
+              setConsultorioName('');
+              setConsultorioLocation('Piso 1');
+              setConsultorioSelectedServices([]);
+              setShowConsultorioModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-xl text-xs shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            + Crear consultorio
+          </button>
 
           {/* Botón Nuevo Servicio */}
           <button
@@ -221,6 +270,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               setFormPrice('45');
               setFormCommission('50');
               setFormMaterialsCost('5');
+              setFormHygienistBonus('5.00');
               setShowModal(true);
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs shadow-sm transition-all"
@@ -231,8 +281,35 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
         </div>
       </div>
 
-      {/* Selector de Divisiones Médicas */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      {/* Tabs Selector de Vista: Servicios vs Consultorios */}
+      <div className="flex border-b border-slate-200 dark:border-[#1e2d5a] gap-2">
+        <button
+          onClick={() => setActiveTab('services')}
+          className={`pb-3 px-4 font-black text-xs transition-all border-b-2 ${
+            activeTab === 'services'
+              ? 'border-teal-600 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          📋 Catálogo de Baremos & Servicios ({procedures.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('consultorios')}
+          className={`pb-3 px-4 font-black text-xs transition-all border-b-2 ${
+            activeTab === 'consultorios'
+              ? 'border-teal-600 text-teal-600 dark:text-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          🏥 Consultorios y Servicios Asignados ({consultoriosList.length})
+        </button>
+      </div>
+
+      {/* VISTA DE SERVICIOS Y BAREMOS (SI ACTIVE TAB ES SERVICES) */}
+      {activeTab === 'services' && (
+        <div className="space-y-6">
+          {/* Selector de Divisiones Médicas */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <button
           onClick={() => setSelectedDivision('ALL')}
           className={`p-3.5 rounded-xl border text-left transition-all font-bold ${
@@ -293,7 +370,8 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 <th className="p-3">División / Área</th>
                 <th className="p-3">Categoría / Especialidad</th>
                 <th className="p-3 text-right">Precio Público ($)</th>
-                <th className="p-3 text-right">% Honorarios Médico</th>
+                <th className="p-3 text-right">% Medico</th>
+                <th className="p-3 text-right">Bono Higienista ($)</th>
                 <th className="p-3 text-right">Costo Insumos ($)</th>
                 <th className="p-3 text-center">Acciones</th>
               </tr>
@@ -311,6 +389,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                   <td className="p-3 text-slate-700 font-semibold">{proc.category || 'General'}</td>
                   <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(proc.price||0).toFixed(2)} USD</td>
                   <td className="p-3 text-right font-mono font-bold text-teal-800">{proc.doctorCommissionPercent||50}%</td>
+                  <td className="p-3 text-right font-mono font-black text-emerald-700">${(proc.hygienistBonus || 5).toFixed(2)} USD</td>
                   <td className="p-3 text-right font-mono text-slate-600">${(proc.estimatedMaterialsCost||0).toFixed(2)}</td>
                   <td className="p-3 text-center space-x-1">
                     <button
@@ -323,6 +402,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                         setFormPrice(proc.price?.toString() || '45');
                         setFormCommission(proc.doctorCommissionPercent?.toString() || '50');
                         setFormMaterialsCost(proc.estimatedMaterialsCost?.toString() || '5');
+                        setFormHygienistBonus(proc.hygienistBonus?.toString() || '5.00');
                         setShowModal(true);
                       }}
                       className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block"
@@ -345,6 +425,140 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
           </table>
         </div>
       </div>
+    </div>
+  )}
+
+      {/* VISTA DE CONSULTORIOS Y SERVICIOS ASIGNADOS (SI ACTIVE TAB ES CONSULTORIOS) */}
+      {activeTab === 'consultorios' && (
+        <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              🏥 Consultorios Registrados & Servicios Autorizados por Unidad
+            </h3>
+            <button
+              onClick={() => {
+                setConsultorioName('');
+                setConsultorioLocation('Piso 1');
+                setConsultorioSelectedServices([]);
+                setShowConsultorioModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-lg text-xs"
+            >
+              <Plus className="w-4 h-4" /> + Crear Consultorio
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {consultoriosList.map(cons => (
+              <div key={cons.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 shadow-sm">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900">{cons.name}</h4>
+                    <p className="text-[11px] text-slate-500 font-medium">📍 {cons.location}</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full border border-emerald-300">
+                    Operativo
+                  </span>
+                </div>
+
+                <div className="space-y-1 pt-2 border-t border-slate-200">
+                  <label className="text-[11px] font-bold text-slate-700 block">Servicios Habilitados:</label>
+                  <div className="flex flex-wrap gap-1">
+                    {cons.services && cons.services.length > 0 ? (
+                      cons.services.map(srvId => {
+                        const matchedProc = procedures.find(p => p.id === srvId || p.code === srvId);
+                        return (
+                          <span key={srvId} className="px-2 py-0.5 bg-teal-100 text-teal-900 font-bold text-[10px] rounded-lg border border-teal-300">
+                            {matchedProc ? matchedProc.name : srvId}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">Sin servicios asignados aún</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CREAR CONSULTORIO */}
+      {showConsultorioModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white text-slate-900 w-full max-w-md p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200 flex items-center gap-2">
+              🏥 Crear Nuevo Consultorio Clínico
+            </h3>
+
+            <form onSubmit={handleCreateConsultorioSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold mb-1">Nombre del Consultorio</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Consultorio 4 - Odontopediatría & Estética"
+                  value={consultorioName}
+                  onChange={(e) => setConsultorioName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Ubicación / Ala</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Piso 1, Ala Norte"
+                  value={consultorioLocation}
+                  onChange={(e) => setConsultorioLocation(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Seleccionar Servicios Realizados en este Consultorio (Multiselección)</label>
+                <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-lg max-h-40 overflow-y-auto space-y-1.5">
+                  {procedures.map(p => (
+                    <label key={p.id} className="flex items-center gap-2 cursor-pointer text-[11px] font-bold text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={consultorioSelectedServices.includes(p.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setConsultorioSelectedServices([...consultorioSelectedServices, p.id]);
+                          } else {
+                            setConsultorioSelectedServices(consultorioSelectedServices.filter(id => id !== p.id));
+                          }
+                        }}
+                        className="w-3.5 h-3.5 text-purple-600 rounded"
+                      />
+                      <span>{p.name} (${p.price} USD)</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowConsultorioModal(false)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs"
+                >
+                  Crear Consultorio
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Crear / Editar Servicio */}
       {showModal && (
@@ -406,9 +620,9 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block font-bold mb-1">Precio Público ($ USD)</label>
+                  <label className="block font-bold mb-1">Precio ($ USD)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -420,7 +634,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1">% Honorarios Médico</label>
+                  <label className="block font-bold mb-1">% Medico</label>
                   <input
                     type="number"
                     step="1"
@@ -432,7 +646,19 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1">Costo Insumos ($ USD)</label>
+                  <label className="block font-bold mb-1">Bono Higienista ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formHygienistBonus}
+                    onChange={(e) => setFormHygienistBonus(e.target.value)}
+                    className="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg font-mono font-black text-emerald-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1">Insumos ($ USD)</label>
                   <input
                     type="number"
                     step="0.01"

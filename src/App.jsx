@@ -3,8 +3,9 @@ import Swal from 'sweetalert2';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff, FileText
 } from 'lucide-react';
+import PaperworkCustomizationModule from './components/PaperworkCustomizationModule';
 
 import {
   INITIAL_SPECIALISTS, INITIAL_PATIENTS, INITIAL_INVENTORY,
@@ -148,7 +149,18 @@ export default function App() {
   const [newUserPermissions, setNewUserPermissions] = useState({
     patients: true, baremos: true, schedules: true, billing: true, cashea: true,
     'patient-portal': true, 'roles-audit': true, seniat: true, payroll: true,
-    profitability: true, inventory: true, whatsapp: true, 'odontogram-budget': true
+    profitability: true, inventory: true, whatsapp: true, 'odontogram-budget': true, paperwork: true
+  });
+  const [paperworkSettings, setPaperworkSettings] = useState({
+    clinicName: 'Centro Médico Odontológico Vida Sana, C.A.',
+    clinicRif: 'RIF: J-50781755-5',
+    clinicAddress: 'Av. Principal, Edif. Vida Sana, Piso 1, Consultorio 102',
+    clinicPhone: '+58 412 1234567 / +58 212 9876543',
+    clinicEmail: 'contacto@vidasanacmo.com',
+    logoUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063176.png',
+    invoiceFooter: 'Gracias por confiar en Centro Médico Odontológico Vida Sana. Documento de control administrativo interno.',
+    quoteFooter: 'Presupuesto válido por 15 días continuos a la tasa oficial del Banco Central de Venezuela (BCV).',
+    receiptFooter: 'Pago Móvil Banesco (0134) - RIF: J-50781755-5 - Teléf: 0412-1234567. Conserve este comprobante.'
   });
   
   // Campos adicionales para el Rol de Odontólogo / Médico
@@ -360,7 +372,7 @@ export default function App() {
 
   const navItems = [
     { id: 'patients', name: '1. Pacientes', icon: UserCheck },
-    { id: 'baremos', name: '2. Servicios', icon: Layers },
+    { id: 'baremos', name: '2. Servicios y consultorios', icon: Layers },
     { id: 'schedules', name: '3. Horarios', icon: Calendar },
     { id: 'billing', name: '4. Flujo de Caja', icon: DollarSign },
     { id: 'cashea', name: '5. Cta. por cobrar', icon: Smartphone },
@@ -371,7 +383,8 @@ export default function App() {
     { id: 'profitability', name: '10. Proyecciones', icon: TrendingUp },
     { id: 'inventory', name: '11. Inventario', icon: Package },
     { id: 'whatsapp', name: '12. Postventa', icon: MessageSquare },
-    { id: 'odontogram-budget', name: '13. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' }
+    { id: 'odontogram-budget', name: '13. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' },
+    { id: 'paperwork', name: '14. Papelería', icon: FileText }
   ];
 
   // Renderizado seguro por módulo
@@ -441,6 +454,14 @@ export default function App() {
               patients={safePatients}
               procedures={safeProcedures}
               specialists={safeSpecialists}
+              bcvRate={safeNum(bcvRate, 755.90)}
+            />
+          );
+        case 'paperwork':
+          return (
+            <PaperworkCustomizationModule
+              paperworkSettings={paperworkSettings}
+              setPaperworkSettings={setPaperworkSettings}
               bcvRate={safeNum(bcvRate, 755.90)}
             />
           );
@@ -1030,7 +1051,7 @@ export default function App() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl max-h-48 overflow-y-auto custom-scrollbar">
                   {[
                     { id: 'patients', name: '1. Pacientes' },
-                    { id: 'baremos', name: '2. Servicios' },
+                    { id: 'baremos', name: '2. Servicios y consultorios' },
                     { id: 'schedules', name: '3. Horarios' },
                     { id: 'billing', name: '4. Flujo de Caja' },
                     { id: 'cashea', name: '5. Cta. por cobrar' },
@@ -1041,7 +1062,8 @@ export default function App() {
                     { id: 'profitability', name: '10. Proyecciones' },
                     { id: 'inventory', name: '11. Inventario' },
                     { id: 'whatsapp', name: '12. Postventa' },
-                    { id: 'odontogram-budget', name: '13. Presupuesto' }
+                    { id: 'odontogram-budget', name: '13. Presupuesto' },
+                    { id: 'paperwork', name: '14. Papelería' }
                   ].map(mod => (
                     <label key={mod.id} className="flex items-center gap-2 cursor-pointer text-slate-800 dark:text-slate-200 text-[11px]">
                       <input

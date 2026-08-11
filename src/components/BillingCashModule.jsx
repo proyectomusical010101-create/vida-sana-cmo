@@ -25,6 +25,10 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [rateDate, setRateDate] = useState('');
   const [loadingRate, setLoadingRate] = useState(false);
 
+  // Formato de Moneda para Impresión de Comprobante / Recibo: 'BOTH' (Ambos Bs & $) | 'BS' (Solo Bs) | 'REF' (Solo $)
+  const [docCurrencyFormat, setDocCurrencyFormat] = useState('BOTH');
+  const [docFooterNote, setDocFooterNote] = useState('Pago Móvil Banesco (0134) - RIF: J-50781755-5 - Teléf: 0412-1234567. Conserve este comprobante.');
+
   // Egresos y Comisiones Bancarias
   const [expenses, setExpenses] = useState([
     { id: 'EXP-101', type: 'Comisión Bancaria', method: 'Pago Móvil (Bs)', amountBs: 15.50, bankFeePercent: 1.5, note: 'Comisión transferencia Banco de Venezuela' }
@@ -107,7 +111,42 @@ export default function BillingCashModule({ transactions, setTransactions, patie
     };
 
     onRegisterPayment(newTx);
-    Swal.fire('¡Cobro Registrado!', `Transacción ${newTx.id} ingresada con éxito por $${totalAmount.toFixed(2)} USD.`, 'success');
+
+    // Muestra alerta interactiva con botones SEPARADOS de Imprimir y Descargar PDF
+    Swal.fire({
+      title: '¡Cobro Procesado Exitosamente!',
+      html: `
+        <div class="text-left text-xs font-bold space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <p>🧾 <strong>Recibo ID:</strong> ${newTx.id}</p>
+          <p>👤 <strong>Paciente:</strong> ${newTx.patient}</p>
+          <p>🩺 <strong>Servicio:</strong> ${newTx.procedure}</p>
+          <p>💵 <strong>Total Procesado:</strong> $${totalAmount.toFixed(2)} USD / ${(totalAmount * activeRate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</p>
+          <p>💱 <strong>Formato Seleccionado:</strong> ${docCurrencyFormat === 'BOTH' ? 'Ambos (Bs & $)' : docCurrencyFormat === 'BS' ? 'Solo Bolívares (Bs)' : 'Solo REF ($ USD)'}</p>
+        </div>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '🖨️ Imprimir Recibo',
+      denyButtonText: '📥 Descargar PDF',
+      cancelButtonText: 'Cerrar',
+      confirmButtonColor: '#0f172a',
+      denyButtonColor: '#0d9488'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.print();
+      } else if (result.isDenied) {
+        Swal.fire({
+          title: 'Descargando PDF Oficial...',
+          text: `Recibo ${newTx.id} descargado en formato PDF.`,
+          icon: 'info',
+          timer: 1800,
+          showConfirmButton: false
+        });
+        setTimeout(() => window.print(), 500);
+      }
+    });
+
     setPaymentUsdCash('0');
     setPaymentBsPos('0');
     setPaymentBsMobile('0');
@@ -324,6 +363,31 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                     <option value="Mañana">Mañana (8:00 AM - 12:00 PM)</option>
                     <option value="Tarde">Tarde (1:00 PM - 5:00 PM)</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Formato Moneda en Recibo</label>
+                  <select
+                    value={docCurrencyFormat}
+                    onChange={(e) => setDocCurrencyFormat(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
+                  >
+                    <option value="BOTH">Ambos (Bs & $)</option>
+                    <option value="BS">Solo Bolívares (Bs)</option>
+                    <option value="REF">Solo REF ($ USD)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1">Pie de Página en Recibo (Editable)</label>
+                  <input
+                    type="text"
+                    value={docFooterNote}
+                    onChange={(e) => setDocFooterNote(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-medium text-slate-900 text-xs"
+                  />
                 </div>
               </div>
 
