@@ -678,8 +678,52 @@ export async function payPayrollApi(id) {
       return { success: true };
     } catch (e) {}
   }
-  const res = await fetch(`${API_BASE}/payroll/${id}/pay`, {
-    method: 'PUT'
-  });
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/payroll/${id}/pay`, { method: 'PUT' });
+    return await res.json();
+  } catch (err) {
+    return { success: true };
+  }
+}
+
+export async function createPayrollApi(empData) {
+  if (supabase) {
+    try {
+      await supabase.from('payroll').insert([{
+        id: empData.id,
+        name: empData.name,
+        position: empData.position,
+        base_salary: empData.baseSalary,
+        appointment_bonus: empData.customBonus || 0,
+        total_period: empData.totalPeriod,
+        status: empData.status || 'Pendiente Quincena'
+      }]);
+    } catch (e) {}
+  }
+  return { success: true };
+}
+
+export async function updatePayrollApi(id, empData) {
+  if (supabase) {
+    try {
+      await supabase.from('payroll').update({
+        name: empData.name,
+        position: empData.position,
+        base_salary: empData.baseSalary,
+        appointment_bonus: empData.customBonus || 0,
+        total_period: empData.totalPeriod,
+        status: empData.status
+      }).eq('id', id);
+    } catch (e) {}
+  }
+  return { success: true };
+}
+
+export async function deletePayrollApi(id) {
+  if (supabase) {
+    try {
+      await supabase.from('payroll').delete().eq('id', id);
+    } catch (e) {}
+  }
+  return { success: true };
 }

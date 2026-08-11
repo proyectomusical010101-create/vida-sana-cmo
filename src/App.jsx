@@ -314,7 +314,15 @@ export default function App() {
         case 'seniat':
           return <SpecialistSettlementModule specialists={safeSpecialists} transactions={safeTransactions} />;
         case 'payroll':
-          return <PayrollModule payroll={safePayroll} setPayroll={setPayroll} />;
+          return (
+            <PayrollModule
+              payroll={safePayroll}
+              setPayroll={setPayroll}
+              transactions={safeTransactions}
+              setTransactions={setTransactions}
+              bcvRate={safeNum(bcvRate, 755.90)}
+            />
+          );
         case 'profitability':
           return <ProfitabilityDashboard transactions={safeTransactions} casheaTransactions={safeCashea} consultoryRentals={safeRentals} extramuralLabOrders={safeLabOrders} />;
         case 'inventory':
