@@ -10,12 +10,25 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   // SECCION 3 State: Odontograma Anatómico 5 Caras por Pieza
   const [activeMarkMode, setActiveMarkMode] = useState('red'); // 'red' | 'blue' | 'green' | 'purple' | 'erase'
   const [toothSurfaces, setToothSurfaces] = useState({
-    17: { top: 'red' }, // Ejemplo inicial de prueba
+    17: { top: 'red' },
     16: { center: 'blue' },
     24: { left: 'green' }
   });
 
+  // Modal de Selección de Tratamiento del Baremo por Cara Seleccionada
+  const [selectedFaceModal, setSelectedFaceModal] = useState(null); // { toothNum: 17, faceKey: 'bottom', faceLabel: 'Lingual / Palatina' }
+  const [baremoSearchTerm, setBaremoSearchTerm] = useState('');
+
+  const faceLabelMap = {
+    top: 'Superior / Vestibular',
+    bottom: 'Inferior / Lingual / Palatina',
+    left: 'Mesial (Izquierda)',
+    right: 'Distal (Derecha)',
+    center: 'Oclusal / Incisal (Centro)'
+  };
+
   const handleFaceClick = (toothNum, faceKey) => {
+    // 1. Pintar la cara en el odontograma según el modo activo
     setToothSurfaces(prev => {
       const current = prev[toothNum] || {};
       const newColor = activeMarkMode === 'erase' ? null : activeMarkMode;
@@ -26,6 +39,13 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           [faceKey]: newColor
         }
       };
+    });
+
+    // 2. Abrir el modal de selección de tratamiento del baremo para esta cara y diente
+    setSelectedFaceModal({
+      toothNum,
+      faceKey,
+      faceLabel: faceLabelMap[faceKey] || 'Cara Dental'
     });
   };
 
@@ -862,6 +882,117 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SELECCION DE TRATAMIENTO DEL BAREMO POR CARA DENTAL */}
+      {selectedFaceModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#1e2d5a] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            
+            {/* Header Modal */}
+            <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border-b border-slate-200 dark:border-[#1e2d5a] flex justify-between items-center shrink-0">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-teal-600" />
+                Tratamiento para Pieza {selectedFaceModal.toothNum} ({selectedFaceModal.faceLabel})
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedFaceModal(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido Modal */}
+            <div className="p-4 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                Seleccione el procedimiento del Baremo de Precios para asociar directamente a esta cara o diente:
+              </p>
+
+              {/* Input Buscador de Tratamientos */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar tratamiento en el baremo..."
+                  value={baremoSearchTerm}
+                  onChange={(e) => setBaremoSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                />
+              </div>
+
+              {/* Lista de Procedimientos del Baremo */}
+              <div className="space-y-2 pt-1">
+                {(procedures && procedures.length > 0 ? procedures : [
+                  { id: '1', name: 'Consulta y Diagnóstico Clínico + Rx Periapical', category: 'Diagnóstico', durationMinutes: 20, priceUsd: 25.00 },
+                  { id: '2', name: 'Limpieza Ultrasonica + Profilaxis Fluorada', category: 'Diagnóstico', durationMinutes: 30, priceUsd: 40.00 },
+                  { id: '3', name: 'Restauración Fotocurada (Resina Clase I / V)', category: 'Operatoria', durationMinutes: 45, priceUsd: 45.00 },
+                  { id: '4', name: 'Restauración Fotocurada Compleja (Clase II / Estética)', category: 'Operatoria', durationMinutes: 60, priceUsd: 60.00 },
+                  { id: '5', name: 'Tratamiento de Conducto Unirradicular', category: 'Endodoncia', durationMinutes: 60, priceUsd: 120.00 },
+                  { id: '6', name: 'Tratamiento de Conducto Multirradicular (Molar)', category: 'Endodoncia', durationMinutes: 90, priceUsd: 180.00 },
+                  { id: '7', name: 'Exodoncia Simple de Pieza Permanente', category: 'Cirugía', durationMinutes: 30, priceUsd: 50.00 },
+                  { id: '8', name: 'Cirugía de Tercer Molar / Cordales Impactadas', category: 'Cirugía', durationMinutes: 60, priceUsd: 150.00 },
+                  { id: '9', name: 'Corona Metal-Cerámica / Zirconio', category: 'Prótesis', durationMinutes: 45, priceUsd: 250.00 },
+                  { id: '10', name: 'Blanqueamiento Dental LED en Consultorio', category: 'Estética', durationMinutes: 60, priceUsd: 160.00 }
+                ])
+                .filter(proc => {
+                  const term = baremoSearchTerm.toLowerCase();
+                  const pName = String(proc.name || proc.procedure_name || '').toLowerCase();
+                  const pCat = String(proc.category || '').toLowerCase();
+                  return pName.includes(term) || pCat.includes(term);
+                })
+                .map(proc => {
+                  const price = parseFloat(proc.priceUsd || proc.price_usd || proc.price || 40);
+                  const pName = String(proc.name || proc.procedure_name || 'Tratamiento Dental');
+                  const pCat = String(proc.category || 'Odontología');
+
+                  return (
+                    <button
+                      key={proc.id || pName}
+                      type="button"
+                      onClick={() => {
+                        // 1. Agregar a la lista del presupuesto
+                        const newItem = {
+                          id: 'ITEM-' + Date.now(),
+                          tooth: `${selectedFaceModal.toothNum} (${selectedFaceModal.faceLabel})`,
+                          procedure: pName,
+                          doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+                          priceUsd: price
+                        };
+
+                        setBudgetItems(prev => [...prev, newItem]);
+                        setSelectedFaceModal(null);
+
+                        Swal.fire({
+                          title: '¡Tratamiento Asignado!',
+                          text: `Se agregó "${pName}" a la Pieza #${selectedFaceModal.toothNum} por $${price.toFixed(2)} USD.`,
+                          icon: 'success',
+                          timer: 1800,
+                          showConfirmButton: false
+                        });
+                      }}
+                      className="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-[#1e2d5a] hover:border-teal-500 bg-white dark:bg-[#0d162f] hover:bg-teal-50/50 dark:hover:bg-teal-900/20 transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-teal-600 transition-colors">
+                          {pName}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          Categoría: {pCat} ({proc.durationMinutes || 30} min)
+                        </p>
+                      </div>
+
+                      <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 font-mono text-xs font-black rounded-xl shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        ${price.toFixed(2)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
