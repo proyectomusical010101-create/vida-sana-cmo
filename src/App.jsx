@@ -158,6 +158,7 @@ export default function App() {
   const [doctorCommissionRate, setDoctorCommissionRate] = useState('50');
   const [doctorDays, setDoctorDays] = useState({ Lunes: true, Martes: true, Miercoles: true, Jueves: true, Viernes: true, Sabado: false });
   const [assignedProcedures, setAssignedProcedures] = useState([]);
+  const [customServiceCommissions, setCustomServiceCommissions] = useState({});
   
   const [userRegisterLoading, setUserRegisterLoading] = useState(false);
 
@@ -237,6 +238,12 @@ export default function App() {
     const isDoctorRole = newUserRole.includes('Odontólogo') || newUserRole.includes('Médico');
     const specialtyStr = doctorSpecialties.length > 0 ? doctorSpecialties.join(', ') : 'Odontología General';
 
+    // Mapear cada servicio asignado con su honorario/comisión personalizada individual
+    const assignedServicesWithCommissions = assignedProcedures.map(procName => ({
+      name: procName,
+      commissionRate: parseFloat(customServiceCommissions[procName]) || parseFloat(doctorCommissionRate) || 50
+    }));
+
     const newUserObj = {
       id: `USR-${Date.now().toString().slice(-4)}`,
       name: newUserName,
@@ -252,7 +259,7 @@ export default function App() {
         shift: doctorShift,
         days: Object.keys(doctorDays).filter(d => doctorDays[d]),
         commissionRate: parseFloat(doctorCommissionRate) || 50,
-        assignedProcedures
+        assignedProcedures: assignedServicesWithCommissions
       })
     };
 
@@ -270,7 +277,7 @@ export default function App() {
         phone: newUserPhone,
         email: newUserEmail,
         commissionRates: { Privado: parseFloat(doctorCommissionRate) || 50, Seguros: 40 },
-        assignedServices: assignedProcedures,
+        assignedServices: assignedServicesWithCommissions,
         shift: doctorShift
       };
       setSpecialists([newSpecialist, ...specialists]);
@@ -352,19 +359,19 @@ export default function App() {
   const totalTodayIncome = safeTransactions.reduce((s, t) => s + safeNum(t?.total || t?.amount), 0);
 
   const navItems = [
-    { id: 'patients', name: '1. Pacientes & Niños (Expediente)', icon: UserCheck },
-    { id: 'baremos', name: '2. Baremos & Carga Excel', icon: Layers, badge: 'v2.0' },
-    { id: 'schedules', name: '3. Horarios & Sustitutos', icon: Calendar, badge: 'v2.0' },
-    { id: 'billing', name: '4. Caja, BCV & Euro', icon: DollarSign },
-    { id: 'cashea', name: '5. Módulo Cashea', icon: Smartphone },
-    { id: 'patient-portal', name: '6. Portal Citas Público', icon: Globe, badge: 'v2.0' },
-    { id: 'roles-audit', name: '7. Roles, Portal Médico & Audit', icon: ShieldCheck, badge: 'v2.0' },
-    { id: 'seniat', name: '8. Retenciones 1% & SENIAT', icon: FileCheck },
-    { id: 'payroll', name: '9. Nómina & Antigüedad', icon: Users },
-    { id: 'profitability', name: '10. Rentabilidad, ROI & 10 Años', icon: TrendingUp },
-    { id: 'inventory', name: '11. Inventario & O.C.', icon: Package },
-    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños', icon: MessageSquare },
-    { id: 'odontogram-budget', name: '13. Odontograma, Presupuesto & Firma', icon: Stethoscope, badge: 'EXCLUSIVO' }
+    { id: 'patients', name: '1. Pacientes', icon: UserCheck },
+    { id: 'baremos', name: '2. Servicios', icon: Layers },
+    { id: 'schedules', name: '3. Horarios', icon: Calendar },
+    { id: 'billing', name: '4. Flujo de Caja', icon: DollarSign },
+    { id: 'cashea', name: '5. Cta. por cobrar', icon: Smartphone },
+    { id: 'patient-portal', name: '6. Citas', icon: Globe },
+    { id: 'roles-audit', name: '7. Usuarios', icon: ShieldCheck },
+    { id: 'seniat', name: '8. Cta. por pagar', icon: FileCheck },
+    { id: 'payroll', name: '9. Nómina', icon: Users },
+    { id: 'profitability', name: '10. Proyecciones', icon: TrendingUp },
+    { id: 'inventory', name: '11. Inventario', icon: Package },
+    { id: 'whatsapp', name: '12. Postventa', icon: MessageSquare },
+    { id: 'odontogram-budget', name: '13. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' }
   ];
 
   // Renderizado seguro por módulo
@@ -932,31 +939,77 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Asignar Servicios del Baremo */}
-                  <div className="space-y-1">
-                    <label className="block text-slate-700 dark:text-slate-300">
-                      Asignar Servicios Autorizados del Baremo (Multiselección)
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl max-h-36 overflow-y-auto custom-scrollbar">
+                  {/* Asignar Servicios del Baremo con Honorarios Individuales por Servicio */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-[11px]">
+                        Asignar Servicios del Baremo & Honorarios Individuales por Servicio
+                      </label>
+                      <span className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">
+                        Define el % de honorario para cada servicio
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 p-2.5 bg-white dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl max-h-48 overflow-y-auto custom-scrollbar">
                       {(Array.isArray(procedures) && procedures.length > 0 ? procedures : INITIAL_PROCEDURES).map(proc => {
                         const procName = proc.name || proc.procedure;
+                        const procPrice = proc.price || proc.priceUsd || 0;
                         const isChecked = assignedProcedures.includes(procName);
+                        const currentComm = customServiceCommissions[procName] !== undefined 
+                          ? customServiceCommissions[procName] 
+                          : doctorCommissionRate;
+
                         return (
-                          <label key={proc.id || procName} className="flex items-center gap-2 cursor-pointer text-[11px] text-slate-800 dark:text-slate-200">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setAssignedProcedures([...assignedProcedures, procName]);
-                                } else {
-                                  setAssignedProcedures(assignedProcedures.filter(p => p !== procName));
-                                }
-                              }}
-                              className="w-3.5 h-3.5 text-teal-600 rounded"
-                            />
-                            <span className="truncate">{procName} (${proc.price || proc.priceUsd} USD)</span>
-                          </label>
+                          <div 
+                            key={proc.id || procName} 
+                            className={`p-2 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                              isChecked 
+                                ? 'bg-teal-50/90 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700' 
+                                : 'bg-slate-50/50 dark:bg-[#111c3a]/50 border-slate-200 dark:border-[#1e2d5a]'
+                            }`}
+                          >
+                            <label className="flex items-center gap-2 cursor-pointer text-slate-900 dark:text-slate-100 text-xs font-bold shrink-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setAssignedProcedures([...assignedProcedures, procName]);
+                                    if (customServiceCommissions[procName] === undefined) {
+                                      setCustomServiceCommissions({ ...customServiceCommissions, [procName]: doctorCommissionRate });
+                                    }
+                                  } else {
+                                    setAssignedProcedures(assignedProcedures.filter(p => p !== procName));
+                                  }
+                                }}
+                                className="w-4 h-4 text-teal-600 rounded"
+                              />
+                              <span>{procName} <strong className="text-teal-700 dark:text-teal-300 font-mono">(${procPrice} USD)</strong></span>
+                            </label>
+
+                            {isChecked && (
+                              <div className="flex items-center gap-2 bg-white dark:bg-[#0d162f] px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800 shadow-sm shrink-0">
+                                <span className="text-[10px] text-slate-600 dark:text-slate-300 font-bold">% Honorario Méd.:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={currentComm}
+                                  onChange={(e) => {
+                                    setCustomServiceCommissions({
+                                      ...customServiceCommissions,
+                                      [procName]: e.target.value
+                                    });
+                                  }}
+                                  className="w-14 px-1.5 py-0.5 text-center bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-xs font-mono font-black text-teal-800 dark:text-teal-200"
+                                />
+                                <span className="text-xs font-black text-teal-700 dark:text-teal-300">%</span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  (${((procPrice * (parseFloat(currentComm) || 0)) / 100).toFixed(2)})
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -976,19 +1029,19 @@ export default function App() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl max-h-48 overflow-y-auto custom-scrollbar">
                   {[
-                    { id: 'patients', name: '1. Pacientes & Niños (Expediente)' },
-                    { id: 'baremos', name: '2. Baremos & Carga Excel' },
-                    { id: 'schedules', name: '3. Horarios & Sustitutos' },
-                    { id: 'billing', name: '4. Caja, BCV & Euro' },
-                    { id: 'cashea', name: '5. Módulo Cashea' },
-                    { id: 'patient-portal', name: '6. Portal Citas Público' },
-                    { id: 'roles-audit', name: '7. Roles, Portal Médico & Audit' },
-                    { id: 'seniat', name: '8. Retenciones 1% & SENIAT' },
-                    { id: 'payroll', name: '9. Nómina & Antigüedad' },
-                    { id: 'profitability', name: '10. Rentabilidad, ROI & 10 Años' },
-                    { id: 'inventory', name: '11. Inventario & O.C.' },
-                    { id: 'whatsapp', name: '12. WhatsApp & Cumpleaños' },
-                    { id: 'odontogram-budget', name: '13. Odontograma & Presupuesto' }
+                    { id: 'patients', name: '1. Pacientes' },
+                    { id: 'baremos', name: '2. Servicios' },
+                    { id: 'schedules', name: '3. Horarios' },
+                    { id: 'billing', name: '4. Flujo de Caja' },
+                    { id: 'cashea', name: '5. Cta. por cobrar' },
+                    { id: 'patient-portal', name: '6. Citas' },
+                    { id: 'roles-audit', name: '7. Usuarios' },
+                    { id: 'seniat', name: '8. Cta. por pagar' },
+                    { id: 'payroll', name: '9. Nómina' },
+                    { id: 'profitability', name: '10. Proyecciones' },
+                    { id: 'inventory', name: '11. Inventario' },
+                    { id: 'whatsapp', name: '12. Postventa' },
+                    { id: 'odontogram-budget', name: '13. Presupuesto' }
                   ].map(mod => (
                     <label key={mod.id} className="flex items-center gap-2 cursor-pointer text-slate-800 dark:text-slate-200 text-[11px]">
                       <input
