@@ -455,6 +455,7 @@ export default function App() {
               procedures={safeProcedures}
               specialists={safeSpecialists}
               bcvRate={safeNum(bcvRate, 755.90)}
+              paperworkSettings={paperworkSettings}
             />
           );
         case 'paperwork':

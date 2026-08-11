@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus, Trash2, Edit3, ShieldCheck, PenTool, RefreshCw, AlertCircle, DollarSign, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-export default function DentalBudgetOdontogramModule({ patients = [], procedures = [], specialists = [], bcvRate = 755.90 }) {
+export default function DentalBudgetOdontogramModule({ patients = [], procedures = [], specialists = [], bcvRate = 755.90, paperworkSettings }) {
   // SECCION 2 State: Paciente Seleccionado
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
@@ -1055,6 +1055,159 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* PLANTILLA DE IMPRESIÓN OFICIAL PDF (VISUALIZACIÓN LIMPIA COMPACTADA) */}
+      {/* ========================================================================= */}
+      <div className="printable-paperwork hidden print:block bg-white text-slate-900 p-6 space-y-4 shadow-none font-sans text-xs border border-slate-200">
+        
+        {/* 1. HEADER OFICIAL (REFERENCIA IMAGEN 1) */}
+        <div className="flex justify-between items-start pb-3 border-b-2 border-slate-900">
+          <div className="flex items-center gap-3">
+            <img
+              src={paperworkSettings?.logoUrl || 'https://cdn-icons-png.flaticon.com/512/3063/3063176.png'}
+              alt="Logo"
+              className="w-12 h-12 object-contain"
+            />
+            <div>
+              <h1 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                {paperworkSettings?.clinicName || 'CENTRO MÉDICO ODONTOLÓGICO VIDA SANA, C.A.'}
+              </h1>
+              <p className="text-xs font-black text-teal-700">
+                {paperworkSettings?.clinicRif || 'RIF: J-50781755-5'}
+              </p>
+              <p className="text-[10px] text-slate-600 font-medium">
+                {paperworkSettings?.clinicAddress || 'Av. Principal, Edif. Vida Sana, Piso 1, Consultorio 102'}
+              </p>
+              <p className="text-[10px] text-slate-600 font-medium">
+                Teléf: {paperworkSettings?.clinicPhone || '+58 412 1234567 / +58 212 9876543'} • {paperworkSettings?.clinicEmail || 'contacto@vidasanacmo.com'}
+              </p>
+            </div>
+          </div>
+
+          <div className="text-right flex flex-col items-end">
+            <div className="px-4 py-1.5 bg-slate-900 text-white font-black text-xs rounded-lg uppercase tracking-wider shadow-xs mb-1">
+              PRESUPUESTO CLÍNICO / ODONTOGRAMA
+            </div>
+            <p className="text-[11px] font-mono font-bold text-slate-700">
+              N° Documento: <span className="text-slate-900 font-black">002026-{(activePatient?.id || '0891').padStart(4, '0')}</span>
+            </p>
+            <p className="text-[11px] font-mono text-slate-600">
+              Fecha: {new Date().toLocaleDateString('es-VE')}
+            </p>
+            <p className="text-[11px] font-mono text-teal-800 font-bold">
+              Tasa BCV: {bcvRate.toFixed(4)} Bs/$
+            </p>
+          </div>
+        </div>
+
+        {/* 2. FICHA COMPACTA DEL PACIENTE */}
+        <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl grid grid-cols-2 gap-2 text-[11px] font-bold">
+          <div><strong>Paciente:</strong> {activePatient?.name || activePatient?.full_name || 'Ana Sofía Rodríguez'}</div>
+          <div><strong>Cédula:</strong> {activePatient?.documentId || activePatient?.document_id || 'V-25.148.963'}</div>
+          <div><strong>Categoría:</strong> {activePatient?.category || 'Privado'}</div>
+          <div><strong>Especialista Tratante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
+        </div>
+
+        {/* 3. ODONTOGRAMA CLINICO ANATÓMICO COMPACTO */}
+        <div className="p-3 border border-slate-300 rounded-xl space-y-2">
+          <div className="text-center">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-0.5">
+              ODONTOGRAMA
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 relative">
+            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400 -translate-x-1/2"></div>
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400 -translate-y-1/2"></div>
+
+            {/* Cuadrante 1 */}
+            <div className="space-y-1">
+              {renderToothRow([18, 17, 16, 15, 14, 13, 12, 11])}
+              <div className="flex justify-end">{renderToothRow([55, 54, 53, 52, 51])}</div>
+            </div>
+
+            {/* Cuadrante 2 */}
+            <div className="space-y-1">
+              {renderToothRow([21, 22, 23, 24, 25, 26, 27, 28])}
+              <div className="flex justify-start">{renderToothRow([61, 62, 63, 64, 65])}</div>
+            </div>
+
+            {/* Cuadrante 4 */}
+            <div className="space-y-1">
+              <div className="flex justify-end">{renderToothRow([85, 84, 83, 82, 81])}</div>
+              {renderToothRow([48, 47, 46, 45, 44, 43, 42, 41])}
+            </div>
+
+            {/* Cuadrante 3 */}
+            <div className="space-y-1">
+              <div className="flex justify-start">{renderToothRow([71, 72, 73, 74, 75])}</div>
+              {renderToothRow([31, 32, 33, 34, 35, 36, 37, 38])}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. PRESUPUESTO GENERADO & DESGLOSE */}
+        <div className="space-y-1.5">
+          <h4 className="text-xs font-black uppercase text-slate-900 border-b border-slate-400 pb-0.5">
+            📋 DESGLOSE DE PRESUPUESTO & PIEZAS DENTALES
+          </h4>
+          <table className="w-full text-left text-[10px] border-collapse">
+            <thead>
+              <tr className="border-b-2 border-slate-800 bg-slate-100 text-slate-900 font-black">
+                <th className="p-1">Pieza / Cara</th>
+                <th className="p-1">Procedimiento Clínico</th>
+                <th className="p-1">Especialista</th>
+                <th className="p-1 text-right">Monto ($ USD)</th>
+                <th className="p-1 text-right">Monto (Bs)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-300">
+              {budgetItems.map(item => (
+                <tr key={item.id}>
+                  <td className="p-1 font-bold font-mono text-slate-900">Pieza #{item.tooth}</td>
+                  <td className="p-1 font-bold text-slate-800">{item.procedure}</td>
+                  <td className="p-1 text-slate-600">{item.doctor}</td>
+                  <td className="p-1 text-right font-mono font-bold text-slate-900">${parseFloat(item.priceUsd).toFixed(2)}</td>
+                  <td className="p-1 text-right font-mono text-slate-700 font-bold">{(parseFloat(item.priceUsd) * bcvRate).toFixed(2)} Bs</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="flex justify-end gap-6 pt-1 font-mono text-[11px] font-black border-t border-slate-800">
+            <span>TOTAL REF: ${subtotalUsd.toFixed(2)} USD</span>
+            <span className="text-teal-900">TOTAL BOLÍVARES: {totalBs.toFixed(2)} Bs</span>
+          </div>
+        </div>
+
+        {/* 5. FIRMAS DIGITALES */}
+        <div className="pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold">
+          <div className="border-t border-slate-800 pt-1">
+            <p className="font-extrabold uppercase">Firma Digital del Paciente / Representante</p>
+            <p className="text-slate-500 font-mono">{activePatient?.name || activePatient?.full_name || 'Paciente'} (CI: {activePatient?.documentId || 'V-00000000'})</p>
+          </div>
+          <div className="border-t border-slate-800 pt-1">
+            <p className="font-extrabold uppercase">Firma Digital del Odontólogo Tratante</p>
+            <p className="text-slate-500 font-mono">{activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'} • M.P.P.S. 84.920</p>
+          </div>
+        </div>
+
+        {/* 6. FOOTER OFICIAL (REFERENCIA IMAGEN 2) */}
+        <div className="pt-2 border-t border-slate-300 space-y-1.5">
+          <div className="p-2 bg-slate-50 border border-slate-300 rounded-xl text-center text-[10px] font-bold italic text-slate-800 flex items-center justify-center gap-1.5">
+            <span>📌</span>
+            <span>
+              {paperworkSettings?.quoteFooter || 'Presupuesto válido por 15 días continuos a la tasa oficial del Banco Central de Venezuela (BCV). Documento de control administrativo interno.'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold">
+            <span>{paperworkSettings?.clinicName || 'Centro Médico Odontológico Vida Sana, C.A.'} • {paperworkSettings?.clinicRif || 'RIF: J-50781755-5'}</span>
+            <span>Página 1 de 1 • Generado por Sistema Multidisciplinario</span>
+          </div>
+        </div>
+      </div>
 
     </div>
   );
