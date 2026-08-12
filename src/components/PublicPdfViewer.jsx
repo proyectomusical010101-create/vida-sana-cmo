@@ -113,8 +113,9 @@ export default function PublicPdfViewer({
         </button>
       </div>
 
-      {/* DOCUMENTO HOJA IMPRESA EXACTA A LA IMAGEN */}
-      <div className="public-pdf-container max-w-4xl mx-auto bg-white text-slate-900 p-6 sm:p-8 space-y-4 shadow-2xl rounded-2xl border border-slate-300 font-sans text-xs">
+      {/* CONTENEDOR DE HOJA TIPO PAPEL (RESPONSIVO E IMPRESCINDIBLE PARA CELULARES) */}
+      <div className="w-full overflow-x-auto custom-scrollbar pb-6">
+        <div className="public-pdf-container w-[760px] min-w-[760px] mx-auto bg-white text-slate-900 p-6 space-y-4 shadow-2xl rounded-2xl border border-slate-300 font-sans text-xs">
         
         {/* 1. HEADER OFICIAL */}
         <div className="flex justify-between items-start pb-3 border-b-2 border-slate-900">
@@ -271,6 +272,7 @@ export default function PublicPdfViewer({
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
