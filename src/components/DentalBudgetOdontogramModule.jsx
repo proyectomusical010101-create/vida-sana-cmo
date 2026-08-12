@@ -3,8 +3,34 @@ import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus,
 import Swal from 'sweetalert2';
 
 export default function DentalBudgetOdontogramModule({ patients = [], procedures = [], specialists = [], bcvRate = 755.90, paperworkSettings }) {
+  const demoPatientSantiago = {
+    id: '100-01',
+    name: 'Santiago Andrés Peña',
+    documentId: 'V-25.148.963',
+    gender: 'M',
+    isMinor: false,
+    representativeId: '',
+    representativeName: '',
+    birthDate: '1995-06-15',
+    phone: '+58 412-1234567',
+    localPhone: '0212-9876543',
+    workPhone: '0212-5554321',
+    address: 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas',
+    occupation: 'Ingeniero de Sistemas',
+    consultReason: 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético',
+    email: 'santiago.pena@email.com',
+    age: 31,
+    category: 'Privado',
+    assignedSpecialist: 'Dr. Carlos Mendoza'
+  };
+
+  const rawPatientsList = Array.isArray(patients) && patients.length > 0 ? patients : [demoPatientSantiago];
+  const safePatientsList = rawPatientsList.some(p => p && (p.id === '100-01' || (p.name && p.name.includes('Santiago'))))
+    ? rawPatientsList
+    : [demoPatientSantiago, ...rawPatientsList];
+
   // SECCION 2 State: Paciente Seleccionado
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const [selectedPatientId, setSelectedPatientId] = useState(safePatientsList[0]?.id || '100-01');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
   // SECCION 3 State: Odontograma Anatómico 5 Caras por Pieza
