@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff, FileText
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff, FileText, LayoutDashboard
 } from 'lucide-react';
 import PaperworkCustomizationModule from './components/PaperworkCustomizationModule';
 
@@ -47,6 +47,7 @@ import PublicPatientPortal from './components/PublicPatientPortal';
 import AuditRolesPortalModule from './components/AuditRolesPortalModule';
 import DentalBudgetOdontogramModule from './components/DentalBudgetOdontogramModule';
 import PublicPdfViewer from './components/PublicPdfViewer';
+import DashboardOverviewModule from './components/DashboardOverviewModule';
 
 // Helper ultra-seguro para convertir cualquier número sin riesgo de crash
 const safeNum = (val, fallback = 0) => {
@@ -106,7 +107,7 @@ export default function App() {
       return null;
     }
   });
-  const [activeModule, setActiveModule] = useState('patients');
+  const [activeModule, setActiveModule] = useState('dashboard');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -385,26 +386,40 @@ export default function App() {
   const totalTodayIncome = safeTransactions.reduce((s, t) => s + safeNum(t?.total || t?.amount), 0);
 
   const navItems = [
-    { id: 'patients', name: '1. Pacientes', icon: UserCheck },
-    { id: 'baremos', name: '2. Servicios y consultorios', icon: Layers },
-    { id: 'schedules', name: '3. Horarios', icon: Calendar },
-    { id: 'billing', name: '4. Flujo de Caja', icon: DollarSign },
-    { id: 'cashea', name: '5. Cta. por cobrar', icon: Smartphone },
-    { id: 'patient-portal', name: '6. Citas', icon: Globe },
-    { id: 'roles-audit', name: '7. Usuarios', icon: ShieldCheck },
-    { id: 'seniat', name: '8. Cta. por pagar', icon: FileCheck },
-    { id: 'payroll', name: '9. Nómina', icon: Users },
-    { id: 'profitability', name: '10. Proyecciones', icon: TrendingUp },
-    { id: 'inventory', name: '11. Inventario', icon: Package },
-    { id: 'whatsapp', name: '12. Postventa', icon: MessageSquare },
-    { id: 'odontogram-budget', name: '13. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' },
-    { id: 'paperwork', name: '14. Papelería', icon: FileText }
+    { id: 'dashboard', name: '1. Dashboard', icon: LayoutDashboard },
+    { id: 'patients', name: '2. Pacientes', icon: UserCheck },
+    { id: 'baremos', name: '3. Servicios y consultorios', icon: Layers },
+    { id: 'schedules', name: '4. Horarios', icon: Calendar },
+    { id: 'billing', name: '5. Flujo de Caja', icon: DollarSign },
+    { id: 'cashea', name: '6. Cta. por cobrar', icon: Smartphone },
+    { id: 'patient-portal', name: '7. Citas', icon: Globe },
+    { id: 'roles-audit', name: '8. Usuarios', icon: ShieldCheck },
+    { id: 'seniat', name: '9. Cta. por pagar', icon: FileCheck },
+    { id: 'payroll', name: '10. Nómina', icon: Users },
+    { id: 'profitability', name: '11. Proyecciones', icon: TrendingUp },
+    { id: 'inventory', name: '12. Inventario', icon: Package },
+    { id: 'whatsapp', name: '13. Postventa', icon: MessageSquare },
+    { id: 'odontogram-budget', name: '14. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' },
+    { id: 'paperwork', name: '15. Papelería', icon: FileText }
   ];
 
   // Renderizado seguro por módulo
   const renderActiveModule = () => {
     try {
       switch (activeModule) {
+        case 'dashboard':
+          return (
+            <DashboardOverviewModule
+              patients={safePatients}
+              appointments={appointments}
+              transactions={safeTransactions}
+              bcvRate={bcvRate}
+              onNavigateToModule={(modIndex) => {
+                const targetMod = navItems[modIndex]?.id || 'billing';
+                setActiveModule(targetMod);
+              }}
+            />
+          );
         case 'patients':
           return (
             <PatientsModule

@@ -43,6 +43,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [filterShift, setFilterShift] = useState('ALL');
   const [txSearchTerm, setTxSearchTerm] = useState('');
   const [showFullExcelSheet, setShowFullExcelSheet] = useState(false);
+  const [expandedArea, setExpandedArea] = useState('ODONTOLOGIA'); // 'ODONTOLOGIA' | 'MEDICINA' | 'LABORATORIO' | 'RAYOS_X' | null
 
   const activeRate = currencyMode === 'USD_BCV' ? bcvRateUsd : bcvRateEur;
 
@@ -607,59 +608,69 @@ export default function BillingCashModule({ transactions, setTransactions, patie
             </div>
           </div>
 
-          {/* VISTA 1: TARJETAS DE LIQUIDACIÓN SIMPLIFICADAS Y LIMPIAS POR DOCTOR (POR DEFECTO EN CELULARES Y WEB) */}
+          {/* VISTA 1: TARJETAS SIMPLIFICADAS POR ÁREA CON DESPLIEGUE POR DOCTOR */}
           {!showFullExcelSheet && (
             <div className="space-y-4">
               <div className="flex justify-between items-center px-1">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  📋 Liquidaciones de Honorarios por Médico & Área
+                  📋 Cierre de Caja Simplificado por Áreas Médicas
                 </h4>
                 <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800">
-                  Vista Simplificada Inteligente
+                  Haz clic en cualquier área para ver doctores y pacientes
                 </span>
               </div>
 
+              {/* GRID DE 4 TARJETAS DE ÁREAS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* TARJETA 1: ODONTOLOGÍA - DRA. ADRIANA LEAL */}
-                <div className="p-4 bg-white dark:bg-[#111c3a] border-2 border-emerald-500 rounded-2xl shadow-sm space-y-3">
-                  <div className="flex justify-between items-start pb-2 border-b border-slate-200 dark:border-slate-800">
+                {/* 1. ÁREA ODONTOLOGÍA */}
+                <div 
+                  onClick={() => setExpandedArea(expandedArea === 'ODONTOLOGIA' ? null : 'ODONTOLOGIA')}
+                  className={`p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-sm hover:shadow-md ${
+                    expandedArea === 'ODONTOLOGIA' 
+                      ? 'bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-600 ring-2 ring-emerald-500/30' 
+                      : 'bg-white dark:bg-[#111c3a] border-emerald-500 hover:bg-emerald-50/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start pb-3 border-b border-emerald-200 dark:border-emerald-800">
                     <div>
-                      <span className="px-2 py-0.5 bg-emerald-600 text-white font-black text-[9px] rounded-md uppercase">
-                        ODONTOLOGÍA
+                      <span className="px-2.5 py-1 bg-emerald-600 text-white font-black text-[10px] rounded-lg uppercase tracking-wider">
+                        🟢 ODONTOLOGÍA
                       </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white mt-1">
-                        Dra. Adriana Leal
+                      <h4 className="text-base font-black text-slate-900 dark:text-white mt-2">
+                        División Odontología Integral
                       </h4>
-                      <p className="text-[11px] text-slate-500 font-bold">3 Pacientes Atendidos</p>
+                      <p className="text-xs text-emerald-800 dark:text-emerald-300 font-bold mt-0.5">
+                        🩺 1 Doctor Tratante • 👥 3 Pacientes Atendidos
+                      </p>
                     </div>
                     <div className="text-right font-mono">
-                      <span className="text-[10px] text-slate-500 font-bold block">Bruto Generado</span>
-                      <span className="text-sm font-black text-slate-900 dark:text-white">$105,00 USD</span>
+                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Bruto Generado</span>
+                      <span className="text-base font-black text-emerald-950 dark:text-emerald-200">$105,00 USD</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                  <div className="grid grid-cols-2 gap-2 text-xs font-bold pt-3">
+                    <div className="p-2.5 bg-white dark:bg-slate-900 border border-emerald-300 rounded-xl">
                       <span className="text-[10px] text-emerald-800 dark:text-emerald-400 uppercase block mb-0.5">
-                        💵 A Pagar al Doctor ($ y Bs)
+                        💵 Total Pagar a Médicos
                       </span>
-                      <span className="text-base font-black font-mono text-emerald-950 dark:text-emerald-200 block">
+                      <span className="text-sm font-black font-mono text-emerald-950 dark:text-emerald-200 block">
                         $42,00 USD
                       </span>
                       <span className="text-[11px] font-extrabold font-mono text-emerald-800 dark:text-emerald-300">
                         Neto Bs: 6.905,37 Bs
                       </span>
-                      <span className="text-[9px] text-rose-700 block mt-0.5 font-semibold">
+                      <span className="text-[9px] text-rose-700 block font-semibold">
                         (Retención aplicada: Bs 69,75)
                       </span>
                     </div>
 
-                    <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl">
+                    <div className="p-2.5 bg-white dark:bg-slate-900 border border-blue-300 rounded-xl">
                       <span className="text-[10px] text-blue-800 dark:text-blue-400 uppercase block mb-0.5">
                         🏥 Ingreso Neto Vida Sana
                       </span>
-                      <span className="text-base font-black font-mono text-blue-950 dark:text-blue-200 block">
+                      <span className="text-sm font-black font-mono text-blue-950 dark:text-blue-200 block">
                         $43,00 USD
                       </span>
                       <span className="text-[11px] font-extrabold font-mono text-blue-800 dark:text-blue-300">
@@ -667,32 +678,45 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                       </span>
                     </div>
                   </div>
+
+                  <div className="pt-2 text-center text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center justify-center gap-1">
+                    {expandedArea === 'ODONTOLOGIA' ? '▲ Ocultar Detalle por Doctor' : '▼ Clic para ver Pacientes y Pagar a Doctores'}
+                  </div>
                 </div>
 
-                {/* TARJETA 2: RAYOS X - OD. VIVIANA */}
-                <div className="p-4 bg-white dark:bg-[#111c3a] border-2 border-yellow-500 rounded-2xl shadow-sm space-y-3">
-                  <div className="flex justify-between items-start pb-2 border-b border-slate-200 dark:border-slate-800">
+                {/* 2. ÁREA RAYOS X */}
+                <div 
+                  onClick={() => setExpandedArea(expandedArea === 'RAYOS_X' ? null : 'RAYOS_X')}
+                  className={`p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-sm hover:shadow-md ${
+                    expandedArea === 'RAYOS_X' 
+                      ? 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/30' 
+                      : 'bg-white dark:bg-[#111c3a] border-yellow-500 hover:bg-amber-50/50'
+                  }`}
+                >
+                  <div className="flex justify-between items-start pb-3 border-b border-amber-200 dark:border-amber-800">
                     <div>
-                      <span className="px-2 py-0.5 bg-yellow-600 text-white font-black text-[9px] rounded-md uppercase">
-                        RAYOS X & IMAGENOLOGÍA
+                      <span className="px-2.5 py-1 bg-yellow-600 text-white font-black text-[10px] rounded-lg uppercase tracking-wider">
+                        🟡 RAYOS X & IMAGENOLOGÍA
                       </span>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white mt-1">
-                        Od. Viviana (Periapical & Panorámico)
+                      <h4 className="text-base font-black text-slate-900 dark:text-white mt-2">
+                        División Rayos X
                       </h4>
-                      <p className="text-[11px] text-slate-500 font-bold">2 Pacientes Atendidos</p>
+                      <p className="text-xs text-amber-800 dark:text-amber-300 font-bold mt-0.5">
+                        🩺 1 Doctor Tratante • 👥 2 Pacientes Atendidos
+                      </p>
                     </div>
                     <div className="text-right font-mono">
-                      <span className="text-[10px] text-slate-500 font-bold block">Bruto Generado</span>
-                      <span className="text-sm font-black text-slate-900 dark:text-white">$20,00 USD</span>
+                      <span className="text-[10px] text-slate-500 font-bold block uppercase">Bruto Generado</span>
+                      <span className="text-base font-black text-amber-950 dark:text-amber-200">$20,00 USD</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                    <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                  <div className="grid grid-cols-2 gap-2 text-xs font-bold pt-3">
+                    <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-300 rounded-xl">
                       <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase block mb-0.5">
-                        💵 A Pagar al Doctor
+                        💵 Total Pagar a Médicos
                       </span>
-                      <span className="text-base font-black font-mono text-slate-900 dark:text-white block">
+                      <span className="text-sm font-black font-mono text-slate-900 dark:text-white block">
                         $0,00 USD
                       </span>
                       <span className="text-[11px] font-bold font-mono text-slate-600">
@@ -700,11 +724,11 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                       </span>
                     </div>
 
-                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl">
-                      <span className="text-[10px] text-amber-900 dark:text-amber-300 uppercase block mb-0.5">
+                    <div className="p-2.5 bg-white dark:bg-slate-900 border border-amber-300 rounded-xl">
+                      <span className="text-[10px] text-amber-900 dark:text-amber-400 uppercase block mb-0.5">
                         🏥 Ingreso Neto Vida Sana
                       </span>
-                      <span className="text-base font-black font-mono text-amber-950 dark:text-amber-200 block">
+                      <span className="text-sm font-black font-mono text-amber-950 dark:text-amber-200 block">
                         $10,00 USD
                       </span>
                       <span className="text-[11px] font-extrabold font-mono text-amber-900 dark:text-amber-300">
@@ -712,9 +736,185 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                       </span>
                     </div>
                   </div>
+
+                  <div className="pt-2 text-center text-xs font-black text-amber-700 dark:text-amber-400 flex items-center justify-center gap-1">
+                    {expandedArea === 'RAYOS_X' ? '▲ Ocultar Detalle por Doctor' : '▼ Clic para ver Pacientes y Pagar a Doctores'}
+                  </div>
+                </div>
+
+                {/* 3. ÁREA MEDICINA */}
+                <div className="p-5 bg-white dark:bg-[#111c3a] border-2 border-blue-300 opacity-60 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2.5 py-1 bg-blue-600 text-white font-black text-[10px] rounded-lg uppercase">
+                      🔵 MEDICINA ESPECIALIZADA
+                    </span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">$0,00 USD</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-bold">Sin pacientes ni transacciones registradas hoy</p>
+                </div>
+
+                {/* 4. ÁREA LABORATORIO */}
+                <div className="p-5 bg-white dark:bg-[#111c3a] border-2 border-purple-300 opacity-60 rounded-2xl space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2.5 py-1 bg-purple-600 text-white font-black text-[9px] rounded-lg uppercase">
+                      🟣 LABORATORIO CLÍNICO
+                    </span>
+                    <span className="text-xs font-bold text-slate-400 font-mono">$0,00 USD</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-bold">Sin pacientes ni transacciones registradas hoy</p>
                 </div>
 
               </div>
+
+              {/* 5. ACORDEÓN DESPLEGADO CON DETALLE POR DOCTOR Y PACIENTES */}
+              {expandedArea === 'ODONTOLOGIA' && (
+                <div className="p-5 bg-emerald-50/90 dark:bg-emerald-950/40 border-2 border-emerald-500 rounded-3xl space-y-4 transition-all">
+                  <div className="flex justify-between items-center border-b border-emerald-300 dark:border-emerald-800 pb-3">
+                    <h3 className="text-sm font-black uppercase text-emerald-950 dark:text-emerald-200 tracking-wider flex items-center gap-2">
+                      👨‍⚕️ Desglose de Doctores y Pacientes en Odontología
+                    </h3>
+                    <span className="text-xs font-bold font-mono text-emerald-800 dark:text-emerald-300">
+                      Total Área: $105,00 USD / 17.437,80 Bs
+                    </span>
+                  </div>
+
+                  {/* FICHA DE DOCTOR: DRA. ADRIANA LEAL */}
+                  <div className="p-4 bg-white dark:bg-[#111c3a] border border-emerald-300 rounded-2xl shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                      <div>
+                        <h4 className="text-base font-black text-slate-900 dark:text-white">
+                          Dra. Adriana Leal
+                        </h4>
+                        <p className="text-xs text-teal-700 dark:text-teal-400 font-bold">
+                          Especialista en Odontología General & Estética
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          Swal.fire({
+                            title: 'Registrar Pago a Doctor',
+                            text: '¿Desea registrar el pago de $42.00 USD (6.905,37 Bs) a la Dra. Adriana Leal y liquidar su saldo en Cuentas por Pagar?',
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, Pagar y Saldar',
+                            cancelButtonText: 'Cancelar'
+                          }).then(res => {
+                            if (res.isConfirmed) {
+                              Swal.fire('Pago Registrado', 'Se ha liquidado el pago a la Dra. Adriana Leal en Cuentas por Pagar.', 'success');
+                            }
+                          });
+                        }}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+                      >
+                        💳 Registrar Pago a este Doctor
+                      </button>
+                    </div>
+
+                    {/* PACIENTES ATENDIDOS POR ESTE DOCTOR */}
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                        👥 Clientes / Pacientes Atendidos por la Dra. Adriana Leal:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                          <span className="text-slate-900 dark:text-white block font-black">1. Santiago Andrés Peña</span>
+                          <span className="text-[10px] text-slate-500 block">Resina Molar • $45,00 USD</span>
+                        </div>
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                          <span className="text-slate-900 dark:text-white block font-black">2. María Fernanda Gómez</span>
+                          <span className="text-[10px] text-slate-500 block">Limpieza Ultrasónica • $30,00 USD</span>
+                        </div>
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                          <span className="text-slate-900 dark:text-white block font-black">3. Carlos Eduardo López</span>
+                          <span className="text-[10px] text-slate-500 block">Extracción Simple • $30,00 USD</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RESULTADOS Y VALORES EXACTOS REQUERIDOS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-bold pt-2">
+                      <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 rounded-xl">
+                        <span className="text-[10px] text-emerald-800 dark:text-emerald-400 uppercase font-black block mb-1">
+                          Pagar al Doctor ($ y Bs)
+                        </span>
+                        <span className="text-lg font-black font-mono text-emerald-950 dark:text-emerald-200 block">
+                          $42,00 USD
+                        </span>
+                        <span className="text-xs font-extrabold font-mono text-emerald-800 dark:text-emerald-300 block">
+                          Neto Bs: 6.905,37 Bs
+                        </span>
+                        <span className="text-[10px] text-rose-700 font-bold block mt-1">
+                          (Retención aplicada: Bs 69,75)
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/60 border border-blue-300 rounded-xl">
+                        <span className="text-[10px] text-blue-800 dark:text-blue-400 uppercase font-black block mb-1">
+                          Ingreso Neto Vida Sana
+                        </span>
+                        <span className="text-lg font-black font-mono text-blue-950 dark:text-blue-200 block">
+                          $43,00 USD
+                        </span>
+                        <span className="text-xs font-extrabold font-mono text-blue-800 dark:text-blue-300 block">
+                          Bs + Retención: 10.532,43 Bs
+                        </span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {expandedArea === 'RAYOS_X' && (
+                <div className="p-5 bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-500 rounded-3xl space-y-4 transition-all">
+                  <div className="flex justify-between items-center border-b border-amber-300 dark:border-amber-800 pb-3">
+                    <h3 className="text-sm font-black uppercase text-amber-950 dark:text-amber-200 tracking-wider flex items-center gap-2">
+                      👨‍⚕️ Desglose de Doctores y Pacientes en Rayos X
+                    </h3>
+                    <span className="text-xs font-bold font-mono text-amber-800 dark:text-amber-300">
+                      Total Área: $20,00 USD / 8.718,90 Bs
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-white dark:bg-[#111c3a] border border-amber-300 rounded-2xl shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                      <div>
+                        <h4 className="text-base font-black text-slate-900 dark:text-white">
+                          Od. Viviana
+                        </h4>
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-bold">
+                          Especialista en Imagenología Dentomaxilofacial
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => Swal.fire('Al Día', 'Este especialista no tiene saldos pendientes de pago.', 'info')}
+                        className="px-4 py-2 bg-slate-200 text-slate-700 font-extrabold rounded-xl text-xs flex items-center gap-2"
+                      >
+                        ✔ Al Día (Sin saldo pendiente)
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 block">
+                        👥 Clientes / Pacientes Atendidos por Od. Viviana:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                          <span className="text-slate-900 dark:text-white block font-black">1. Valentina Martínez</span>
+                          <span className="text-[10px] text-slate-500 block">Radiografía Periapical • $10,00 USD</span>
+                        </div>
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+                          <span className="text-slate-900 dark:text-white block font-black">2. José Luis Rodríguez</span>
+                          <span className="text-[10px] text-slate-500 block">Radiografía Panorámica • $10,00 USD</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
