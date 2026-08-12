@@ -16,17 +16,56 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
   // Modal para agregar paciente
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+  const [modalTab, setModalTab] = useState('filiation'); // 'filiation' | 'anamnesis' | 'exam'
   const [isMinor, setIsMinor] = useState(false);
   const [docId, setDocId] = useState('');
   const [repDocId, setRepDocId] = useState('');
   const [repName, setRepName] = useState('');
   const [patientName, setPatientName] = useState('');
   const [patientBirthDate, setPatientBirthDate] = useState('1995-06-15');
+  const [patientGender, setPatientGender] = useState('F'); // 'F' | 'M'
+  const [patientAddress, setPatientAddress] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
+  const [patientLocalPhone, setPatientLocalPhone] = useState('');
+  const [patientWorkPhone, setPatientWorkPhone] = useState('');
+  const [patientOccupation, setPatientOccupation] = useState('');
+  const [consultReason, setConsultReason] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
   const [patientCategory, setPatientCategory] = useState('Privado');
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
   const [isSaving, setIsSaving] = useState(false);
+
+  // ANAMNESIS (Historia Médica Completa)
+  const [medTreatment, setMedTreatment] = useState({ has: 'NO', details: '' });
+  const [childDiseases, setChildDiseases] = useState({ has: 'NO', details: '' });
+  const [allergies, setAllergies] = useState({ has: 'NO', details: '' });
+  const [surgeries, setSurgeries] = useState('');
+  const [excessiveBleeding, setExcessiveBleeding] = useState('NO');
+  const [respiratory, setRespiratory] = useState({ adenoids: false, tonsils: false, details: '' });
+  const [anesthesiaReaction, setAnesthesiaReaction] = useState({ has: 'NO', details: '' });
+  const [penicillinAllergy, setPenicillinAllergy] = useState({ has: 'NO', details: '' });
+  const [heartProblems, setHeartProblems] = useState({ has: 'NO', details: '' });
+
+  // EXAMEN INTEGRAL Y EXTRAORAL
+  const [oralTissues, setOralTissues] = useState({
+    hardPalate: 'Normal',
+    softPalate: 'Normal',
+    mouthFloor: 'Normal',
+    cheeks: 'Normal',
+    tongue: 'Normal',
+    frenulum: 'Normal'
+  });
+
+  const [oralHabits, setOralHabits] = useState({
+    abnormalSwallowing: 'NO',
+    nailBiting: 'NO',
+    thumbSucking: 'NO',
+    thumbWhich: '',
+    mouthBreather: 'NO',
+    frequency: '',
+    intensity: '',
+    others: ''
+  });
 
   // Modal y estado para EDITAR Paciente
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
@@ -133,12 +172,33 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       representative_id: isMinor ? repDocId : '',
       representative_name: isMinor ? repName : '',
       birth_date: patientBirthDate,
+      gender: patientGender,
+      address: patientAddress,
       phone: patientPhone,
+      local_phone: patientLocalPhone,
+      work_phone: patientWorkPhone,
+      occupation: patientOccupation,
+      consult_reason: consultReason,
       email: patientEmail,
       category: patientCategory,
       assigned_specialist: patientSpecialist,
       treatment_start_date: new Date().toISOString().slice(0, 10),
-      last_control_date: new Date().toISOString().slice(0, 10)
+      last_control_date: new Date().toISOString().slice(0, 10),
+      anamnesis: {
+        medTreatment,
+        childDiseases,
+        allergies,
+        surgeries,
+        excessiveBleeding,
+        respiratory,
+        anesthesiaReaction,
+        penicillinAllergy,
+        heartProblems
+      },
+      extraoral_exam: {
+        oralTissues,
+        oralHabits
+      }
     };
 
     try {
@@ -504,10 +564,19 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             <button
               onClick={() => setActiveSubTab('exams')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                activeSubTab === 'exams' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-[#300] hover:bg-slate-200 dark:hover:bg-slate-700'
+                activeSubTab === 'exams' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <Printer className="w-3.5 h-3.5" /> 3. Solicitud de Exámenes & Rayos X
+              <Printer className="w-3.5 h-3.5" /> 3. Solicitud de Exámenes
+            </button>
+
+            <button
+              onClick={() => setActiveSubTab('clinical-history')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeSubTab === 'clinical-history' ? 'bg-teal-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5" /> 4. Historia Clínica Completa
             </button>
           </div>
 
@@ -654,7 +723,63 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             </div>
           )}
 
-          {/* TAB 3: SOLICITUD DE EXÁMENES & RAYOS X */}
+          {/* TAB 4: HISTORIA CLINICA ADULTOS E INFANTIL DETALLADA */}
+          {activeSubTab === 'clinical-history' && (
+            <div className="space-y-6 text-xs">
+              
+              {/* FILIACIÓN Y DATOS DE CONTACTO */}
+              <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-3">
+                <h4 className="text-xs font-black uppercase text-teal-700 dark:text-teal-400 border-b border-slate-200 dark:border-slate-800 pb-1">
+                  📋 FILIACIÓN Y DATOS PERSONALES DEL PACIENTE
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-semibold">
+                  <div><span className="text-slate-500 block text-[10px]">Nombre:</span> {pName}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Cédula:</span> {pDoc}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Sexo:</span> {activePatient?.gender === 'M' ? 'Masculino' : 'Femenino'}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Edad:</span> {calculateAge(pBirthDate)} Años ({pBirthDate})</div>
+                  <div><span className="text-slate-500 block text-[10px]">Teléfono Celular:</span> {pPhone}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Teléfono Local:</span> {activePatient?.localPhone || activePatient?.local_phone || 'N/A'}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Teléfono Trabajo:</span> {activePatient?.workPhone || activePatient?.work_phone || 'N/A'}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Profesión / Ocupación:</span> {activePatient?.occupation || 'N/A'}</div>
+                  <div><span className="text-slate-500 block text-[10px]">Categoría:</span> {pCategory}</div>
+                  <div className="col-span-2 sm:col-span-3"><span className="text-slate-500 block text-[10px]">Dirección de Habitación:</span> {activePatient?.address || 'No registrada'}</div>
+                  <div className="col-span-2 sm:col-span-3"><span className="text-slate-500 block text-[10px]">Motivo de Consulta:</span> <span className="font-bold text-teal-800 dark:text-teal-300">{activePatient?.consultReason || activePatient?.consult_reason || 'Evaluación Odontológica General'}</span></div>
+                </div>
+              </div>
+
+              {/* ANAMNESIS / ANTECEDENTES */}
+              <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-3">
+                <h4 className="text-xs font-black uppercase text-teal-700 dark:text-teal-400 border-b border-slate-200 dark:border-slate-800 pb-1">
+                  🩺 ANAMNESIS Y ANTECEDENTES MÉDICOS
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-800 dark:text-slate-200">
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Tratamiento Médico:</strong> {activePatient?.anamnesis?.medTreatment?.has || 'NO'} ({activePatient?.anamnesis?.medTreatment?.details || 'Ninguno'})</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Enfermedades Niñez:</strong> {activePatient?.anamnesis?.childDiseases?.has || 'NO'} ({activePatient?.anamnesis?.childDiseases?.details || 'Ninguna'})</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Alergias Conocidas:</strong> {activePatient?.anamnesis?.allergies?.has || 'NO'} ({activePatient?.anamnesis?.allergies?.details || 'Ninguna'})</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Intervenciones Quirúrgicas:</strong> {activePatient?.anamnesis?.surgeries || 'Ninguna'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>¿Sangrado Excesivo al cortarse?:</strong> {activePatient?.anamnesis?.excessiveBleeding || 'NO'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Reacción Anormal Anestesia:</strong> {activePatient?.anamnesis?.anesthesiaReaction?.has || 'NO'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Alérgico Penicilina:</strong> {activePatient?.anamnesis?.penicillinAllergy?.has || 'NO'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Problemas Cardíacos:</strong> {activePatient?.anamnesis?.heartProblems?.has || 'NO'}</div>
+                </div>
+              </div>
+
+              {/* EXAMEN INTEGRAL & EXTRAORAL */}
+              <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-3">
+                <h4 className="text-xs font-black uppercase text-teal-700 dark:text-teal-400 border-b border-slate-200 dark:border-slate-800 pb-1">
+                  🦷 EXAMEN INTEGRAL Y TEJIDOS BUCALES
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Paladar Duro:</strong> {activePatient?.extraoral_exam?.oralTissues?.hardPalate || 'Normal'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Paladar Blando:</strong> {activePatient?.extraoral_exam?.oralTissues?.softPalate || 'Normal'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Piso de Boca:</strong> {activePatient?.extraoral_exam?.oralTissues?.mouthFloor || 'Normal'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Mejillas:</strong> {activePatient?.extraoral_exam?.oralTissues?.cheeks || 'Normal'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Lengua:</strong> {activePatient?.extraoral_exam?.oralTissues?.tongue || 'Normal'}</div>
+                  <div className="p-2 bg-white dark:bg-slate-900 border rounded-lg"><strong>Frenillo:</strong> {activePatient?.extraoral_exam?.oralTissues?.frenulum || 'Normal'}</div>
+                </div>
+              </div>
+            </div>
+          )}
           {activeSubTab === 'exams' && (
             <div>
               {/* Formulario Web de Edición (Oculto en Impresión) */}
@@ -778,143 +903,481 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
       </div>
 
-      {/* Modal Nuevo Expediente / Paciente */}
+      {/* MODAL REGISTRAR NUEVO PACIENTE (HISTORIA CLÍNICA ADULTOS E INFANTIL COMPLETA) */}
       {showAddPatientModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white text-slate-900 w-full max-w-lg p-6 rounded-2xl border border-slate-200 shadow-2xl space-y-4">
-            <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200 dark:border-[#1e2d5a]">
-              Registrar Nuevo Paciente (Expediente Clínico)
-            </h3>
+          <div className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-[#1e2d5a] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Header Modal con Título & Tabs */}
+            <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border-b border-slate-200 dark:border-[#1e2d5a] space-y-3 shrink-0">
+              <div className="flex justify-between items-center">
+                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-teal-600" />
+                  Registrar Nuevo Paciente (Historia Clínica Adultos e Infantil)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAddPatientModal(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg"
+                >
+                  ✕
+                </button>
+              </div>
 
-            <form onSubmit={handleSavePatientSubmit} className="space-y-3.5 text-xs">
+              {/* Pestañas de la Historia Clínica */}
+              <div className="flex gap-2 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setModalTab('filiation')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    modalTab === 'filiation'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  📄 1. Filiación & Datos
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalTab('anamnesis')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    modalTab === 'anamnesis'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  🩺 2. Anamnesis (Historia Médica)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModalTab('exam')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    modalTab === 'exam'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  🦷 3. Examen Integral & Extraoral
+                </button>
+              </div>
+            </div>
+
+            {/* Formulario Modal Scrollable */}
+            <form onSubmit={handleSavePatientSubmit} className="p-5 overflow-y-auto space-y-4 text-xs font-bold flex-1 custom-scrollbar">
               
-              {/* Checkbox Menor de Edad */}
-              <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between">
-                <span className="font-extrabold text-amber-950">¿Paciente Menor de Edad / Niño?</span>
-                <input
-                  type="checkbox"
-                  checked={isMinor}
-                  onChange={(e) => setIsMinor(e.target.checked)}
-                  className="w-4 h-4 text-amber-600 rounded"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold mb-1">Nombre Completo del Paciente</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Santiago Andrés Peña"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
-                />
-              </div>
-
-              {!isMinor ? (
-                <div>
-                  <label className="block font-bold mb-1">Cédula de Identidad del Paciente</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej: V-25.148.963"
-                    value={docId}
-                    onChange={(e) => setDocId(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
-                  <div>
-                    <label className="block font-bold mb-1">Cédula del Representante Legal</label>
+              {/* PESTAÑA 1: FILIACIÓN Y DATOS DE CONTACTO */}
+              {modalTab === 'filiation' && (
+                <div className="space-y-3.5">
+                  {/* Checkbox Menor de Edad */}
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl flex items-center justify-between">
+                    <span className="font-extrabold text-amber-950 dark:text-amber-200">¿Paciente Menor de Edad / Niño?</span>
                     <input
-                      type="text"
-                      required
-                      placeholder="Ej: V-15.632.147"
-                      value={repDocId}
-                      onChange={(e) => setRepDocId(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
+                      type="checkbox"
+                      checked={isMinor}
+                      onChange={(e) => setIsMinor(e.target.checked)}
+                      className="w-4 h-4 text-amber-600 rounded"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold mb-1">Nombre del Representante</label>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre Completo del Paciente *</label>
                     <input
                       type="text"
                       required
-                      placeholder="Ej: Marcos Antonio Peña"
-                      value={repName}
-                      onChange={(e) => setRepName(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 dark:text-white"
+                      placeholder="Ej: Santiago Andrés Peña"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
                     />
+                  </div>
+
+                  {!isMinor ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">Cédula de Identidad *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: V-25.148.963"
+                          value={docId}
+                          onChange={(e) => setDocId(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl font-mono text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">Sexo *</label>
+                        <select
+                          value={patientGender}
+                          onChange={(e) => setPatientGender(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white"
+                        >
+                          <option value="F">Femenino (F)</option>
+                          <option value="M">Masculino (M)</option>
+                        </select>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3 p-3 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">Cédula Representante *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: V-15.632.147"
+                          value={repDocId}
+                          onChange={(e) => setRepDocId(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-[#0d162f] border border-slate-300 rounded-lg font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">Nombre Representante *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Marcos Antonio Peña"
+                          value={repName}
+                          onChange={(e) => setRepName(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-[#0d162f] border border-slate-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 dark:text-slate-300 mb-1">Sexo *</label>
+                        <select
+                          value={patientGender}
+                          onChange={(e) => setPatientGender(e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white dark:bg-[#0d162f] border border-slate-300 rounded-lg"
+                        >
+                          <option value="F">Femenino (F)</option>
+                          <option value="M">Masculino (M)</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Fecha de Nacimiento *</label>
+                      <input
+                        type="date"
+                        required
+                        value={patientBirthDate}
+                        onChange={(e) => setPatientBirthDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Edad Calculada</label>
+                      <div className="w-full px-3 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-mono font-extrabold text-slate-900 dark:text-white">
+                        {calculateAge(patientBirthDate)} Años
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Dirección de Habitación</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Av. Principal de Las Mercedes, Edif. Torre B, Apto 4"
+                      value={patientAddress}
+                      onChange={(e) => setPatientAddress(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Telf. Celular (WhatsApp) *</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+584123456789"
+                        value={patientPhone}
+                        onChange={(e) => setPatientPhone(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Telf. Local</label>
+                      <input
+                        type="tel"
+                        placeholder="02129876543"
+                        value={patientLocalPhone}
+                        onChange={(e) => setPatientLocalPhone(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Telf. Trabajo</label>
+                      <input
+                        type="tel"
+                        placeholder="02125554321"
+                        value={patientWorkPhone}
+                        onChange={(e) => setPatientWorkPhone(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Profesión u Ocupación</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Odontólogo / Ingeniero"
+                        value={patientOccupation}
+                        onChange={(e) => setPatientOccupation(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría del Paciente</label>
+                      <select
+                        value={patientCategory}
+                        onChange={(e) => setPatientCategory(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                      >
+                        <option value="Privado">Privado</option>
+                        <option value="Funcionario">Funcionario</option>
+                        <option value="Convenio">Convenio</option>
+                        <option value="Asegurado">Asegurado</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">Motivo de Consulta *</label>
+                    <textarea
+                      rows="2"
+                      required
+                      placeholder="Ej: Dolor en molar superior derecho / Limpieza y blanqueamiento..."
+                      value={consultReason}
+                      onChange={(e) => setConsultReason(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
+                    ></textarea>
                   </div>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Fecha de Nacimiento</label>
-                  <input
-                    type="date"
-                    required
-                    value={patientBirthDate}
-                    onChange={(e) => setPatientBirthDate(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
-                  />
-                </div>
+              {/* PESTAÑA 2: ANAMNESIS (HISTORIA MÉDICA COMPLETA DE LA IMAGEN 2) */}
+              {modalTab === 'anamnesis' && (
+                <div className="space-y-3">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Responda las preguntas de antecedentes clínicos requeridas en la historia física:
+                  </p>
 
-                <div>
-                  <label className="block font-bold mb-1">Edad Calculada Dinámicamente</label>
-                  <div className="w-full p-2.5 bg-slate-200 border border-slate-300 rounded-lg font-mono font-extrabold text-slate-900">
-                    {calculateAge(patientBirthDate)} Años
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">1. Historia Médica: ¿Está bajo tratamiento médico?</span>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1"><input type="radio" name="medTreatment" checked={medTreatment.has === 'SI'} onChange={() => setMedTreatment({ ...medTreatment, has: 'SI' })} /> SI</label>
+                        <label className="flex items-center gap-1"><input type="radio" name="medTreatment" checked={medTreatment.has === 'NO'} onChange={() => setMedTreatment({ ...medTreatment, has: 'NO' })} /> NO</label>
+                      </div>
+                    </div>
+                    {medTreatment.has === 'SI' && (
+                      <input type="text" placeholder="¿Algo que mencionar sobre el tratamiento?" value={medTreatment.details} onChange={(e) => setMedTreatment({ ...medTreatment, details: e.target.value })} className="w-full p-2 bg-white dark:bg-slate-900 border rounded-lg" />
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">2. Enfermedades de la Niñez:</span>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1"><input type="radio" name="childDiseases" checked={childDiseases.has === 'SI'} onChange={() => setChildDiseases({ ...childDiseases, has: 'SI' })} /> SI</label>
+                        <label className="flex items-center gap-1"><input type="radio" name="childDiseases" checked={childDiseases.has === 'NO'} onChange={() => setChildDiseases({ ...childDiseases, has: 'NO' })} /> NO</label>
+                      </div>
+                    </div>
+                    {childDiseases.has === 'SI' && (
+                      <input type="text" placeholder="Varicela, Sarampión, Parotiditis, etc." value={childDiseases.details} onChange={(e) => setChildDiseases({ ...childDiseases, details: e.target.value })} className="w-full p-2 bg-white dark:bg-slate-900 border rounded-lg" />
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">3. Alergias Conocidas:</span>
+                      <div className="flex gap-2">
+                        <label className="flex items-center gap-1"><input type="radio" name="allergies" checked={allergies.has === 'SI'} onChange={() => setAllergies({ ...allergies, has: 'SI' })} /> SI</label>
+                        <label className="flex items-center gap-1"><input type="radio" name="allergies" checked={allergies.has === 'NO'} onChange={() => setAllergies({ ...allergies, has: 'NO' })} /> NO</label>
+                      </div>
+                    </div>
+                    {allergies.has === 'SI' && (
+                      <input type="text" placeholder="Medicamentos, polen, alimentos, AINEs..." value={allergies.details} onChange={(e) => setAllergies({ ...allergies, details: e.target.value })} className="w-full p-2 bg-white dark:bg-slate-900 border rounded-lg" />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 mb-1">4. Intervenciones Quirúrgicas (Cirugías Previas)</label>
+                    <input type="text" placeholder="Apendicectomía, amigdalectomía, etc." value={surgeries} onChange={(e) => setSurgeries(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl" />
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center justify-between">
+                    <span className="font-bold">5. ¿Sangra mucho cuando se corta?</span>
+                    <div className="flex gap-2">
+                      <label className="flex items-center gap-1"><input type="radio" name="excessiveBleeding" checked={excessiveBleeding === 'SI'} onChange={() => setExcessiveBleeding('SI')} /> SI</label>
+                      <label className="flex items-center gap-1"><input type="radio" name="excessiveBleeding" checked={excessiveBleeding === 'NO'} onChange={() => setExcessiveBleeding('NO')} /> NO</label>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl space-y-2">
+                    <span className="font-bold block">6. Trastornos Respiratorios:</span>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-1"><input type="checkbox" checked={respiratory.adenoids} onChange={(e) => setRespiratory({ ...respiratory, adenoids: e.target.checked })} /> Adenoides</label>
+                      <label className="flex items-center gap-1"><input type="checkbox" checked={respiratory.tonsils} onChange={(e) => setRespiratory({ ...respiratory, tonsils: e.target.checked })} /> Amígdalas</label>
+                    </div>
+                    <input type="text" placeholder="¿Algo que mencionar sobre problemas respiratorios?" value={respiratory.details} onChange={(e) => setRespiratory({ ...respiratory, details: e.target.value })} className="w-full p-2 bg-white dark:bg-slate-900 border rounded-lg" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border rounded-xl space-y-1">
+                      <span className="font-bold block">7. Reacción Anormal a Anestesia</span>
+                      <div className="flex gap-2">
+                        <label><input type="radio" name="anesthesiaReaction" checked={anesthesiaReaction.has === 'SI'} onChange={() => setAnesthesiaReaction({ ...anesthesiaReaction, has: 'SI' })} /> SI</label>
+                        <label><input type="radio" name="anesthesiaReaction" checked={anesthesiaReaction.has === 'NO'} onChange={() => setAnesthesiaReaction({ ...anesthesiaReaction, has: 'NO' })} /> NO</label>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border rounded-xl space-y-1">
+                      <span className="font-bold block">8. Alérgico a la Penicilina</span>
+                      <div className="flex gap-2">
+                        <label><input type="radio" name="penicillinAllergy" checked={penicillinAllergy.has === 'SI'} onChange={() => setPenicillinAllergy({ ...penicillinAllergy, has: 'SI' })} /> SI</label>
+                        <label><input type="radio" name="penicillinAllergy" checked={penicillinAllergy.has === 'NO'} onChange={() => setPenicillinAllergy({ ...penicillinAllergy, has: 'NO' })} /> NO</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border rounded-xl space-y-1">
+                    <span className="font-bold block">9. Problemas del Corazón (Cardiopatías)</span>
+                    <div className="flex gap-2">
+                      <label><input type="radio" name="heartProblems" checked={heartProblems.has === 'SI'} onChange={() => setHeartProblems({ ...heartProblems, has: 'SI' })} /> SI</label>
+                      <label><input type="radio" name="heartProblems" checked={heartProblems.has === 'NO'} onChange={() => setHeartProblems({ ...heartProblems, has: 'NO' })} /> NO</label>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Teléfono (WhatsApp)</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+584123456789"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
-                  />
+              {/* PESTAÑA 3: EXAMEN INTEGRAL Y EXTRAORAL */}
+              {modalTab === 'exam' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="font-extrabold text-slate-900 dark:text-white uppercase text-[11px] border-b pb-1">
+                      1. Condición de Tejidos Bucales:
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block mb-1">Paladar Duro:</label>
+                        <input type="text" value={oralTissues.hardPalate} onChange={(e) => setOralTissues({ ...oralTissues, hardPalate: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block mb-1">Paladar Blando:</label>
+                        <input type="text" value={oralTissues.softPalate} onChange={(e) => setOralTissues({ ...oralTissues, softPalate: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block mb-1">Piso de Boca:</label>
+                        <input type="text" value={oralTissues.mouthFloor} onChange={(e) => setOralTissues({ ...oralTissues, mouthFloor: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block mb-1">Mejillas:</label>
+                        <input type="text" value={oralTissues.cheeks} onChange={(e) => setOralTissues({ ...oralTissues, cheeks: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block mb-1">Lengua:</label>
+                        <input type="text" value={oralTissues.tongue} onChange={(e) => setOralTissues({ ...oralTissues, tongue: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="block mb-1">Frenillo:</label>
+                        <input type="text" value={oralTissues.frenulum} onChange={(e) => setOralTissues({ ...oralTissues, frenulum: e.target.value })} className="w-full p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t">
+                    <h4 className="font-extrabold text-slate-900 dark:text-white uppercase text-[11px] border-b pb-1">
+                      2. Hábitos Bucales:
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg">
+                        <span>Deglución Anormal:</span>
+                        <div className="flex gap-2">
+                          <label><input type="radio" name="abnormalSwallowing" checked={oralHabits.abnormalSwallowing === 'SI'} onChange={() => setOralHabits({ ...oralHabits, abnormalSwallowing: 'SI' })} /> SI</label>
+                          <label><input type="radio" name="abnormalSwallowing" checked={oralHabits.abnormalSwallowing === 'NO'} onChange={() => setOralHabits({ ...oralHabits, abnormalSwallowing: 'NO' })} /> NO</label>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg">
+                        <span>Onicofagia (Morderse Uñas):</span>
+                        <div className="flex gap-2">
+                          <label><input type="radio" name="nailBiting" checked={oralHabits.nailBiting === 'SI'} onChange={() => setOralHabits({ ...oralHabits, nailBiting: 'SI' })} /> SI</label>
+                          <label><input type="radio" name="nailBiting" checked={oralHabits.nailBiting === 'NO'} onChange={() => setOralHabits({ ...oralHabits, nailBiting: 'NO' })} /> NO</label>
+                        </div>
+                      </div>
+
+                      <div className="p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span>Succión Dedo:</span>
+                          <div className="flex gap-2">
+                            <label><input type="radio" name="thumbSucking" checked={oralHabits.thumbSucking === 'SI'} onChange={() => setOralHabits({ ...oralHabits, thumbSucking: 'SI' })} /> SI</label>
+                            <label><input type="radio" name="thumbSucking" checked={oralHabits.thumbSucking === 'NO'} onChange={() => setOralHabits({ ...oralHabits, thumbSucking: 'NO' })} /> NO</label>
+                          </div>
+                        </div>
+                        {oralHabits.thumbSucking === 'SI' && (
+                          <input type="text" placeholder="¿Cuál dedo?" value={oralHabits.thumbWhich} onChange={(e) => setOralHabits({ ...oralHabits, thumbWhich: e.target.value })} className="w-full p-1.5 bg-white dark:bg-slate-900 border rounded" />
+                        )}
+                      </div>
+
+                      <div className="p-2 bg-slate-50 dark:bg-[#0d162f] border rounded-lg space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span>Respirador Bucal:</span>
+                          <div className="flex gap-2">
+                            <label><input type="radio" name="mouthBreather" checked={oralHabits.mouthBreather === 'SI'} onChange={() => setOralHabits({ ...oralHabits, mouthBreather: 'SI' })} /> SI</label>
+                            <label><input type="radio" name="mouthBreather" checked={oralHabits.mouthBreather === 'NO'} onChange={() => setOralHabits({ ...oralHabits, mouthBreather: 'NO' })} /> NO</label>
+                          </div>
+                        </div>
+                        {oralHabits.mouthBreather === 'SI' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <input type="text" placeholder="Frecuencia" value={oralHabits.frequency} onChange={(e) => setOralHabits({ ...oralHabits, frequency: e.target.value })} className="p-1.5 bg-white dark:bg-slate-900 border rounded" />
+                            <input type="text" placeholder="Intensidad" value={oralHabits.intensity} onChange={(e) => setOralHabits({ ...oralHabits, intensity: e.target.value })} className="p-1.5 bg-white dark:bg-slate-900 border rounded" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block font-bold mb-1">Categoría del Paciente</label>
-                  <select
-                    value={patientCategory}
-                    onChange={(e) => setPatientCategory(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white dark:text-white"
+              {/* Footer Botones Modal */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-[#1e2d5a] shrink-0">
+                <span className="text-[10px] text-slate-500">Pestaña {modalTab === 'filiation' ? '1/3' : modalTab === 'anamnesis' ? '2/3' : '3/3'}</span>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPatientModal(false)}
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-300 font-bold rounded-xl"
                   >
-                    <option value="Privado">Privado</option>
-                    <option value="Funcionario">Funcionario</option>
-                    <option value="Convenio">Convenio</option>
-                    <option value="Asegurado">Asegurado</option>
-                  </select>
+                    Cancelar
+                  </button>
+                  
+                  {modalTab !== 'exam' ? (
+                    <button
+                      type="button"
+                      onClick={() => setModalTab(modalTab === 'filiation' ? 'anamnesis' : 'exam')}
+                      className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl transition-all shadow-md"
+                    >
+                      Siguiente ➔
+                    </button>
+                  ) : (
+                    <button 
+                      type="submit"
+                      disabled={isSaving}
+                      className="px-6 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      {isSaving ? 'Guardando en la Nube...' : 'Guardar Expediente Oficial'}
+                    </button>
+                  )}
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setShowAddPatientModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-6 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  {isSaving ? 'Guardando en la Nube...' : 'Guardar Expediente Oficial'}
-                </button>
               </div>
             </form>
           </div>
