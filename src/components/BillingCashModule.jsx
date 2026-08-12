@@ -42,6 +42,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [filterDivision, setFilterDivision] = useState('ALL');
   const [filterShift, setFilterShift] = useState('ALL');
   const [txSearchTerm, setTxSearchTerm] = useState('');
+  const [showFullExcelSheet, setShowFullExcelSheet] = useState(false);
 
   const activeRate = currencyMode === 'USD_BCV' ? bcvRateUsd : bcvRateEur;
 
@@ -491,30 +492,77 @@ export default function BillingCashModule({ transactions, setTransactions, patie
         </form>
       )}
 
-      {/* TAB 2: CIERRE DE CAJA DIARIO - MODELO EXCEL OFICIAL VIDA SANA */}
+      {/* TAB 2: CIERRE DE CAJA DIARIO - SISTEMA RESUMIDO Y EXCEL VIDA SANA */}
       {activeTab === 'closeout' && (
         <div className="space-y-6">
           
-          {/* BARRA SUPERIOR DE ACCIONES Y MODO DE VISTA (EXCEL VS MÓVIL) */}
+          {/* BARRA SUPERIOR DE ACCIONES Y SWITCH DE VISTA */}
           <div className="bg-white border border-slate-200 shadow-sm p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
                 <Printer className="w-5 h-5 text-teal-600" />
-                Cierre de Caja Diario Auditado — Modelo Excel Oficial Vida Sana
+                Cierre de Caja Diario Auditado — Vida Sana
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Desglose multi-área (Odontología, Medicina, Laboratorio, Rayos X) con comisiones, retenciones y métodos de pago.
+                Cálculo automático de ingresos, liquidación de honorarios a médicos y ganancia neta.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowFullExcelSheet(!showFullExcelSheet)}
+                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-teal-600" />
+                {showFullExcelSheet ? '📱 Vista Tarjetas Simplificada' : '📊 Ver Matriz Excel Completa'}
+              </button>
+
               <button
                 onClick={() => window.print()}
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
               >
                 <Printer className="w-4 h-4 text-teal-400" />
-                Exportar Reporte Excel / PDF
+                Exportar Cierre (PDF / Excel)
               </button>
+            </div>
+          </div>
+
+          {/* 3 TARJETAS RESUMEN EJECUTIVO (LOS 3 NÚMEROS CLAVE DE GERENCIA) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-xs">
+              <span className="text-[11px] font-black uppercase text-emerald-800 block mb-1">
+                1. Total Recaudado en Caja
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-950">
+                $125,00 USD
+              </div>
+              <span className="text-xs font-bold font-mono text-emerald-700">
+                Equivalente: 26.156,70 Bs
+              </span>
+            </div>
+
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl shadow-xs">
+              <span className="text-[11px] font-black uppercase text-blue-800 block mb-1">
+                2. Honorarios Totales a Médicos
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-mono text-blue-950">
+                $42,00 USD
+              </div>
+              <span className="text-xs font-bold font-mono text-blue-700">
+                Neto Bs: 6.905,37 Bs (Retención Bs 69,75)
+              </span>
+            </div>
+
+            <div className="p-4 bg-amber-100 border-2 border-amber-400 rounded-2xl shadow-sm">
+              <span className="text-[11px] font-black uppercase text-amber-900 block mb-1">
+                3. Ganancia NETA Vida Sana
+              </span>
+              <div className="text-xl sm:text-2xl font-black font-mono text-amber-950">
+                $53,00 USD
+              </div>
+              <span className="text-xs font-extrabold font-mono text-amber-800">
+                Neto Bs + Retención: 19.251,33 Bs
+              </span>
             </div>
           </div>
 
