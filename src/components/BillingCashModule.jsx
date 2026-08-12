@@ -491,91 +491,407 @@ export default function BillingCashModule({ transactions, setTransactions, patie
         </form>
       )}
 
-      {/* TAB 2: CIERRE DE CAJA AUDITADO EN PDF */}
+      {/* TAB 2: CIERRE DE CAJA DIARIO - MODELO EXCEL OFICIAL VIDA SANA */}
       {activeTab === 'closeout' && (
-        <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
-            <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-              <Printer className="w-5 h-5 text-teal-600" />
-              Reporte de Cierre de Caja Auditado (Filtros Multidireccionales)
-            </h3>
+        <div className="space-y-6">
+          
+          {/* BARRA SUPERIOR DE ACCIONES Y MODO DE VISTA (EXCEL VS MÓVIL) */}
+          <div className="bg-white border border-slate-200 shadow-sm p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                <Printer className="w-5 h-5 text-teal-600" />
+                Cierre de Caja Diario Auditado — Modelo Excel Oficial Vida Sana
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Desglose multi-área (Odontología, Medicina, Laboratorio, Rayos X) con comisiones, retenciones y métodos de pago.
+              </p>
+            </div>
 
-            {/* Botón de Exportación PDF Auditada */}
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-md"
-            >
-              <Printer className="w-4 h-4" /> Exportar Reporte Cierre en PDF
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+              >
+                <Printer className="w-4 h-4 text-teal-400" />
+                Exportar Reporte Excel / PDF
+              </button>
+            </div>
           </div>
 
-          {/* Filtros Combinados de Cierre */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+          {/* FILTROS Y INFORMACIÓN ENCABEZADO */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold">
             <div>
-              <label className="block font-bold text-xs mb-1">Filtrar por Área / División Servicio</label>
+              <label className="block text-slate-700 mb-1">Filtrar por Área / División</label>
               <select
                 value={filterDivision}
                 onChange={(e) => setFilterDivision(e.target.value)}
-                className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-xs text-slate-900"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900"
               >
                 <option value="ALL">Todas las Áreas (Odontología, Medicina, Rayos X, Laboratorio)</option>
-                <option value="ODONTOLOGIA">Odontología Integral</option>
-                <option value="MEDICINA">Medicina Especializada</option>
-                <option value="RAYOS_X">Rayos X & Imagenología</option>
-                <option value="LABORATORIO">Laboratorio Clínico</option>
+                <option value="ODONTOLOGIA">Odontología</option>
+                <option value="MEDICINA">Medicina</option>
+                <option value="LABORATORIO">Laboratorio</option>
+                <option value="RAYOS_X">Rayos X</option>
               </select>
             </div>
 
             <div>
-              <label className="block font-bold text-xs mb-1">Filtrar por Turno de Trabajo</label>
+              <label className="block text-slate-700 mb-1">Filtrar por Turno</label>
               <select
                 value={filterShift}
                 onChange={(e) => setFilterShift(e.target.value)}
-                className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-xs text-slate-900"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900"
               >
                 <option value="ALL">Todos los Turnos (Mañana + Tarde)</option>
                 <option value="Mañana">Mañana (8:00 AM - 12:00 PM)</option>
                 <option value="Tarde">Tarde (1:00 PM - 5:00 PM)</option>
               </select>
             </div>
+
+            <div className="p-2.5 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-teal-700 font-bold uppercase block">Tasa Euro / BCV Activa:</span>
+                <span className="text-sm font-extrabold font-mono text-teal-950">{activeRate.toFixed(2)} Bs/$</span>
+              </div>
+              <span className="px-2.5 py-1 bg-teal-700 text-white font-mono text-xs font-bold rounded-lg">
+                FECHA: {new Date().toLocaleDateString('es-VE')}
+              </span>
+            </div>
           </div>
 
-          {/* Tabla de Asientos Filtrados */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
-                <tr>
-                  <th className="p-3">Recibo ID</th>
-                  <th className="p-3">Fecha / Hora</th>
-                  <th className="p-3">Paciente</th>
-                  <th className="p-3">Procedimiento</th>
-                  <th className="p-3">Turno</th>
-                  <th className="p-3 text-right">Monto ($)</th>
-                  <th className="p-3 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-                  {filteredTransactions.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-mono font-bold text-slate-700">{t.id}</td>
-                      <td className="p-3 font-mono text-slate-600">{t.date}</td>
-                      <td className="p-3 font-extrabold text-slate-900">{t.patient}</td>
-                      <td className="p-3 font-semibold text-slate-800">{t.procedure}</td>
-                      <td className="p-3 text-slate-700">{t.shift}</td>
-                      <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${t.total.toFixed(2)}</td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDeleteTransaction(t)}
-                          className="p-1 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-600 transition-all"
-                          title="Anular Transacción"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+          {/* TABLA PRINCIPAL MODELO EXCEL RESPONSIVA CON DESPLAZAMIENTO HORIZONTAL EN CELULARES */}
+          <div className="w-full overflow-x-auto custom-scrollbar bg-white border border-slate-300 rounded-2xl shadow-lg p-4 font-sans text-xs">
+            <div className="min-w-[1280px] space-y-6">
+
+              {/* TÍTULO HOJA EXCEL */}
+              <div className="p-2 bg-slate-900 text-white font-black text-sm uppercase text-center rounded-xl tracking-wider">
+                CIERRE DE CAJA DIARIO - VIDA SANA
+              </div>
+
+              {/* 🟢 SECCIÓN 1: ODONTOLOGÍA */}
+              {(filterDivision === 'ALL' || filterDivision === 'ODONTOLOGIA') && (
+                <div className="border border-emerald-300 rounded-xl overflow-hidden shadow-xs">
+                  <div className="p-2 bg-[#2e7d32] text-white font-black uppercase text-xs tracking-wider">
+                    ODONTOLOGIA
+                  </div>
+                  <table className="w-full text-center text-[10px] border-collapse font-bold">
+                    <thead>
+                      <tr className="bg-sky-100 text-sky-900 border-b border-emerald-300">
+                        <th className="p-1.5 border-r border-slate-300">ESPECIALISTA</th>
+                        <th className="p-1.5 border-r border-slate-300">ESPECIALIDAD</th>
+                        <th className="p-1.5 border-r border-slate-300"># PACIENTES</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-sky-200">MONTO BRUTO ($)</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-emerald-100 text-emerald-900">TOTAL DIVISAS</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-emerald-50 text-emerald-800">% DOCTOR ($)</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-emerald-50 text-emerald-800">% CONSULTORIO ($)</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-cyan-100 text-cyan-900">TOTAL BS.</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-sky-50">% CONSULTORIO (Bs)</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-sky-50">% DOCTOR (Bs)</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-pink-100 text-pink-900">RETENCION</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-pink-200 text-pink-950">TOTAL A PAGAR AL DR. BS. - RETENCION</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-orange-100 text-orange-950">TOTAL A PAGAR AL DR. $</th>
+                        <th className="p-1.5 border-r border-slate-300 bg-orange-200 text-orange-950">TOTAL VIDA SANA BS. + RETENCION</th>
+                        <th className="p-1.5 bg-orange-300 text-orange-950">TOTAL VIDA SANA $</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      <tr>
+                        <td className="p-1.5 border-r text-left">Dra. Adriana Leal</td>
+                        <td className="p-1.5 border-r">ODONTOLOGIA</td>
+                        <td className="p-1.5 border-r font-mono">3</td>
+                        <td className="p-1.5 border-r font-mono bg-sky-50">$105,00</td>
+                        <td className="p-1.5 border-r font-mono bg-emerald-50 text-emerald-900">$85,00</td>
+                        <td className="p-1.5 border-r font-mono">$42,00</td>
+                        <td className="p-1.5 border-r font-mono">$43,00</td>
+                        <td className="p-1.5 border-r font-mono bg-cyan-50">Bs17.437,80</td>
+                        <td className="p-1.5 border-r font-mono">Bs10.462,68</td>
+                        <td className="p-1.5 border-r font-mono">Bs6.975,12</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-50 text-rose-900">Bs69,75</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-100 font-black">Bs6.905,37</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-50 font-black">$42,00</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-100 font-black">Bs10.532,43</td>
+                        <td className="p-1.5 font-mono bg-orange-200 font-black text-slate-900">$43,00</td>
+                      </tr>
+                      {/* FILA TOTAL ODONTOLOGÍA */}
+                      <tr className="bg-orange-500 text-white font-black font-mono">
+                        <td colSpan={2} className="p-1.5 text-right uppercase">TOTAL ODONTOLOGÍA</td>
+                        <td className="p-1.5 border-r">3</td>
+                        <td className="p-1.5 border-r">$105,00</td>
+                        <td className="p-1.5 border-r">$85,00</td>
+                        <td className="p-1.5 border-r">$42,00</td>
+                        <td className="p-1.5 border-r">$43,00</td>
+                        <td className="p-1.5 border-r">Bs17.437,80</td>
+                        <td className="p-1.5 border-r">Bs10.462,68</td>
+                        <td className="p-1.5 border-r">Bs6.975,12</td>
+                        <td className="p-1.5 border-r">Bs69,75</td>
+                        <td className="p-1.5 border-r">Bs6.905,37</td>
+                        <td className="p-1.5 border-r">$42,00</td>
+                        <td className="p-1.5 border-r">Bs10.532,43</td>
+                        <td className="p-1.5">$43,00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 🔵 SECCIÓN 2: MEDICINA */}
+              {(filterDivision === 'ALL' || filterDivision === 'MEDICINA') && (
+                <div className="border border-blue-300 rounded-xl overflow-hidden shadow-xs">
+                  <div className="p-2 bg-[#1565c0] text-white font-black uppercase text-xs tracking-wider">
+                    MEDICINA
+                  </div>
+                  <table className="w-full text-center text-[10px] border-collapse font-bold">
+                    <thead>
+                      <tr className="bg-sky-100 text-sky-900 border-b border-blue-300">
+                        <th className="p-1.5 border-r">ESPECIALISTA</th>
+                        <th className="p-1.5 border-r">ESPECIALIDAD</th>
+                        <th className="p-1.5 border-r"># PACIENTES</th>
+                        <th className="p-1.5 border-r bg-sky-200">MONTO BRUTO ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-100">TOTAL DIVISAS</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% DOCTOR ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% CONSULTORIO ($)</th>
+                        <th className="p-1.5 border-r bg-cyan-100">TOTAL BS.</th>
+                        <th className="p-1.5 border-r bg-sky-50">% CONSULTORIO (Bs)</th>
+                        <th className="p-1.5 border-r bg-sky-50">% DOCTOR (Bs)</th>
+                        <th className="p-1.5 border-r bg-pink-100">RETENCION</th>
+                        <th className="p-1.5 border-r bg-pink-200">TOTAL A PAGAR AL DR. BS. - RETENCION</th>
+                        <th className="p-1.5 border-r bg-orange-100">TOTAL A PAGAR AL DR. $</th>
+                        <th className="p-1.5 border-r bg-orange-200">TOTAL VIDA SANA BS. + RETENCION</th>
+                        <th className="p-1.5 bg-orange-300">TOTAL VIDA SANA $</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-orange-500 text-white font-black font-mono">
+                        <td colSpan={2} className="p-1.5 text-right uppercase">TOTAL MEDICINA</td>
+                        <td className="p-1.5 border-r">0</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5">$0,00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 🟣 SECCIÓN 3: LABORATORIO */}
+              {(filterDivision === 'ALL' || filterDivision === 'LABORATORIO') && (
+                <div className="border border-purple-300 rounded-xl overflow-hidden shadow-xs">
+                  <div className="p-2 bg-[#4a148c] text-white font-black uppercase text-xs tracking-wider">
+                    LABORATORIO
+                  </div>
+                  <table className="w-full text-center text-[10px] border-collapse font-bold">
+                    <thead>
+                      <tr className="bg-purple-100 text-purple-900 border-b border-purple-300">
+                        <th className="p-1.5 border-r">ESPECIALISTA</th>
+                        <th className="p-1.5 border-r">ESPECIALIDAD</th>
+                        <th className="p-1.5 border-r"># PACIENTES</th>
+                        <th className="p-1.5 border-r bg-sky-200">MONTO BRUTO ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-100">TOTAL DIVISAS</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% DOCTOR ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% CONSULTORIO ($)</th>
+                        <th className="p-1.5 border-r bg-cyan-100">TOTAL BS.</th>
+                        <th className="p-1.5 border-r bg-sky-50">% CONSULTORIO (Bs)</th>
+                        <th className="p-1.5 border-r bg-sky-50">% DOCTOR (Bs)</th>
+                        <th className="p-1.5 border-r bg-pink-100">RETENCION</th>
+                        <th className="p-1.5 border-r bg-pink-200">TOTAL A PAGAR AL DR. BS. - RETENCION</th>
+                        <th className="p-1.5 border-r bg-orange-100">TOTAL A PAGAR AL DR. $</th>
+                        <th className="p-1.5 border-r bg-orange-200">TOTAL VIDA SANA BS. + RETENCION</th>
+                        <th className="p-1.5 bg-orange-300">TOTAL VIDA SANA $</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-orange-500 text-white font-black font-mono">
+                        <td colSpan={2} className="p-1.5 text-right uppercase">TOTAL LABORATORIO</td>
+                        <td className="p-1.5 border-r">0</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5">$0,00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 🟡 SECCIÓN 4: RAYOS X */}
+              {(filterDivision === 'ALL' || filterDivision === 'RAYOS_X') && (
+                <div className="border border-yellow-400 rounded-xl overflow-hidden shadow-xs">
+                  <div className="p-2 bg-[#9e9d24] text-white font-black uppercase text-xs tracking-wider">
+                    RAYOS X
+                  </div>
+                  <table className="w-full text-center text-[10px] border-collapse font-bold">
+                    <thead>
+                      <tr className="bg-yellow-100 text-yellow-900 border-b border-yellow-400">
+                        <th className="p-1.5 border-r">ESPECIALISTA</th>
+                        <th className="p-1.5 border-r">ESPECIALIDAD</th>
+                        <th className="p-1.5 border-r"># PACIENTES</th>
+                        <th className="p-1.5 border-r bg-sky-200">MONTO BRUTO ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-100">TOTAL DIVISAS</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% DOCTOR ($)</th>
+                        <th className="p-1.5 border-r bg-emerald-50">% CONSULTORIO ($)</th>
+                        <th className="p-1.5 border-r bg-cyan-100">TOTAL BS.</th>
+                        <th className="p-1.5 border-r bg-sky-50">% CONSULTORIO (Bs)</th>
+                        <th className="p-1.5 border-r bg-sky-50">% DOCTOR (Bs)</th>
+                        <th className="p-1.5 border-r bg-pink-100">RETENCION</th>
+                        <th className="p-1.5 border-r bg-pink-200">TOTAL A PAGAR AL DR. BS. - RETENCION</th>
+                        <th className="p-1.5 border-r bg-orange-100">TOTAL A PAGAR AL DR. $</th>
+                        <th className="p-1.5 border-r bg-orange-200">TOTAL VIDA SANA BS. + RETENCION</th>
+                        <th className="p-1.5 bg-orange-300">TOTAL VIDA SANA $</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      <tr>
+                        <td className="p-1.5 border-r text-left">Od. Viviana (Periapical)</td>
+                        <td className="p-1.5 border-r">PERIAPICALES</td>
+                        <td className="p-1.5 border-r font-mono">1</td>
+                        <td className="p-1.5 border-r font-mono bg-sky-50">$10,00</td>
+                        <td className="p-1.5 border-r font-mono bg-emerald-50">$10,00</td>
+                        <td className="p-1.5 border-r font-mono">$0,00</td>
+                        <td className="p-1.5 border-r font-mono">$10,00</td>
+                        <td className="p-1.5 border-r font-mono bg-cyan-50">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-50">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-100">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-50">$0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-100">Bs0,00</td>
+                        <td className="p-1.5 font-mono bg-orange-200 font-black">$10,00</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 border-r text-left">Od. Viviana (Panorámico)</td>
+                        <td className="p-1.5 border-r">PANORAMICO</td>
+                        <td className="p-1.5 border-r font-mono">1</td>
+                        <td className="p-1.5 border-r font-mono bg-sky-50">$10,00</td>
+                        <td className="p-1.5 border-r font-mono bg-emerald-50">$0,00</td>
+                        <td className="p-1.5 border-r font-mono">$0,00</td>
+                        <td className="p-1.5 border-r font-mono">$0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-cyan-50">Bs8.718,90</td>
+                        <td className="p-1.5 border-r font-mono">Bs8.718,90</td>
+                        <td className="p-1.5 border-r font-mono">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-50">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-pink-100">Bs0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-50">$0,00</td>
+                        <td className="p-1.5 border-r font-mono bg-orange-100 font-black">Bs8.718,90</td>
+                        <td className="p-1.5 font-mono bg-orange-200 font-black">$0,00</td>
+                      </tr>
+                      {/* FILA TOTAL RAYOS X */}
+                      <tr className="bg-orange-500 text-white font-black font-mono">
+                        <td colSpan={2} className="p-1.5 text-right uppercase">TOTAL RAYOS X</td>
+                        <td className="p-1.5 border-r">2</td>
+                        <td className="p-1.5 border-r">$20,00</td>
+                        <td className="p-1.5 border-r">$10,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">$10,00</td>
+                        <td className="p-1.5 border-r">Bs8.718,90</td>
+                        <td className="p-1.5 border-r">Bs8.718,90</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">Bs0,00</td>
+                        <td className="p-1.5 border-r">$0,00</td>
+                        <td className="p-1.5 border-r">Bs8.718,90</td>
+                        <td className="p-1.5">$10,00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 💳 SECCIÓN 5: TABLA DE MÉTODOS DE PAGO & RESUMEN FINAL GENERAL VIDA SANA (CAPTURAS DE HOJA EXCEL 2) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-4 border-t-2 border-slate-800">
+                
+                {/* TABLA MÉTODOS DE PAGO */}
+                <div className="md:col-span-6 border border-slate-300 rounded-xl overflow-hidden shadow-xs">
+                  <table className="w-full text-left text-[10px] font-bold">
+                    <thead>
+                      <tr className="bg-sky-200 text-sky-950 uppercase border-b border-slate-300">
+                        <th className="p-2">MÉTODO DE PAGO</th>
+                        <th className="p-2 text-right">MONTO</th>
+                        <th className="p-2 text-right">PAGOS REALIZADOS</th>
+                        <th className="p-2 text-right bg-sky-300">TOTAL EN VIDA SANA</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      <tr>
+                        <td className="p-1.5 bg-rose-100 text-rose-950 font-black">$ Efectivo</td>
+                        <td className="p-1.5 text-right font-mono">$55,00</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">$41,00</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">$14,00</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 bg-rose-100 text-rose-950 font-black">Pago Móvil</td>
+                        <td className="p-1.5 text-right font-mono">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">Bs6.905,37</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">-Bs6.905,37</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 bg-emerald-100 text-emerald-950 font-black">Efectivo Bs.</td>
+                        <td className="p-1.5 text-right font-mono">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">Bs0,00</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 bg-indigo-100 text-indigo-950 font-black">DÉBITO</td>
+                        <td className="p-1.5 text-right font-mono">Bs26.156,70</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">Bs26.156,70</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 bg-purple-100 text-purple-950 font-black">CRÉDITO</td>
+                        <td className="p-1.5 text-right font-mono">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">Bs0,00</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">Bs0,00</td>
+                      </tr>
+                      <tr>
+                        <td className="p-1.5 bg-amber-200 text-amber-950 font-black">CASHEA</td>
+                        <td className="p-1.5 text-right font-mono">€21,19</td>
+                        <td className="p-1.5 text-right font-mono text-emerald-900">€0,00</td>
+                        <td className="p-1.5 text-right font-mono bg-amber-100 text-amber-950 font-black">€21,19</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* CAJAS DE TOTALES GENERALES VIDA SANA */}
+                <div className="md:col-span-6 flex flex-col justify-center gap-4">
+                  <div className="p-4 bg-yellow-300 border-2 border-yellow-600 rounded-2xl text-center shadow-md">
+                    <span className="text-xs font-black uppercase text-yellow-950 block">
+                      TOTAL GENERAL VIDA SANA BS. + RETENCION
+                    </span>
+                    <span className="text-2xl font-black font-mono text-yellow-950">
+                      Bs 19.251,33
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-yellow-300 border-2 border-yellow-600 rounded-2xl text-center shadow-md">
+                    <span className="text-xs font-black uppercase text-yellow-950 block">
+                      TOTAL GENERAL VIDA SANA $
+                    </span>
+                    <span className="text-2xl font-black font-mono text-yellow-950">
+                      $53,00
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
           </div>
         </div>
       )}
