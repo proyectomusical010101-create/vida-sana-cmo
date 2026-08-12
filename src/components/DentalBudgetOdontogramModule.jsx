@@ -234,24 +234,24 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     });
   };
 
-  // Renderizador de Diente Anatómico 5 Caras (SVG Interactivo)
-  const renderToothRow = (teethArray, label = '') => (
-    <div className="flex flex-wrap items-center justify-center gap-4 py-2">
+  // Renderizador de Diente Anatómico 5 Caras (SVG Interactivo / Compacto Impresión)
+  const renderToothRow = (teethArray, isCompact = false) => (
+    <div className={`flex flex-wrap items-center justify-center ${isCompact ? 'gap-1 py-0.5' : 'gap-4 py-2'}`}>
       {teethArray.map(toothNum => {
         const faces = toothSurfaces[toothNum] || {};
 
         return (
-          <div key={toothNum} className="flex flex-col items-center gap-1 group">
+          <div key={toothNum} className="flex flex-col items-center gap-0.5 group">
             <span
-              onClick={() => handleOpenToothModal(toothNum)}
-              className="text-[11px] font-mono font-black text-slate-700 dark:text-slate-300 hover:text-teal-600 cursor-pointer"
-              title={`Ver detalles de la pieza #${toothNum}`}
+              onClick={() => !isCompact && handleOpenToothModal(toothNum)}
+              className={`${isCompact ? 'text-[9px]' : 'text-[11px]'} font-mono font-black text-slate-700 dark:text-slate-300 hover:text-teal-600 cursor-pointer`}
+              title={`Pieza #${toothNum}`}
             >
               {toothNum}
             </span>
 
-            {/* SVG Diente 5 Caras (40x40 px) */}
-            <div className="w-10 h-10 relative bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xs">
+            {/* SVG Diente 5 Caras */}
+            <div className={`${isCompact ? 'w-6 h-6' : 'w-10 h-10'} relative bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xs`}>
               <svg viewBox="0 0 40 40" className="w-full h-full">
                 {/* Cuadro exterior */}
                 <rect x="0" y="0" width="40" height="40" fill="none" stroke="#cbd5e1" strokeWidth="1" />
@@ -262,7 +262,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   fill={getFaceColorHex(faces.top)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => handleFaceClick(toothNum, 'top')}
+                  onClick={() => !isCompact && handleFaceClick(toothNum, 'top')}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -272,7 +272,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   fill={getFaceColorHex(faces.right)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => handleFaceClick(toothNum, 'right')}
+                  onClick={() => !isCompact && handleFaceClick(toothNum, 'right')}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -282,7 +282,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   fill={getFaceColorHex(faces.bottom)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => handleFaceClick(toothNum, 'bottom')}
+                  onClick={() => !isCompact && handleFaceClick(toothNum, 'bottom')}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -292,7 +292,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   fill={getFaceColorHex(faces.left)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => handleFaceClick(toothNum, 'left')}
+                  onClick={() => !isCompact && handleFaceClick(toothNum, 'left')}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -305,7 +305,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   fill={getFaceColorHex(faces.center)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => handleFaceClick(toothNum, 'center')}
+                  onClick={() => !isCompact && handleFaceClick(toothNum, 'center')}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
               </svg>
@@ -317,7 +317,10 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   );
 
   return (
-    <div className="space-y-8 w-full max-w-5xl mx-auto pb-12">
+    <div className="w-full max-w-5xl mx-auto pb-12">
+      
+      {/* CONTENEDOR WEB DE FORMULARIOS E INTERFAZ (100% OCULTO EN IMPRESIÓN / PDF) */}
+      <div className="web-only-form space-y-8">
 
       {/* ========================================================================= */}
       {/* SECCION 1: CABECERA (Emisión y Envío de Presupuestos) */}
@@ -863,6 +866,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </button>
         </div>
       </section>
+      </div>
 
       {/* MODAL CAMBIAR DIAGNOSTICO PIEZA DENTAL */}
       {selectedToothModal && (
@@ -1110,39 +1114,39 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
         </div>
 
         {/* 3. ODONTOGRAMA CLINICO ANATÓMICO COMPACTO */}
-        <div className="p-3 border border-slate-300 rounded-xl space-y-2">
+        <div className="p-2.5 border border-slate-300 rounded-xl space-y-1">
           <div className="text-center">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-0.5">
+            <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-0.5">
               ODONTOGRAMA
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 relative">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 relative">
             <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400 -translate-x-1/2"></div>
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400 -translate-y-1/2"></div>
 
             {/* Cuadrante 1 */}
-            <div className="space-y-1">
-              {renderToothRow([18, 17, 16, 15, 14, 13, 12, 11])}
-              <div className="flex justify-end">{renderToothRow([55, 54, 53, 52, 51])}</div>
+            <div className="space-y-0.5">
+              {renderToothRow([18, 17, 16, 15, 14, 13, 12, 11], true)}
+              <div className="flex justify-end">{renderToothRow([55, 54, 53, 52, 51], true)}</div>
             </div>
 
             {/* Cuadrante 2 */}
-            <div className="space-y-1">
-              {renderToothRow([21, 22, 23, 24, 25, 26, 27, 28])}
-              <div className="flex justify-start">{renderToothRow([61, 62, 63, 64, 65])}</div>
+            <div className="space-y-0.5">
+              {renderToothRow([21, 22, 23, 24, 25, 26, 27, 28], true)}
+              <div className="flex justify-start">{renderToothRow([61, 62, 63, 64, 65], true)}</div>
             </div>
 
             {/* Cuadrante 4 */}
-            <div className="space-y-1">
-              <div className="flex justify-end">{renderToothRow([85, 84, 83, 82, 81])}</div>
-              {renderToothRow([48, 47, 46, 45, 44, 43, 42, 41])}
+            <div className="space-y-0.5">
+              <div className="flex justify-end">{renderToothRow([85, 84, 83, 82, 81], true)}</div>
+              {renderToothRow([48, 47, 46, 45, 44, 43, 42, 41], true)}
             </div>
 
             {/* Cuadrante 3 */}
-            <div className="space-y-1">
-              <div className="flex justify-start">{renderToothRow([71, 72, 73, 74, 75])}</div>
-              {renderToothRow([31, 32, 33, 34, 35, 36, 37, 38])}
+            <div className="space-y-0.5">
+              <div className="flex justify-start">{renderToothRow([71, 72, 73, 74, 75], true)}</div>
+              {renderToothRow([31, 32, 33, 34, 35, 36, 37, 38], true)}
             </div>
           </div>
         </div>
