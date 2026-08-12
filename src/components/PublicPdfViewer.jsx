@@ -114,7 +114,7 @@ export default function PublicPdfViewer({
       </div>
 
       {/* DOCUMENTO HOJA IMPRESA EXACTA A LA IMAGEN */}
-      <div className="printable-paperwork max-w-4xl mx-auto bg-white text-slate-900 p-6 sm:p-8 space-y-4 shadow-2xl rounded-2xl border border-slate-300 font-sans text-xs">
+      <div className="public-pdf-container max-w-4xl mx-auto bg-white text-slate-900 p-6 sm:p-8 space-y-4 shadow-2xl rounded-2xl border border-slate-300 font-sans text-xs">
         
         {/* 1. HEADER OFICIAL */}
         <div className="flex justify-between items-start pb-3 border-b-2 border-slate-900">

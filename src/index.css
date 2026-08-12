@@ -185,7 +185,7 @@
   }
 
   /* Mostrar exclusivamente los documentos impresos oficiales */
-  .printable-paperwork, .printable-receipt {
+  .printable-paperwork, .printable-receipt, .public-pdf-container {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
