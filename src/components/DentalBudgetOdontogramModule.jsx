@@ -19,6 +19,23 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const [selectedFaceModal, setSelectedFaceModal] = useState(null); // { toothNum: 17, faceKey: 'bottom', faceLabel: 'Lingual / Palatina' }
   const [baremoSearchTerm, setBaremoSearchTerm] = useState('');
 
+  // Cálculo Dinámico de Edad
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString) return 30;
+    try {
+      const today = new Date();
+      const birth = new Date(birthDateString);
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return (isNaN(age) || age < 0) ? 30 : age;
+    } catch (e) {
+      return 30;
+    }
+  };
+
   const faceLabelMap = {
     top: 'Superior / Vestibular',
     bottom: 'Inferior / Lingual / Palatina',

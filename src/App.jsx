@@ -97,7 +97,14 @@ class ModuleBoundary extends React.Component {
 }
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cmo_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [activeModule, setActiveModule] = useState('patients');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -232,10 +239,16 @@ export default function App() {
 
   const handleLoginSuccess = (userObj) => {
     const validUser = userObj || { name: 'Administrador Principal', role: 'Administrador' };
+    try {
+      localStorage.setItem('cmo_user', JSON.stringify(validUser));
+    } catch (e) {}
     setCurrentUser(validUser);
   };
 
   const handleLogout = () => {
+    try {
+      localStorage.removeItem('cmo_user');
+    } catch (e) {}
     setCurrentUser(null);
   };
 
