@@ -161,18 +161,20 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
       .replace(/{LINK_PRESUPUESTO}/g, linkVal);
   };
 
-  // Envío Directo por WhatsApp (Sin ventanas emergentes ni generación automática de PDF)
-  const handleSendWhatsAppDirect = () => {
-    if (!activePatient?.phone && !activePatient?.phone_number) {
-      Swal.fire('Atención', 'El paciente seleccionado no tiene un número de teléfono celular registrado.', 'warning');
-      return;
+  // Construcción garantizada del enlace directo a WhatsApp (sin bloqueador de popups)
+  const getWaHref = () => {
+    let rawPhone = String(activePatient?.phone || activePatient?.phone_number || activePatient?.telefonos || '').replace(/[^0-9]/g, '');
+    if (rawPhone.startsWith('04')) {
+      rawPhone = '58' + rawPhone.slice(1);
+    } else if (rawPhone.length === 10 && !rawPhone.startsWith('58')) {
+      rawPhone = '58' + rawPhone;
     }
-    const cleanPhone = String(activePatient?.phone || activePatient?.phone_number || '').replace(/[^0-9]/g, '');
-    const messageText = encodeURIComponent(getFormattedWaMessage());
-    const waUrl = `https://wa.me/${cleanPhone}?text=${messageText}`;
 
-    // Abrir WhatsApp Web o la App directamente
-    window.open(waUrl, '_blank');
+    const messageText = encodeURIComponent(getFormattedWaMessage());
+    if (rawPhone && rawPhone.length >= 8) {
+      return `https://api.whatsapp.com/send?phone=${rawPhone}&text=${messageText}`;
+    }
+    return `https://api.whatsapp.com/send?text=${messageText}`;
   };
 
   // Manejo de clicks y trazado en Canvas de Firma
@@ -434,13 +436,15 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
               {showWaCustomizer ? 'Ocultar Edición Mensaje' : 'Personalizar Mensaje WhatsApp'}
             </button>
 
-            <button
-              onClick={handleSendWhatsAppDirect}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
+            <a
+              href={getWaHref()}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all inline-flex items-center"
             >
               <Send className="w-4 h-4" />
               Enviar por WhatsApp
-            </button>
+            </a>
           </div>
         </div>
 
