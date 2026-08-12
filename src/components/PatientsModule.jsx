@@ -89,83 +89,91 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [selectedProcToQuote, setSelectedProcToQuote] = useState('PROC-01');
   const [photoTermsAccepted, setPhotoTermsAccepted] = useState(false);
 
-  const demoPatientSantiago = {
-    id: '100-01',
-    name: 'Santiago Andrés Peña',
-    documentId: 'V-25.148.963',
-    gender: 'M',
-    isMinor: false,
-    representativeId: '',
-    representativeName: '',
-    birthDate: '1995-06-15',
-    phone: '+58 412-1234567',
-    localPhone: '0212-9876543',
-    workPhone: '0212-5554321',
-    address: 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas',
-    occupation: 'Ingeniero de Sistemas',
-    consultReason: 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético',
-    email: 'santiago.pena@email.com',
-    age: 31,
-    category: 'Privado',
-    assignedSpecialist: 'Dr. Carlos Mendoza',
-    treatmentStartDate: '2026-06-15',
-    lastControlDate: '2026-08-11',
-    anamnesis: {
-      medTreatment: { has: 'SI', details: 'Tratamiento antihipertensivo leve con Losartán 50mg' },
-      childDiseases: { has: 'SI', details: 'Varicela a los 8 años' },
-      allergies: { has: 'SI', details: 'Alergia estacional al polen y AINEs (Ketoprofeno)' },
-      surgeries: 'Apendicectomía Laparoscópica (2018)',
-      excessiveBleeding: 'NO',
-      respiratory: { adenoids: false, tonsils: true, details: 'Amigdalitis recurrente en la infancia' },
-      anesthesiaReaction: { has: 'NO', details: 'Ninguna' },
-      penicillinAllergy: { has: 'NO', details: 'Tolerancia normal' },
-      heartProblems: { has: 'NO', details: 'Evaluación cardiovascular normal' }
-    },
-    extraoral_exam: {
-      oralTissues: {
-        hardPalate: 'Normal',
-        softPalate: 'Normal / Ligera hiperemia',
-        mouthFloor: 'Normal',
-        cheeks: 'Integridad mucosa conservada',
-        tongue: 'Normoglosa / Saburral leve',
-        frenulum: 'Inserción lingual normal'
-      },
-      oralHabits: {
-        abnormalSwallowing: 'NO',
-        nailBiting: 'SI (Onicofagia leve por estrés)',
-        thumbSucking: 'NO',
-        thumbWhich: '',
-        mouthBreather: 'NO',
-        frequency: '',
-        intensity: '',
-        others: 'Bruxismo nocturno leve'
-      }
-    },
-    history: [
-      { date: '2026-08-11', procedure: 'Diagnóstico & Tratamiento de Conducto Multirradicular', doctor: 'Dr. Carlos Mendoza', cost: 180.00, status: 'Completado' },
-      { date: '2026-07-28', procedure: 'Restauración Resina Fotocurada Estética (#17)', doctor: 'Dr. Carlos Mendoza', cost: 45.00, status: 'Completado' },
-      { date: '2026-06-15', procedure: 'Profilaxis Profunda Ultrasonido', doctor: 'Dr. Carlos Mendoza', cost: 40.00, status: 'Completado' }
-    ]
-  };
-
-  const rawPatientsList = Array.isArray(patients) && patients.length > 0 ? patients : [demoPatientSantiago];
-  const safePatients = rawPatientsList.some(p => p && (p.id === '100-01' || (p.name && p.name.includes('Santiago'))))
-    ? rawPatientsList
-    : [demoPatientSantiago, ...rawPatientsList];
-
-  const activePatient = safePatients.find(p => p && String(p.id) === String(selectedPatientId)) || safePatients[0] || demoPatientSantiago;
+  const safePatients = Array.isArray(patients) ? patients : [];
+  const activePatient = safePatients.find(p => p && String(p.id) === String(selectedPatientId)) || safePatients[0] || null;
 
   // Normalizador de Paciente (Soporta camelCase o DB snake_case)
-  const pName = String(activePatient?.name || activePatient?.full_name || 'Santiago Andrés Peña');
-  const pDoc = String(activePatient?.documentId || activePatient?.document_id || activePatient?.rif || 'V-25.148.963');
-  const pPhone = String(activePatient?.phone || activePatient?.phone_number || activePatient?.telefono || '+584123456789');
-  const pBirthDate = String(activePatient?.birthDate || activePatient?.birth_date || '1992-05-14');
+  const pName = String(activePatient?.name || activePatient?.full_name || 'Seleccione Paciente');
+  const pDoc = String(activePatient?.documentId || activePatient?.document_id || activePatient?.rif || 'N/A');
+  const pPhone = String(activePatient?.phone || activePatient?.phone_number || activePatient?.telefono || 'N/A');
+  const pBirthDate = String(activePatient?.birthDate || activePatient?.birth_date || '1995-01-01');
   const pCategory = String(activePatient?.category || 'Privado');
-  const pStartDate = String(activePatient?.treatmentStartDate || activePatient?.treatment_start_date || '2026-06-15');
-  const pLastControl = String(activePatient?.lastControlDate || activePatient?.last_control_date || '2026-07-28');
-  const pHistory = Array.isArray(activePatient?.history) ? activePatient.history : [
-    { date: '2026-07-28', procedure: 'Resina Fotocurada Superior', doctor: 'Dr. Carlos Mendoza', cost: 45.00, status: 'Completado' }
-  ];
+  const pStartDate = String(activePatient?.treatmentStartDate || activePatient?.treatment_start_date || new Date().toISOString().slice(0, 10));
+  const pLastControl = String(activePatient?.lastControlDate || activePatient?.last_control_date || new Date().toISOString().slice(0, 10));
+  const pHistory = Array.isArray(activePatient?.history) ? activePatient.history : [];
+
+  // Función para insertar Paciente Demo Completo directamente en Supabase
+  const handleSeedDemoPatientToSupabase = async () => {
+    setIsSaving(true);
+    const demoPayload = {
+      name: 'Santiago Andrés Peña',
+      document_id: 'V-25.148.963',
+      gender: 'M',
+      is_minor: false,
+      birth_date: '1995-06-15',
+      phone: '+58 412-1234567',
+      local_phone: '0212-9876543',
+      work_phone: '0212-5554321',
+      address: 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas',
+      occupation: 'Ingeniero de Sistemas',
+      consult_reason: 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético',
+      email: 'santiago.pena@email.com',
+      category: 'Privado',
+      assigned_specialist: 'Dr. Carlos Mendoza',
+      treatment_start_date: '2026-06-15',
+      last_control_date: new Date().toISOString().slice(0, 10),
+      anamnesis: {
+        medTreatment: { has: 'SI', details: 'Tratamiento antihipertensivo leve con Losartán 50mg' },
+        childDiseases: { has: 'SI', details: 'Varicela a los 8 años' },
+        allergies: { has: 'SI', details: 'Alergia estacional al polen y AINEs (Ketoprofeno)' },
+        surgeries: 'Apendicectomía Laparoscópica (2018)',
+        excessiveBleeding: 'NO',
+        respiratory: { adenoids: false, tonsils: true, details: 'Amigdalitis recurrente en la infancia' },
+        anesthesiaReaction: { has: 'NO', details: 'Ninguna' },
+        penicillinAllergy: { has: 'NO', details: 'Tolerancia normal' },
+        heartProblems: { has: 'NO', details: 'Evaluación cardiovascular normal' }
+      },
+      extraoral_exam: {
+        oralTissues: {
+          hardPalate: 'Normal',
+          softPalate: 'Normal / Ligera hiperemia',
+          mouthFloor: 'Normal',
+          cheeks: 'Integridad mucosa conservada',
+          tongue: 'Normoglosa / Saburral leve',
+          frenulum: 'Inserción lingual normal'
+        },
+        oralHabits: {
+          abnormalSwallowing: 'NO',
+          nailBiting: 'SI (Onicofagia leve por estrés)',
+          thumbSucking: 'NO',
+          thumbWhich: '',
+          mouthBreather: 'NO',
+          frequency: '',
+          intensity: '',
+          others: 'Bruxismo nocturno leve'
+        }
+      },
+      history: [
+        { date: new Date().toISOString().slice(0, 10), procedure: 'Diagnóstico & Tratamiento de Conducto Multirradicular', doctor: 'Dr. Carlos Mendoza', cost: 180.00, status: 'Completado' }
+      ]
+    };
+
+    try {
+      const created = await createPatientApi(demoPayload);
+      const freshList = await fetchPatients();
+      if (freshList && setPatients) setPatients(freshList);
+      Swal.fire({
+        title: '¡Paciente Guardado en Supabase!',
+        text: `El expediente completo de Santiago Andrés Peña fue registrado directamente en la base de datos Supabase (ID: ${created?.id || 'OK'}).`,
+        icon: 'success',
+        confirmButtonColor: '#0d9488'
+      });
+    } catch (err) {
+      Swal.fire('Error al Guardar en Supabase', err.message, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Cálculo Dinámico de Edad
   const calculateAge = (birthDateString) => {
@@ -429,13 +437,23 @@ export default function PatientsModule({ patients = [], setPatients, specialists
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddPatientModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          +Paciente
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={handleSeedDemoPatientToSupabase}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-sm transition-all disabled:opacity-50"
+            title="Guardar paciente Santiago Andrés Peña directamente en la base de datos Supabase"
+          >
+            ⚡ Registrar Santiago en Supabase
+          </button>
+          <button
+            onClick={() => setShowAddPatientModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            + Paciente
+          </button>
+        </div>
       </div>
 
       {/* Main Grid */}
