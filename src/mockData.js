@@ -45,22 +45,60 @@ export const INITIAL_SPECIALISTS = [
 export const INITIAL_PATIENTS = [
   {
     id: '100-01',
-    name: 'Ana Sofía Rodríguez',
+    name: 'Santiago Andrés Peña',
     documentId: 'V-25.148.963',
+    gender: 'M',
     isMinor: false,
     representativeId: '',
     representativeName: '',
-    birthDate: '1992-05-14',
-    phone: '+584123456789',
-    email: 'ana.rodriguez@email.com',
-    age: 32,
+    birthDate: '1995-06-15',
+    phone: '+58 412-1234567',
+    localPhone: '0212-9876543',
+    workPhone: '0212-5554321',
+    address: 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas',
+    occupation: 'Ingeniero de Sistemas',
+    consultReason: 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético',
+    email: 'santiago.pena@email.com',
+    age: 31,
     category: 'Privado',
     assignedSpecialist: 'Dr. Carlos Mendoza',
     treatmentStartDate: '2026-06-15',
-    lastControlDate: '2026-07-28',
+    lastControlDate: '2026-08-11',
+    anamnesis: {
+      medTreatment: { has: 'SI', details: 'Tratamiento antihipertensivo leve con Losartán 50mg' },
+      childDiseases: { has: 'SI', details: 'Varicela a los 8 años' },
+      allergies: { has: 'SI', details: 'Alergia estacional al polen y AINEs (Ketoprofeno)' },
+      surgeries: 'Apendicectomía Laparoscópica (2018)',
+      excessiveBleeding: 'NO',
+      respiratory: { adenoids: false, tonsils: true, details: 'Amigdalitis recurrente en la infancia' },
+      anesthesiaReaction: { has: 'NO', details: 'Ninguna' },
+      penicillinAllergy: { has: 'NO', details: 'Tolerancia normal' },
+      heartProblems: { has: 'NO', details: 'Evaluación cardiovascular normal' }
+    },
+    extraoral_exam: {
+      oralTissues: {
+        hardPalate: 'Normal',
+        softPalate: 'Normal / Ligera hiperemia',
+        mouthFloor: 'Normal',
+        cheeks: 'Integridad mucosa conservada',
+        tongue: 'Normoglosa / Saburral leve',
+        frenulum: 'Inserción lingual normal'
+      },
+      oralHabits: {
+        abnormalSwallowing: 'NO',
+        nailBiting: 'SI (Onicofagia leve por estrés)',
+        thumbSucking: 'NO',
+        thumbWhich: '',
+        mouthBreather: 'NO',
+        frequency: '',
+        intensity: '',
+        others: 'Bruxismo nocturno leve'
+      }
+    },
     history: [
-      { date: '2026-07-28', procedure: 'Resina Fotocurada Superior', doctor: 'Dr. Carlos Mendoza', cost: 45.00, status: 'Completado' },
-      { date: '2026-06-15', procedure: 'Profilaxis Profunda', doctor: 'Dr. Carlos Mendoza', cost: 25.00, status: 'Completado' }
+      { date: '2026-08-11', procedure: 'Diagnóstico & Tratamiento de Conducto Multirradicular', doctor: 'Dr. Carlos Mendoza', cost: 180.00, status: 'Completado' },
+      { date: '2026-07-28', procedure: 'Restauración Resina Fotocurada Estética (#17)', doctor: 'Dr. Carlos Mendoza', cost: 45.00, status: 'Completado' },
+      { date: '2026-06-15', procedure: 'Profilaxis Profunda Ultrasonido', doctor: 'Dr. Carlos Mendoza', cost: 40.00, status: 'Completado' }
     ]
   },
   {

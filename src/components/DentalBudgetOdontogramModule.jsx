@@ -1105,12 +1105,16 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
 
-        {/* 2. FICHA COMPACTA DEL PACIENTE */}
-        <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl grid grid-cols-2 gap-2 text-[11px] font-bold">
-          <div><strong>Paciente:</strong> {activePatient?.name || activePatient?.full_name || 'Ana Sofía Rodríguez'}</div>
-          <div><strong>Cédula:</strong> {activePatient?.documentId || activePatient?.document_id || 'V-25.148.963'}</div>
-          <div><strong>Categoría:</strong> {activePatient?.category || 'Privado'}</div>
-          <div><strong>Especialista Tratante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
+        {/* 2. FICHA COMPACTA DEL PACIENTE (TODOS LOS DATOS REQUERIDOS REGISTRADOS) */}
+        <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1.5 text-[10px] font-bold">
+          <div><strong className="text-slate-900">Paciente:</strong> {activePatient?.name || activePatient?.full_name || 'Santiago Andrés Peña'}</div>
+          <div><strong className="text-slate-900">Cédula:</strong> {activePatient?.documentId || activePatient?.document_id || 'V-25.148.963'}</div>
+          <div><strong className="text-slate-900">Edad / Sexo:</strong> {calculateAge(activePatient?.birthDate || activePatient?.birth_date || '1995-06-15')} Años ({activePatient?.gender === 'M' ? 'Masculino' : 'Femenino'})</div>
+          <div><strong className="text-slate-900">Teléfono (WhatsApp):</strong> {activePatient?.phone || activePatient?.phone_number || '+58 412-1234567'}</div>
+          <div><strong className="text-slate-900">Categoría:</strong> {activePatient?.category || 'Privado'}</div>
+          <div><strong className="text-slate-900">Especialista Tratante:</strong> {activePatient?.assignedSpecialist || activePatient?.assigned_specialist || 'Dr. Carlos Mendoza'}</div>
+          <div className="col-span-2 sm:col-span-3"><strong className="text-slate-900">Dirección de Habitación:</strong> {activePatient?.address || activePatient?.direccion || 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas'}</div>
+          <div className="col-span-2 sm:col-span-3"><strong className="text-slate-900">Motivo de Consulta:</strong> <span className="text-teal-900 font-extrabold">{activePatient?.consultReason || activePatient?.consult_reason || 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético'}</span></div>
         </div>
 
         {/* 3. ODONTOGRAMA CLINICO ANATÓMICO COMPACTO */}
