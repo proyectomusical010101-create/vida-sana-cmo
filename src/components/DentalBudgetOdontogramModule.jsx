@@ -137,6 +137,66 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const subtotalUsd = budgetItems.reduce((acc, item) => acc + (parseFloat(item.priceUsd) || 0), 0);
   const totalBs = subtotalUsd * bcvRate;
 
+  // Plantilla de Mensaje de WhatsApp Personalizable
+  const [waMessageTemplate, setWaMessageTemplate] = useState(
+    'Hola {PACIENTE}, le hacemos entrega de su Presupuesto Clínico Odontológico de {CLINICA}.\n\n📌 *Resumen de Propuesta Económica:*\n- Total Ref.: ${TOTAL_USD} USD\n- Total en Bolívares: {TOTAL_BS} Bs (Tasa BCV {TASA_BCV} Bs/$)\n\nTe adjunto el documento PDF oficial con el detalle de los procedimientos e historia de tratamiento. Quedamos a tu entera disposición.'
+  );
+  const [showWaCustomizer, setShowWaCustomizer] = useState(false);
+
+  // Formateador dinámico del mensaje de WhatsApp
+  const getFormattedWaMessage = () => {
+    const pNameVal = activePatient?.name || activePatient?.full_name || 'Estimado Paciente';
+    const clinicNameVal = paperworkSettings?.clinicName || 'Centro Médico Odontológico Vida Sana, C.A.';
+    const totalUsdStr = subtotalUsd.toFixed(2);
+    const totalBsStr = totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const bcvRateStr = bcvRate.toFixed(2);
+
+    return waMessageTemplate
+      .replace(/{PACIENTE}/g, pNameVal)
+      .replace(/{CLINICA}/g, clinicNameVal)
+      .replace(/{TOTAL_USD}/g, totalUsdStr)
+      .replace(/{TOTAL_BS}/g, totalBsStr)
+      .replace(/{TASA_BCV}/g, bcvRateStr);
+  };
+
+  // Función de envío unificado con PDF
+  const handleSendWhatsAppWithPdf = () => {
+    if (!activePatient?.phone && !activePatient?.phone_number) {
+      Swal.fire('Atención', 'El paciente seleccionado no tiene un número de teléfono celular registrado.', 'warning');
+      return;
+    }
+    const cleanPhone = String(activePatient?.phone || activePatient?.phone_number || '').replace(/[^0-9]/g, '');
+    const messageText = encodeURIComponent(getFormattedWaMessage());
+    const waUrl = `https://wa.me/${cleanPhone}?text=${messageText}`;
+
+    Swal.fire({
+      title: '📱 Enviando Presupuesto & Generando PDF',
+      html: `
+        <div class="text-left space-y-3 text-xs">
+          <p class="font-bold text-slate-800">Se realizarán 2 pasos automáticos para enviar el presupuesto:</p>
+          <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-1.5 text-slate-800">
+            <p>1. 📄 <strong>Se abrirá la ventana para Guardar/Descargar el PDF</strong> oficial.</p>
+            <p>2. 📲 <strong>Se abrirá WhatsApp</strong> con tu mensaje personalizado pre-redactado para enviar al paciente.</p>
+          </div>
+          <p class="text-slate-500 font-medium">Solo deberás adjuntar el archivo PDF en la ventana de chat que se abrirá.</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonColor: '#059669',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: '🚀 Continuar y Abrir WhatsApp',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.print();
+        setTimeout(() => {
+          window.open(waUrl, '_blank');
+        }, 800);
+      }
+    });
+  };
+
   // Manejo de clicks y trazado en Canvas de Firma
   const startDrawing = (canvasRef, setIsDrawing) => (e) => {
     const canvas = canvasRef.current;
@@ -388,19 +448,82 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
               Exportar Presupuesto PDF
             </button>
 
-            {activePatient?.phone && (
-              <a
-                href={`https://wa.me/${activePatient.phone.replace(/[^0-9]/g, '')}?text=Hola%20${encodeURIComponent(activePatient.name)},%20le%20enviamos%20su%20presupuesto%20clinico%20de%20Vida%20Sana%20CMO`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
-              >
-                <Send className="w-4 h-4" />
-                Enviar por WhatsApp
-              </a>
-            )}
+            <button
+              onClick={() => setShowWaCustomizer(!showWaCustomizer)}
+              className="px-3 py-2.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700 hover:bg-teal-100 font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all"
+            >
+              <Edit3 className="w-4 h-4" />
+              {showWaCustomizer ? 'Ocultar Edición Mensaje' : 'Personalizar Mensaje WhatsApp'}
+            </button>
+
+            <button
+              onClick={handleSendWhatsAppWithPdf}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
+            >
+              <Send className="w-4 h-4" />
+              Enviar por WhatsApp + Generar PDF
+            </button>
           </div>
         </div>
+
+        {/* PANEL EDITABLE Y PERSONALIZABLE DE MENSAJE WHATSAPP */}
+        {showWaCustomizer && (
+          <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-4 text-xs transition-all">
+            <div className="flex justify-between items-center border-b border-emerald-200 dark:border-emerald-800 pb-2">
+              <h4 className="font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                💬 Personalizador de Plantilla de Mensaje WhatsApp
+              </h4>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                Edita la plantilla y usa las etiquetas automáticas
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block font-bold text-slate-800 dark:text-slate-200">
+                Plantilla del Texto a Enviar (Puedes escribir el mensaje que desees):
+              </label>
+              <textarea
+                rows={4}
+                value={waMessageTemplate}
+                onChange={(e) => setWaMessageTemplate(e.target.value)}
+                className="w-full p-3 bg-white dark:bg-[#0d162f] border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs font-mono font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            {/* Etiquetas Dinámicas rápidas */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Clic para insertar variable dinámica:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { tag: '{PACIENTE}', label: 'Nombre Paciente' },
+                  { tag: '{CLINICA}', label: 'Nombre Clínica' },
+                  { tag: '{TOTAL_USD}', label: 'Total USD' },
+                  { tag: '{TOTAL_BS}', label: 'Total Bolívares' },
+                  { tag: '{TASA_BCV}', label: 'Tasa BCV' }
+                ].map(item => (
+                  <button
+                    key={item.tag}
+                    type="button"
+                    onClick={() => setWaMessageTemplate(prev => prev + ' ' + item.tag)}
+                    className="px-2.5 py-1 bg-white dark:bg-[#111c3a] border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 rounded-lg text-[10px] font-mono font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all"
+                  >
+                    + {item.tag} ({item.label})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Vista previa en tiempo real */}
+            <div className="p-3 bg-white dark:bg-[#0d162f] border border-slate-200 dark:border-slate-800 rounded-xl space-y-1">
+              <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                👁️ Vista Previa en Vivo del Mensaje (Como lo recibirá el paciente {activePatient?.name || activePatient?.full_name}):
+              </span>
+              <p className="font-sans whitespace-pre-wrap text-xs leading-relaxed font-semibold text-slate-800 dark:text-slate-200 p-2 bg-emerald-50/50 dark:bg-emerald-900/20 rounded-lg">
+                {getFormattedWaMessage()}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Píldora de Tasa Oficial BCV */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-xs gap-3">
