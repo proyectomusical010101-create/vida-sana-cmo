@@ -607,9 +607,121 @@ export default function BillingCashModule({ transactions, setTransactions, patie
             </div>
           </div>
 
-          {/* TABLA PRINCIPAL MODELO EXCEL RESPONSIVA CON DESPLAZAMIENTO HORIZONTAL EN CELULARES */}
-          <div className="w-full overflow-x-auto custom-scrollbar bg-white border border-slate-300 rounded-2xl shadow-lg p-4 font-sans text-xs">
-            <div className="min-w-[1280px] space-y-6">
+          {/* VISTA 1: TARJETAS DE LIQUIDACIÓN SIMPLIFICADAS Y LIMPIAS POR DOCTOR (POR DEFECTO EN CELULARES Y WEB) */}
+          {!showFullExcelSheet && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  📋 Liquidaciones de Honorarios por Médico & Área
+                </h4>
+                <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800">
+                  Vista Simplificada Inteligente
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* TARJETA 1: ODONTOLOGÍA - DRA. ADRIANA LEAL */}
+                <div className="p-4 bg-white dark:bg-[#111c3a] border-2 border-emerald-500 rounded-2xl shadow-sm space-y-3">
+                  <div className="flex justify-between items-start pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                      <span className="px-2 py-0.5 bg-emerald-600 text-white font-black text-[9px] rounded-md uppercase">
+                        ODONTOLOGÍA
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white mt-1">
+                        Dra. Adriana Leal
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-bold">3 Pacientes Atendidos</p>
+                    </div>
+                    <div className="text-right font-mono">
+                      <span className="text-[10px] text-slate-500 font-bold block">Bruto Generado</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">$105,00 USD</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                      <span className="text-[10px] text-emerald-800 dark:text-emerald-400 uppercase block mb-0.5">
+                        💵 A Pagar al Doctor ($ y Bs)
+                      </span>
+                      <span className="text-base font-black font-mono text-emerald-950 dark:text-emerald-200 block">
+                        $42,00 USD
+                      </span>
+                      <span className="text-[11px] font-extrabold font-mono text-emerald-800 dark:text-emerald-300">
+                        Neto Bs: 6.905,37 Bs
+                      </span>
+                      <span className="text-[9px] text-rose-700 block mt-0.5 font-semibold">
+                        (Retención aplicada: Bs 69,75)
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl">
+                      <span className="text-[10px] text-blue-800 dark:text-blue-400 uppercase block mb-0.5">
+                        🏥 Ingreso Neto Vida Sana
+                      </span>
+                      <span className="text-base font-black font-mono text-blue-950 dark:text-blue-200 block">
+                        $43,00 USD
+                      </span>
+                      <span className="text-[11px] font-extrabold font-mono text-blue-800 dark:text-blue-300">
+                        Bs + Retención: 10.532,43 Bs
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TARJETA 2: RAYOS X - OD. VIVIANA */}
+                <div className="p-4 bg-white dark:bg-[#111c3a] border-2 border-yellow-500 rounded-2xl shadow-sm space-y-3">
+                  <div className="flex justify-between items-start pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                      <span className="px-2 py-0.5 bg-yellow-600 text-white font-black text-[9px] rounded-md uppercase">
+                        RAYOS X & IMAGENOLOGÍA
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white mt-1">
+                        Od. Viviana (Periapical & Panorámico)
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-bold">2 Pacientes Atendidos</p>
+                    </div>
+                    <div className="text-right font-mono">
+                      <span className="text-[10px] text-slate-500 font-bold block">Bruto Generado</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">$20,00 USD</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase block mb-0.5">
+                        💵 A Pagar al Doctor
+                      </span>
+                      <span className="text-base font-black font-mono text-slate-900 dark:text-white block">
+                        $0,00 USD
+                      </span>
+                      <span className="text-[11px] font-bold font-mono text-slate-600">
+                        Bs 0,00
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl">
+                      <span className="text-[10px] text-amber-900 dark:text-amber-300 uppercase block mb-0.5">
+                        🏥 Ingreso Neto Vida Sana
+                      </span>
+                      <span className="text-base font-black font-mono text-amber-950 dark:text-amber-200 block">
+                        $10,00 USD
+                      </span>
+                      <span className="text-[11px] font-extrabold font-mono text-amber-900 dark:text-amber-300">
+                        Bs: 8.718,90 Bs
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* VISTA 2: TABLA MATRIZ EXCEL COMPLETA (OPCIONAL O IMPRESIÓN) */}
+          {showFullExcelSheet && (
+            <div className="w-full overflow-x-auto custom-scrollbar bg-white border border-slate-300 rounded-2xl shadow-lg p-4 font-sans text-xs">
+              <div className="min-w-[1280px] space-y-6">
 
               {/* TÍTULO HOJA EXCEL */}
               <div className="p-2 bg-slate-900 text-white font-black text-sm uppercase text-center rounded-xl tracking-wider">
@@ -936,12 +1048,11 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                     </span>
                   </div>
                 </div>
-
               </div>
-
             </div>
           </div>
-        </div>
+        )}
+      </div>
       )}
 
       {/* TAB 3: EGRESOS & COMISIONES BANCARIAS */}
