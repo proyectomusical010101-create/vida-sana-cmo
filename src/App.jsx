@@ -46,6 +46,7 @@ import ScheduleCoverageModule from './components/ScheduleCoverageModule';
 import PublicPatientPortal from './components/PublicPatientPortal';
 import AuditRolesPortalModule from './components/AuditRolesPortalModule';
 import DentalBudgetOdontogramModule from './components/DentalBudgetOdontogramModule';
+import PublicPdfViewer from './components/PublicPdfViewer';
 
 // Helper ultra-seguro para convertir cualquier número sin riesgo de crash
 const safeNum = (val, fallback = 0) => {
@@ -500,6 +501,20 @@ export default function App() {
       );
     }
   };
+
+  // SI SE ACCEDE POR EL ENLACE DE WHATSAPP CON PARAMETRO ?pdf=1
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPdfDirectLink = urlParams.has('pdf') || urlParams.has('download_pdf') || urlParams.has('print');
+
+  if (isPdfDirectLink) {
+    return (
+      <PublicPdfViewer
+        patients={safePatients}
+        bcvRate={safeNum(bcvRateUsd, 755.90)}
+        paperworkSettings={paperworkSettings}
+      />
+    );
+  }
 
   // SI NO HAY SESIÓN ACTIVA -> MUESTRA LA PANTALLA DE LOGIN
   if (!currentUser) {

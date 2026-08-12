@@ -149,8 +149,8 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     const clinicNameVal = paperworkSettings?.clinicName || 'Centro Médico Odontológico Vida Sana, C.A.';
     const totalUsdStr = subtotalUsd.toFixed(2);
     const totalBsStr = totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const bcvRateStr = bcvRate.toFixed(2);
-    const linkVal = window.location.href || 'https://vida-sana-cmo.vercel.app';
+    const pIdVal = activePatient?.id || '100-01';
+    const linkVal = `${window.location.origin}/?pdf=1&patientId=${encodeURIComponent(pIdVal)}`;
 
     return waMessageTemplate
       .replace(/{PACIENTE}/g, pNameVal)
