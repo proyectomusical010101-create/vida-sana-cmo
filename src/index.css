@@ -147,6 +147,11 @@
   border-radius: 9999px;
 }
 
+/* Documentos impresos ocultos en pantalla web */
+.printable-paperwork, .printable-receipt {
+  display: none;
+}
+
 /* ESTILOS DE IMPRESIÓN LIMPIA & PDF PROFESIONAL */
 @media print {
   @page {
@@ -154,6 +159,11 @@
     size: auto;
   }
   
+  html, body, #root, main, div {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
   body {
     background: #ffffff !important;
     color: #000000 !important;
@@ -171,11 +181,14 @@
     margin: 0 !important;
     width: 100% !important;
     overflow: visible !important;
+    display: block !important;
   }
 
   /* Mostrar exclusivamente los documentos impresos oficiales */
   .printable-paperwork, .printable-receipt {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     border: none !important;
     box-shadow: none !important;
     width: 100% !important;
@@ -184,5 +197,6 @@
     margin: 0 !important;
     background: #ffffff !important;
     color: #0f172a !important;
+    position: relative !important;
   }
 }

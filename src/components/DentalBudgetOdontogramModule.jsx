@@ -137,9 +137,9 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const subtotalUsd = budgetItems.reduce((acc, item) => acc + (parseFloat(item.priceUsd) || 0), 0);
   const totalBs = subtotalUsd * bcvRate;
 
-  // Plantilla de Mensaje de WhatsApp Personalizable
+  // Plantilla de Mensaje de WhatsApp Personalizable con Link
   const [waMessageTemplate, setWaMessageTemplate] = useState(
-    'Hola {PACIENTE}, le hacemos entrega de su Presupuesto Clínico Odontológico de {CLINICA}.\n\n📌 *Resumen de Propuesta Económica:*\n- Total Ref.: ${TOTAL_USD} USD\n- Total en Bolívares: {TOTAL_BS} Bs (Tasa BCV {TASA_BCV} Bs/$)\n\nTe adjunto el documento PDF oficial con el detalle de los procedimientos e historia de tratamiento. Quedamos a tu entera disposición.'
+    'Hola {PACIENTE}, le enviamos su Presupuesto Clínico Odontológico de {CLINICA}.\n\n📌 *Resumen de Propuesta Económica:*\n- Total Ref.: ${TOTAL_USD} USD\n- Total en Bolívares: {TOTAL_BS} Bs (Tasa BCV {TASA_BCV} Bs/$)\n\nPuedes consultar y descargar tu presupuesto en línea ingresando aquí:\n{LINK_PRESUPUESTO}\n\nQuedamos a su entera disposición.'
   );
   const [showWaCustomizer, setShowWaCustomizer] = useState(false);
 
@@ -150,17 +150,19 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     const totalUsdStr = subtotalUsd.toFixed(2);
     const totalBsStr = totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const bcvRateStr = bcvRate.toFixed(2);
+    const linkVal = window.location.href || 'https://vida-sana-cmo.vercel.app';
 
     return waMessageTemplate
       .replace(/{PACIENTE}/g, pNameVal)
       .replace(/{CLINICA}/g, clinicNameVal)
       .replace(/{TOTAL_USD}/g, totalUsdStr)
       .replace(/{TOTAL_BS}/g, totalBsStr)
-      .replace(/{TASA_BCV}/g, bcvRateStr);
+      .replace(/{TASA_BCV}/g, bcvRateStr)
+      .replace(/{LINK_PRESUPUESTO}/g, linkVal);
   };
 
-  // Función de envío unificado con PDF
-  const handleSendWhatsAppWithPdf = () => {
+  // Envío Directo por WhatsApp (Sin ventanas emergentes ni generación automática de PDF)
+  const handleSendWhatsAppDirect = () => {
     if (!activePatient?.phone && !activePatient?.phone_number) {
       Swal.fire('Atención', 'El paciente seleccionado no tiene un número de teléfono celular registrado.', 'warning');
       return;
@@ -169,32 +171,8 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     const messageText = encodeURIComponent(getFormattedWaMessage());
     const waUrl = `https://wa.me/${cleanPhone}?text=${messageText}`;
 
-    Swal.fire({
-      title: '📱 Enviando Presupuesto & Generando PDF',
-      html: `
-        <div class="text-left space-y-3 text-xs">
-          <p class="font-bold text-slate-800">Se realizarán 2 pasos automáticos para enviar el presupuesto:</p>
-          <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-1.5 text-slate-800">
-            <p>1. 📄 <strong>Se abrirá la ventana para Guardar/Descargar el PDF</strong> oficial.</p>
-            <p>2. 📲 <strong>Se abrirá WhatsApp</strong> con tu mensaje personalizado pre-redactado para enviar al paciente.</p>
-          </div>
-          <p class="text-slate-500 font-medium">Solo deberás adjuntar el archivo PDF en la ventana de chat que se abrirá.</p>
-        </div>
-      `,
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonColor: '#059669',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: '🚀 Continuar y Abrir WhatsApp',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.print();
-        setTimeout(() => {
-          window.open(waUrl, '_blank');
-        }, 800);
-      }
-    });
+    // Abrir WhatsApp Web o la App directamente
+    window.open(waUrl, '_blank');
   };
 
   // Manejo de clicks y trazado en Canvas de Firma
@@ -457,11 +435,11 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
             </button>
 
             <button
-              onClick={handleSendWhatsAppWithPdf}
+              onClick={handleSendWhatsAppDirect}
               className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
             >
               <Send className="w-4 h-4" />
-              Enviar por WhatsApp + Generar PDF
+              Enviar por WhatsApp
             </button>
           </div>
         </div>
@@ -499,7 +477,8 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   { tag: '{CLINICA}', label: 'Nombre Clínica' },
                   { tag: '{TOTAL_USD}', label: 'Total USD' },
                   { tag: '{TOTAL_BS}', label: 'Total Bolívares' },
-                  { tag: '{TASA_BCV}', label: 'Tasa BCV' }
+                  { tag: '{TASA_BCV}', label: 'Tasa BCV' },
+                  { tag: '{LINK_PRESUPUESTO}', label: 'Link Web Presupuesto' }
                 ].map(item => (
                   <button
                     key={item.tag}
