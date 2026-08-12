@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { createPatientApi, updatePatientApi, deletePatientApi } from '../api';
+import { fetchPatients, createPatientApi, updatePatientApi, deletePatientApi } from '../api';
 
 export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -437,23 +437,13 @@ export default function PatientsModule({ patients = [], setPatients, specialists
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            onClick={handleSeedDemoPatientToSupabase}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 px-3 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-sm transition-all disabled:opacity-50"
-            title="Guardar paciente Santiago Andrés Peña directamente en la base de datos Supabase"
-          >
-            ⚡ Registrar Santiago en Supabase
-          </button>
-          <button
-            onClick={() => setShowAddPatientModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            + Paciente
-          </button>
-        </div>
+        <button
+          onClick={() => setShowAddPatientModal(true)}
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          + Paciente
+        </button>
       </div>
 
       {/* Main Grid */}

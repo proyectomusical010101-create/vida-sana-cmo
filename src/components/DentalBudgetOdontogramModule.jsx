@@ -38,6 +38,27 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     }
   };
 
+  // Formateador de Anamnesis y Patologías para la plantilla PDF
+  const renderPathologySummary = (patient) => {
+    if (!patient) return 'Sin patologías ni alergias registradas (Paciente Sano)';
+    const ana = patient.anamnesis || {};
+    const items = [];
+    if (ana.medTreatment?.has === 'SI') items.push(`Tratamiento: ${ana.medTreatment.details || 'Sí'}`);
+    if (ana.allergies?.has === 'SI') items.push(`Alergias: ${ana.allergies.details || 'Sí'}`);
+    if (ana.penicillinAllergy?.has === 'SI') items.push('Alérgico a Penicilina');
+    if (ana.childDiseases?.has === 'SI') items.push(`Enf. Niñez: ${ana.childDiseases.details || 'Sí'}`);
+    if (ana.surgeries) items.push(`Cirugías: ${ana.surgeries}`);
+    if (ana.heartProblems?.has === 'SI') items.push('Cardiopatía/Corazón');
+    if (ana.respiratory?.adenoids || ana.respiratory?.tonsils) items.push('Trastorno Respiratorio');
+    
+    const habits = patient.extraoral_exam?.oralHabits || {};
+    if (habits.nailBiting === 'SI') items.push('Onicofagia');
+    if (habits.mouthBreather === 'SI') items.push('Respirador Bucal');
+    if (habits.others) items.push(habits.others);
+
+    return items.length > 0 ? items.join(' • ') : 'Sin patologías ni alergias registradas (Paciente Sano)';
+  };
+
   const faceLabelMap = {
     top: 'Superior / Vestibular',
     bottom: 'Inferior / Lingual / Palatina',
@@ -1123,7 +1144,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
 
-        {/* 2. FICHA COMPACTA DEL PACIENTE (TODOS LOS DATOS REQUERIDOS REGISTRADOS) */}
+        {/* 2. FICHA COMPACTA DEL PACIENTE (TODOS LOS DATOS REQUERIDOS REGISTRADOS + PATOLOGÍAS) */}
         <div className="p-2.5 bg-slate-50 border border-slate-300 rounded-xl grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1.5 text-[10px] font-bold">
           <div><strong className="text-slate-900">Paciente:</strong> {activePatient?.name || activePatient?.full_name || 'Santiago Andrés Peña'}</div>
           <div><strong className="text-slate-900">Cédula:</strong> {activePatient?.documentId || activePatient?.document_id || 'V-25.148.963'}</div>
@@ -1132,7 +1153,11 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           <div><strong className="text-slate-900">Categoría:</strong> {activePatient?.category || 'Privado'}</div>
           <div><strong className="text-slate-900">Especialista Tratante:</strong> {activePatient?.assignedSpecialist || activePatient?.assigned_specialist || 'Dr. Carlos Mendoza'}</div>
           <div className="col-span-2 sm:col-span-3"><strong className="text-slate-900">Dirección de Habitación:</strong> {activePatient?.address || activePatient?.direccion || 'Av. Principal de Las Mercedes, Edif. Torre B, Apto 4-B, Caracas'}</div>
-          <div className="col-span-2 sm:col-span-3"><strong className="text-slate-900">Motivo de Consulta:</strong> <span className="text-teal-900 font-extrabold">{activePatient?.consultReason || activePatient?.consult_reason || 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético'}</span></div>
+          <div className="col-span-2 sm:col-span-3"><strong className="text-slate-900">Motivo de Consulta:</strong> <span className="text-slate-900 font-bold">{activePatient?.consultReason || activePatient?.consult_reason || 'Evaluación Odontológica General, Dolor en Pieza #17 y Blanqueamiento Estético'}</span></div>
+          <div className="col-span-2 sm:col-span-3 pt-1 border-t border-slate-300">
+            <strong className="text-rose-900 uppercase font-black">Antecedentes Médicos & Patologías:</strong>{' '}
+            <span className="text-rose-950 font-extrabold">{renderPathologySummary(activePatient)}</span>
+          </div>
         </div>
 
         {/* 3. ODONTOGRAMA CLINICO ANATÓMICO COMPACTO */}
