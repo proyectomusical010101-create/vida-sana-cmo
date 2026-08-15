@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer, Edit, Trash2 } from 'lucide-react';
+import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer, Edit, Trash2, Download, Upload } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createInventoryApi, adjustStockApi } from '../api';
 
@@ -8,6 +8,103 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
   const [searchTerm, setSearchTerm] = useState('');
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
+
+  // Descargar Plantilla Oficial Excel / CSV para Inventario
+  const handleDownloadInventoryTemplate = () => {
+    const headers = "Codigo_Item;Nombre_Producto_Insumo;Categoria;Stock_Actual;Stock_Minimo;Costo_Unidad_USD;Proveedor\n";
+    const sampleRows = [
+      "INS-101;Guantes de Nitrilo Talla M (Caja 100u);Material Odontológico;50;10;12.50;Depósito Dental OdontoMed",
+      "INS-102;Resina A2 Filtek Z250 4g 3M;Material Restaurativo;15;5;35.00;Dental Express Venezuela"
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + headers + sampleRows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Plantilla_Oficial_Inventario_VidaSana.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Parser de Carga Masiva de Insumos / Inventario
+  const handleInventoryFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        let text = evt.target.result || '';
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.substring(1);
+        }
+
+        const lines = text.split(/\r\n|\n/);
+        if (lines.length <= 1) {
+          Swal.fire('Atención', 'El archivo está vacío o no contiene datos válidos.', 'warning');
+          return;
+        }
+
+        const newInventory = [...safeInventory];
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const delimiter = line.includes(';') ? ';' : ',';
+          const cols = line.split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
+
+          if (cols.length < 2) continue;
+
+          const codeVal = cols[0] || `INS-${Date.now().toString().slice(-4)}-${i}`;
+          const nameVal = cols[1] || 'Insumo Sin Nombre';
+          const catVal = cols[2] || 'General';
+          const stockVal = parseFloat((cols[3] || '50').replace(',', '.')) || 0;
+          const minStockVal = parseFloat((cols[4] || '10').replace(',', '.')) || 0;
+          const costVal = parseFloat((cols[5] || '1.50').replace(',', '.')) || 0;
+
+          const existingIdx = newInventory.findIndex(item => 
+            (item.id && String(item.id).toLowerCase() === codeVal.toLowerCase()) || 
+            (item.name && item.name.toLowerCase() === nameVal.toLowerCase())
+          );
+
+          const itemObj = {
+            id: existingIdx >= 0 ? newInventory[existingIdx].id : codeVal,
+            name: nameVal,
+            category: catVal,
+            currentStock: stockVal,
+            current_stock: stockVal,
+            minStock: minStockVal,
+            min_stock: minStockVal,
+            unitCost: costVal,
+            unit_cost: costVal,
+            unit: 'Unidad'
+          };
+
+          if (existingIdx >= 0) {
+            newInventory[existingIdx] = { ...newInventory[existingIdx], ...itemObj };
+            updatedCount++;
+          } else {
+            newInventory.push(itemObj);
+            addedCount++;
+          }
+        }
+
+        setInventory(newInventory);
+        Swal.fire({
+          title: '¡Inventario Actualizado!',
+          text: `Se agregaron ${addedCount} insumos nuevos y se actualizaron ${updatedCount} existentes.`,
+          icon: 'success'
+        });
+      } catch (err) {
+        Swal.fire('Error de Carga', err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
   const safeProcedures = Array.isArray(procedures) ? procedures : [];
 
   const getCost = (item) => Number(item?.unitCost ?? item?.unit_cost ?? 0);
@@ -166,10 +263,26 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Descargar Plantilla */}
+          <button
+            onClick={handleDownloadInventoryTemplate}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4 text-emerald-700" />
+            Plantilla Excel
+          </button>
+
+          {/* Importar Insumos */}
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
+            <Upload className="w-4 h-4" />
+            Importar Insumos
+            <input type="file" accept=".csv, .txt, .xlsx" onChange={handleInventoryFileUpload} className="hidden" />
+          </label>
+
           <button
             onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-sm text-xs transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-sm text-xs transition-all"
           >
             <Plus className="w-4 h-4" />
             + Nuevo Insumo

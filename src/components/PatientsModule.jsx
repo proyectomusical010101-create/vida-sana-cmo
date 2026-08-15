@@ -423,6 +423,113 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     }
   };
 
+  // Descargar Plantilla Oficial Excel / CSV para Pacientes
+  const handleDownloadPatientsTemplate = () => {
+    const headers = "Cedula_Identidad;Nombres_y_Apellidos;Telefono_Movil;Correo_Electronico;Fecha_Nacimiento_YYYY_MM_DD;Genero_F_M;Categoria_Paciente;Alergias;Direccion\n";
+    const sampleRows = [
+      "V-18923456;María Alejandra Pérez;04141234567;maria.perez@email.com;1995-06-15;F;Privado;Penicilina;Av. Principal Caracas",
+      "V-15432109;Carlos Eduardo Gómez;04129876543;carlos.gomez@email.com;1988-11-20;M;Seguro;Polen y AINEs;Calle 4 Barquisimeto"
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + headers + sampleRows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Plantilla_Oficial_Pacientes_VidaSana.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Parser de Carga Masiva de Pacientes
+  const handlePatientsFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        let text = evt.target.result || '';
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.substring(1);
+        }
+
+        const lines = text.split(/\r\n|\n/);
+        if (lines.length <= 1) {
+          Swal.fire('Atención', 'El archivo está vacío o no contiene datos.', 'warning');
+          return;
+        }
+
+        const newPatients = [...safePatients];
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const delimiter = line.includes(';') ? ';' : ',';
+          const cols = line.split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
+
+          if (cols.length < 2) continue;
+
+          const docIdVal = cols[0] || `V-SF-${i}`;
+          const nameVal = cols[1] || 'Paciente Sin Nombre';
+          const phoneVal = cols[2] || '';
+          const emailVal = cols[3] || '';
+          const birthVal = cols[4] || '1995-01-01';
+          const genderVal = (cols[5] || 'F').toUpperCase().startsWith('M') ? 'M' : 'F';
+          const categoryVal = cols[6] || 'Privado';
+          const allergyVal = cols[7] || 'Ninguna';
+          const addressVal = cols[8] || '';
+
+          const existingIdx = newPatients.findIndex(p => 
+            (p.documentId && p.documentId === docIdVal) || 
+            (p.name && p.name.toLowerCase() === nameVal.toLowerCase())
+          );
+
+          const patientObj = {
+            id: existingIdx >= 0 ? newPatients[existingIdx].id : `100-${Date.now().toString().slice(-4)}-${i}`,
+            name: nameVal,
+            documentId: docIdVal,
+            document_id: docIdVal,
+            phone: phoneVal,
+            email: emailVal,
+            birthDate: birthVal,
+            gender: genderVal,
+            category: categoryVal,
+            address: addressVal,
+            assignedSpecialist: 'Dr. Carlos Mendoza',
+            treatment_start_date: new Date().toISOString().slice(0, 10),
+            last_control_date: new Date().toISOString().slice(0, 10),
+            anamnesis: {
+              allergies: { has: allergyVal !== 'Ninguna' ? 'SI' : 'NO', details: allergyVal }
+            },
+            history: []
+          };
+
+          if (existingIdx >= 0) {
+            newPatients[existingIdx] = { ...newPatients[existingIdx], ...patientObj };
+            updatedCount++;
+          } else {
+            newPatients.push(patientObj);
+            addedCount++;
+          }
+        }
+
+        setPatients(newPatients);
+        Swal.fire({
+          title: '¡Pacientes Importados!',
+          text: `Se agregaron ${addedCount} pacientes nuevos y se actualizaron ${updatedCount} existentes.`,
+          icon: 'success'
+        });
+      } catch (err) {
+        Swal.fire('Error al Cargar Pacientes', err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -437,13 +544,31 @@ export default function PatientsModule({ patients = [], setPatients, specialists
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddPatientModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          + Paciente
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Descargar Plantilla */}
+          <button
+            onClick={handleDownloadPatientsTemplate}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4 text-emerald-700" />
+            Plantilla Excel
+          </button>
+
+          {/* Importar Pacientes */}
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
+            <Upload className="w-4 h-4" />
+            Importar Pacientes
+            <input type="file" accept=".csv, .txt, .xlsx" onChange={handlePatientsFileUpload} className="hidden" />
+          </label>
+
+          <button
+            onClick={() => setShowAddPatientModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            + Paciente
+          </button>
+        </div>
       </div>
 
       {/* Main Grid */}

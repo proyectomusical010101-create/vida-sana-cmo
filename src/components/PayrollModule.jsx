@@ -1,11 +1,112 @@
 import React, { useState } from 'react';
-import { Users, DollarSign, Award, Printer, CheckCircle2, Clock, Calendar, UserPlus, Search, Edit3, Trash2, ShieldCheck, RefreshCw, AlertCircle, FileText, ArrowRight } from 'lucide-react';
+import { Users, DollarSign, Award, Printer, CheckCircle2, Clock, Calendar, UserPlus, Search, Edit3, Trash2, ShieldCheck, RefreshCw, AlertCircle, FileText, ArrowRight, Download, Upload } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createPayrollApi, updatePayrollApi, deletePayrollApi, payPayrollApi } from '../api';
 
 export default function PayrollModule({ payroll = [], setPayroll, transactions = [], setTransactions, bcvRate = 755.90 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Descargar Plantilla Oficial Excel / CSV para Nómina
+  const handleDownloadPayrollTemplate = () => {
+    const headers = "Cedula_Identidad;Nombres_y_Apellidos;Cargo_Rol;Departamento;Sueldo_Base_USD;Metodo_Pago;Banco_Cuenta\n";
+    const sampleRows = [
+      "V-15432109;Dra. Adriana Leal;Odontólogo Especialista;Odontología;800.00;Pago Móvil;Banesco 013400010000",
+      "V-28540120;María Fernanda Rivas;Asistente Odontológica;Asistencia Médica;400.00;Pago Móvil;Mercantil 010500020000"
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + headers + sampleRows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Plantilla_Oficial_Nomina_VidaSana.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Parser de Carga Masiva de Personal / Nómina
+  const handlePayrollFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        let text = evt.target.result || '';
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.substring(1);
+        }
+
+        const lines = text.split(/\r\n|\n/);
+        if (lines.length <= 1) {
+          Swal.fire('Atención', 'El archivo está vacío o no contiene datos válidos.', 'warning');
+          return;
+        }
+
+        const newPayroll = [...payroll];
+        let addedCount = 0;
+        let updatedCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const delimiter = line.includes(';') ? ';' : ',';
+          const cols = line.split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
+
+          if (cols.length < 2) continue;
+
+          const docIdVal = cols[0] || `V-${10000000 + i}`;
+          const nameVal = cols[1] || 'Empleado Sin Nombre';
+          const posVal = cols[2] || 'Personal General';
+          const deptVal = cols[3] || 'Administración';
+          const salaryVal = parseFloat((cols[4] || '400').replace(',', '.')) || 400;
+
+          const existingIdx = newPayroll.findIndex(emp => 
+            (emp.docId && emp.docId === docIdVal) || 
+            (emp.name && emp.name.toLowerCase() === nameVal.toLowerCase())
+          );
+
+          const empObj = {
+            id: existingIdx >= 0 ? newPayroll[existingIdx].id : `EMP-${String(newPayroll.length + 1).padStart(2, '0')}`,
+            docId: docIdVal,
+            name: nameVal,
+            position: posVal,
+            department: deptVal,
+            monthlySalary: salaryVal,
+            baseSalary: salaryVal / 2,
+            startDate: '2026-01-15',
+            endDate: '2026-12-31',
+            workedDays: 15,
+            extraDays: 0,
+            extraHours: 0,
+            hourlyRate: 3.50,
+            customBonus: 0,
+            status: 'Pendiente Quincena 1'
+          };
+
+          if (existingIdx >= 0) {
+            newPayroll[existingIdx] = { ...newPayroll[existingIdx], ...empObj };
+            updatedCount++;
+          } else {
+            newPayroll.push(empObj);
+            addedCount++;
+          }
+        }
+
+        setPayroll(newPayroll);
+        Swal.fire({
+          title: '¡Nómina Cargada!',
+          text: `Se registraron ${addedCount} empleados nuevos y se actualizaron ${updatedCount} existentes.`,
+          icon: 'success'
+        });
+      } catch (err) {
+        Swal.fire('Error de Carga', err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // Modal State para Agregar / Editar Empleado
   const [showModal, setShowModal] = useState(false);
@@ -305,11 +406,27 @@ export default function PayrollModule({ payroll = [], setPayroll, transactions =
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Descargar Plantilla */}
+          <button
+            onClick={handleDownloadPayrollTemplate}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4 text-emerald-700" />
+            Plantilla Excel
+          </button>
+
+          {/* Importar Personal */}
+          <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
+            <Upload className="w-4 h-4" />
+            Importar Personal
+            <input type="file" accept=".csv, .txt, .xlsx" onChange={handlePayrollFileUpload} className="hidden" />
+          </label>
+
           <button
             onClick={handleOpenCreateModal}
-            className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-md transition-all"
+            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-md transition-all"
           >
-            <UserPlus className="w-4 h-4" /> + Registrar Nuevo Empleado
+            <UserPlus className="w-4 h-4" /> + Registrar Empleado
           </button>
 
           <button

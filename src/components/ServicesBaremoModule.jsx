@@ -50,26 +50,28 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     return matchesDivision && matchesCategory && matchesSearch;
   });
 
-  // Exportar / Descargar Plantilla Excel/CSV oficial
+  // Generar y Descargar Plantilla Oficial Excel / CSV para Baremo
   const handleDownloadExcelTemplate = () => {
-    const headers = "Codigo,Servicio,Categoria,Especialidad,Precio_USD,Porcentaje_Medico,Costo_Insumos\n";
+    const headers = "Codigo_Servicio;Nombre_Servicio;Division_Medica;Categoria_Especialidad;Precio_Ref_USD;Porcentaje_Comision_Doctor;Costo_Estimado_Materiales_USD;Bonificacion_Higienista_USD\n";
     const sampleRows = [
-      "OD-101,Resina Fotocurada Superior,Odontología General,Odontología General,45.00,50,5.50",
-      "MED-201,Consulta Pediátrica Integral,Medicina Especializada,Pediatría,40.00,50,2.00",
-      "RX-301,Ecografía Abdominal,Imagenología,Ecografía General,60.00,50,4.50",
-      "LAB-401,Perfil 20 Completo,Laboratorio Clínico,Bionalista / Pruebas de Sangre,35.00,40,7.00"
+      "ODON-101;Resina Molar Fotocurada;ODONTOLOGIA;Odontología General;45.00;50;5.00;5.00",
+      "MED-201;Consulta Médica Especializada;MEDICINA;Medicina Interna;50.00;70;0.00;0.00",
+      "RAD-301;Radiografía Panorámica;RAYOS_X;Imagenología;20.00;0;0.00;0.00",
+      "LAB-401;Perfil 20 Completo;LABORATORIO;Bionalista / Pruebas de Sangre;35.00;40;7.00;0.00"
     ].join("\n");
 
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(headers + sampleRows);
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", csvContent);
-    downloadAnchor.setAttribute("download", "Plantilla_Baremos_VidaSana.csv");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    // BOM \uFEFF para que Excel abra UTF-8 perfecto en español
+    const blob = new Blob(["\uFEFF" + headers + sampleRows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Plantilla_Oficial_Baremos_VidaSana.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  // Parser de Importación Masiva (CSV / Excel Text)
+  // Parser de Importación Masiva Robusto (CSV / Excel Text)
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -77,10 +79,15 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const text = evt.target.result;
+        let text = evt.target.result || '';
+        // Remover BOM si existe
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.substring(1);
+        }
+
         const lines = text.split(/\r\n|\n/);
         if (lines.length <= 1) {
-          alert('⚠️ El archivo está vacío o no contiene datos.');
+          Swal.fire('Atención', 'El archivo está vacío o no contiene datos válidos.', 'warning');
           return;
         }
 
@@ -91,22 +98,29 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
-          const cols = line.split(',');
+
+          // Autodetectar separador (coma o punto y coma)
+          const delimiter = line.includes(';') ? ';' : ',';
+          const cols = line.split(delimiter).map(c => c.replace(/^["']|["']$/g, '').trim());
+
           if (cols.length < 2) continue;
 
-          const code = cols[0]?.trim() || `IMP-${i}`;
-          const name = cols[1]?.trim() || 'Servicio Sin Nombre';
-          const category = cols[2]?.trim() || 'General';
-          const specialty = cols[3]?.trim() || 'General';
-          const price = parseFloat(cols[4]?.trim() || 0);
-          const commission = parseFloat(cols[5]?.trim() || 50);
-          const materialsCost = parseFloat(cols[6]?.trim() || 0);
+          const code = cols[0] || `IMP-${i}`;
+          const name = cols[1] || 'Servicio Sin Nombre';
+          let divisionRaw = (cols[2] || 'MEDICINA').toUpperCase();
+          const category = cols[3] || 'General';
+          
+          // Limpiar números con comas europeas/venezolanas (ej: 45,00 -> 45.00)
+          const price = parseFloat((cols[4] || '0').replace(',', '.')) || 0;
+          const commission = parseFloat((cols[5] || '50').replace(',', '.')) || 50;
+          const materialsCost = parseFloat((cols[6] || '0').replace(',', '.')) || 0;
+          const hygienistBonus = parseFloat((cols[7] || '0').replace(',', '.')) || 0;
 
           let division = 'MEDICINA';
-          const catLower = (category + ' ' + specialty).toLowerCase();
-          if (catLower.includes('odontolog') || catLower.includes('resina') || catLower.includes('exodoncia')) division = 'ODONTOLOGIA';
-          else if (catLower.includes('laboratorio') || catLower.includes('sangre') || catLower.includes('perfil')) division = 'LABORATORIO';
-          else if (catLower.includes('rayos') || catLower.includes('eco') || catLower.includes('radiolog')) division = 'RAYOS_X';
+          if (divisionRaw.includes('ODON') || divisionRaw.includes('DENT')) division = 'ODONTOLOGIA';
+          else if (divisionRaw.includes('LAB') || divisionRaw.includes('SANGRE')) division = 'LABORATORIO';
+          else if (divisionRaw.includes('RAYO') || divisionRaw.includes('RAD') || divisionRaw.includes('X')) division = 'RAYOS_X';
+          else if (divisionRaw.includes('MED')) division = 'MEDICINA';
 
           const existingIdx = newProcs.findIndex(p => p.code === code || p.name.toLowerCase() === name.toLowerCase());
 
@@ -115,12 +129,13 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               ...newProcs[existingIdx],
               code,
               name,
+              division,
               category,
-              specialty,
+              specialty: category,
               price,
               doctorCommissionPercent: commission,
               estimatedMaterialsCost: materialsCost,
-              division
+              hygienistBonus
             };
             updatedCount++;
           } else {
@@ -130,10 +145,11 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               name,
               division,
               category,
-              specialty,
+              specialty: category,
               price,
               doctorCommissionPercent: commission,
               estimatedMaterialsCost: materialsCost,
+              hygienistBonus,
               materials: []
             });
             addedCount++;
@@ -141,9 +157,13 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
         }
 
         setProcedures(newProcs);
-        alert(`✅ ¡Carga Masiva Exitosa! Se agregaron ${addedCount} servicios nuevos y se actualizaron ${updatedCount} existentes.`);
+        Swal.fire({
+          title: '¡Carga Masiva Completada!',
+          text: `Se agregaron ${addedCount} servicios nuevos y se actualizaron ${updatedCount} existentes en el baremo.`,
+          icon: 'success'
+        });
       } catch (err) {
-        alert(`⚠️ Error al procesar archivo: ${err.message}`);
+        Swal.fire('Error de Carga', `No se pudo procesar el archivo: ${err.message}`, 'error');
       }
     };
     reader.readAsText(file);
