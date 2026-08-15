@@ -137,12 +137,18 @@ export default function App() {
 
   const bcvRate = selectedCurrency === 'USD' ? bcvRateUsd : bcvRateEur;
 
-  // Sincronizar el tema en el elemento html para Tailwind darkMode: 'class'
+  // Sincronizar el tema en el elemento html y body para Tailwind y CSS global
   useEffect(() => {
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add('dark', 'dark-theme');
+      document.documentElement.classList.remove('light-theme');
+      document.body.classList.add('dark', 'dark-theme');
+      document.body.classList.remove('light-theme');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove('dark', 'dark-theme');
+      document.documentElement.classList.add('light-theme');
+      document.body.classList.remove('dark', 'dark-theme');
+      document.body.classList.add('light-theme');
     }
   }, [theme]);
 
