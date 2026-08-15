@@ -5,6 +5,16 @@
 @layer base {
   body {
     @apply font-sans antialiased bg-slate-50 text-slate-900 transition-colors duration-150;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevenir zoom automático molesto en iOS Safari al enfocar inputs */
+  @media (max-width: 639px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 }
 
@@ -65,9 +75,7 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #f8fafc !important;
 }
 
-/* 🟢 CORRECCIÓN CLAVE: CONVERSIÓN AUTOMÁTICA DE TEXTOS EN MODO OSCURO */
-
-/* Verdes: Los verdes oscuros pasan a verde claro brillante (#6ee7b7 / #34d399 / #5eead4) */
+/* 🟢 CONVERSIÓN AUTOMÁTICA DE TEXTOS EN MODO OSCURO */
 .dark .text-\[\#2e7d32\],
 .dark .text-emerald-950,
 .dark .text-emerald-900,
@@ -76,17 +84,16 @@ html.dark, body.dark, .dark-theme, .dark {
 .dark .text-green-900,
 .dark .text-green-800,
 .dark .text-green-700 {
-  color: #6ee7b7 !important; /* Emerald-300 ultralegible */
+  color: #6ee7b7 !important;
 }
 
 .dark .text-teal-950,
 .dark .text-teal-900,
 .dark .text-teal-800,
 .dark .text-teal-700 {
-  color: #5eead4 !important; /* Teal-300 ultralegible */
+  color: #5eead4 !important;
 }
 
-/* Textos oscuros base pasan a blanco / slate claro */
 .dark .text-slate-900,
 .dark .text-slate-800,
 .dark .text-slate-700,
@@ -103,7 +110,6 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #cbd5e1 !important;
 }
 
-/* Azules oscuros pasan a azul claro brillante */
 .dark .text-\[\#1565c0\],
 .dark .text-blue-950,
 .dark .text-blue-900,
@@ -113,7 +119,6 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #93c5fd !important;
 }
 
-/* Amarillos/Ámbar oscuros pasan a dorado brillante */
 .dark .text-amber-950,
 .dark .text-amber-900,
 .dark .text-amber-800,
@@ -122,14 +127,12 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #fcd34d !important;
 }
 
-/* Morados oscuros */
 .dark .text-purple-950,
 .dark .text-purple-900,
 .dark .text-purple-800 {
   color: #d8b4fe !important;
 }
 
-/* Rosados/Rojos oscuros */
 .dark .text-pink-950,
 .dark .text-pink-900,
 .dark .text-pink-800,
@@ -138,7 +141,7 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #f472b6 !important;
 }
 
-/* 📦 CORRECCIÓN CLAVE: PANELES Y TARJETAS EN MODO OSCURO */
+/* PANELES Y TARJETAS EN MODO OSCURO */
 .dark .glass-panel,
 .dark .glass-card {
   background-color: #111c3a !important;
@@ -166,7 +169,6 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #f8fafc !important;
 }
 
-/* Adapta tarjetas con fondos suaves de color */
 .dark .bg-emerald-50,
 .dark .bg-emerald-100 {
   background-color: rgba(6, 78, 59, 0.45) !important;
@@ -209,13 +211,11 @@ html.dark, body.dark, .dark-theme, .dark {
   border-color: rgba(244, 63, 94, 0.35) !important;
 }
 
-/* Bordes en Modo Oscuro */
 .dark .border-slate-200,
 .dark .border-slate-300 {
   border-color: #1e2d5a !important;
 }
 
-/* Campos de Formulario en Modo Oscuro */
 .dark input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]),
 .dark select,
 .dark textarea {
@@ -229,7 +229,6 @@ html.dark, body.dark, .dark-theme, .dark {
   color: #64748b !important;
 }
 
-/* Divisores de tablas y listas */
 .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
 .dark .divide-slate-300 > :not([hidden]) ~ :not([hidden]) {
   border-color: #1e2d5a !important;
@@ -243,7 +242,40 @@ html.dark, body.dark, .dark-theme, .dark {
   background-color: #1e2d5a !important;
 }
 
-/* Custom scrollbar */
+
+/* ==========================================================================
+   3. RESPONSIVE Y TOUCH-TARGETS (EXPERIENCIA APP NATIVA EN MÓVIL)
+   ========================================================================== */
+
+/* Áreas táctiles óptimas (touch targets >= 44px x 44px) */
+@media (max-width: 639px) {
+  button, .touch-target {
+    min-height: 44px;
+  }
+
+  .mobile-card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mobile-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top-left-radius: 1.5rem;
+    border-top-right-radius: 1.5rem;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+}
+
+/* Scrollbar táctil suave */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
