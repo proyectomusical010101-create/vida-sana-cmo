@@ -420,6 +420,8 @@ export default function App() {
               appointments={appointments}
               transactions={safeTransactions}
               bcvRate={bcvRate}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
               onNavigateToModule={(modIndex) => {
                 const targetMod = navItems[modIndex]?.id || 'billing';
                 setActiveModule(targetMod);

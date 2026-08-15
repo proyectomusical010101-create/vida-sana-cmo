@@ -874,7 +874,23 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                       <td className="p-3 font-mono font-black text-teal-600">#{item.tooth}</td>
                       <td className="p-3 font-extrabold">{item.procedure}</td>
                       <td className="p-3 text-slate-600 dark:text-slate-400">{item.doctor}</td>
-                      <td className="p-3 text-right font-mono font-black text-emerald-900 dark:text-emerald-400">${parseFloat(item.priceUsd).toFixed(2)} USD</td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1 font-mono font-black">
+                          <span className="text-emerald-700 dark:text-emerald-400">$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.priceUsd}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setBudgetItems(budgetItems.map(b => b.id === item.id ? { ...b, priceUsd: val } : b));
+                            }}
+                            className="w-24 p-1 text-right bg-white dark:bg-[#0d162f] border border-teal-400 dark:border-teal-700 rounded text-xs font-black font-mono text-emerald-950 dark:text-emerald-200 focus:ring-2 focus:ring-teal-500"
+                            title="Haz clic para modificar el precio especial del convenio o servicio"
+                          />
+                          <span className="text-[10px] text-slate-500">USD</span>
+                        </div>
+                      </td>
                       <td className="p-3 text-right font-mono font-bold text-blue-900 dark:text-blue-300">{priceBs.toFixed(2)} Bs</td>
                       <td className="p-3 text-center">
                         <button

@@ -10,9 +10,20 @@ export default function DashboardOverviewModule({
   appointments = [],
   transactions = [],
   bcvRate = 755.90,
+  selectedCurrency = 'USD',
+  currencySymbol = '$',
   onNavigateToModule
 }) {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
+
+  // Ranking de Rendimiento Médico (Médicos con más servicios realizados)
+  const doctorsRanking = [
+    { name: 'Dra. Adriana Leal', division: 'Odontología', servicesCount: 28, revenue: 1420.00, avatarBg: 'bg-emerald-600' },
+    { name: 'Dr. Carlos Mendoza', division: 'Odontología (Ortodoncia)', servicesCount: 22, revenue: 1150.00, avatarBg: 'bg-teal-600' },
+    { name: 'Dra. Vanessa Rivas', division: 'Endodoncia & Cirugía', servicesCount: 18, revenue: 940.00, avatarBg: 'bg-blue-600' },
+    { name: 'Dr. Alejandro Ruiz', division: 'Medicina General', servicesCount: 14, revenue: 650.00, avatarBg: 'bg-indigo-600' },
+    { name: 'Od. Viviana', division: 'Rayos X & Imagenología', servicesCount: 12, revenue: 420.00, avatarBg: 'bg-amber-600' }
+  ];
 
   // Pacientes este mes
   const totalPatients = patients.length || 24;
@@ -230,39 +241,50 @@ export default function DashboardOverviewModule({
           </div>
         </div>
 
-        {/* MÉTODOS DE PAGO POPULARES */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-6 rounded-3xl shadow-sm space-y-4">
-          <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
-              Métodos de Pago Preferidos
-            </h3>
-            <p className="text-xs text-slate-500 font-medium">Volumen transaccionado por canal de cobro</p>
+        {/* 🏆 NUEVA SECCIÓN: RANKING DE RENDIMIENTO DE MÉDICOS Y MÁS ACTIVOS */}
+        <div className="lg:col-span-12 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-6 rounded-3xl shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 className="text-base font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-teal-600" />
+                Rendimiento de Médicos & Especialistas Más Activos
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Ranking de producción según cantidad de procedimientos realizados y recaudación generada
+              </p>
+            </div>
+            <span className="text-xs font-mono font-black text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+              🏆 Top Especialistas del Mes
+            </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs font-bold">
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="text-slate-500 block text-[10px]">Punto de Venta POS</span>
-              <span className="text-base font-black font-mono text-indigo-950 dark:text-indigo-300">45%</span>
-              <span className="text-[10px] text-indigo-600 block">Bs 26.156,70</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+            {doctorsRanking.map((doc, idx) => (
+              <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 relative overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl ${doc.avatarBg} text-white font-black flex items-center justify-center text-xs shadow-sm`}>
+                    #{idx + 1}
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs line-clamp-1">{doc.name}</h4>
+                    <span className="text-[10px] text-slate-500 block font-semibold">{doc.division}</span>
+                  </div>
+                </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="text-slate-500 block text-[10px]">Pago Móvil Banesco</span>
-              <span className="text-base font-black font-mono text-emerald-950 dark:text-emerald-300">30%</span>
-              <span className="text-[10px] text-emerald-600 block">Bs 6.905,37</span>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="text-slate-500 block text-[10px]">Efectivo Divisas ($)</span>
-              <span className="text-base font-black font-mono text-amber-950 dark:text-amber-300">18%</span>
-              <span className="text-[10px] text-amber-600 block">$55.00 USD</span>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1">
-              <span className="text-slate-500 block text-[10px]">Cashea / Zelle</span>
-              <span className="text-base font-black font-mono text-purple-950 dark:text-purple-300">7%</span>
-              <span className="text-[10px] text-purple-600 block">€21.19 EUR</span>
-            </div>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex justify-between text-[11px] font-bold">
+                    <span className="text-slate-500">Servicios:</span>
+                    <span className="text-slate-900 dark:text-white font-mono">{doc.servicesCount} Atenciones</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] font-bold">
+                    <span className="text-slate-500">Recaudado:</span>
+                    <span className="text-emerald-700 dark:text-emerald-300 font-mono font-black">
+                      {currencySymbol}{doc.revenue.toFixed(2)} {selectedCurrency}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
