@@ -5,6 +5,7 @@ const API_BASE = 'http://localhost:3001/api';
 // 0. AUTHENTICATION & LOGIN
 export async function loginApi(email, password) {
   const cleanEmail = email.trim().toLowerCase();
+  const cleanPassword = String(password).trim();
 
   // Si Supabase está disponible en la nube (Vercel)
   if (supabase) {
@@ -14,40 +15,47 @@ export async function loginApi(email, password) {
         .select('*')
         .eq('email', cleanEmail);
 
-      if (error || !users || users.length === 0) {
-        // Si es la cuenta admin inicial por defecto y no existía en la tabla
-        if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && password === 'admin123') {
+      if (!error && users && users.length > 0) {
+        // Buscar coincidencia exacta por contraseña comparando password_hash o password
+        const matchedUser = users.find(u => {
+          const storedPass = String(u.password_hash || u.password || '').trim();
+          return storedPass === cleanPassword;
+        });
+
+        if (matchedUser) {
           return {
             success: true,
             user: {
-              id: 1,
-              name: 'Administrador Principal',
-              email: cleanEmail,
-              role: 'Administrador',
-              token: 'token-admin-demo'
+              id: matchedUser.id,
+              name: matchedUser.name,
+              email: matchedUser.email,
+              role: matchedUser.role,
+              token: `token-${matchedUser.id}-${Date.now()}`
             }
           };
+        } else {
+          // El usuario existe pero la contraseña no coincidió
+          throw new Error('Contraseña incorrecta. Verifique sus datos.');
         }
+      }
+
+      // Si no existía en la tabla y es admin por defecto
+      if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && cleanPassword === 'admin123') {
+        return {
+          success: true,
+          user: {
+            id: 1,
+            name: 'Administrador Principal',
+            email: cleanEmail,
+            role: 'Administrador',
+            token: 'token-admin-demo'
+          }
+        };
+      }
+
+      if (users && users.length === 0) {
         throw new Error('Credenciales inválidas. El usuario no existe.');
       }
-
-      // Si hay duplicados con el mismo correo, busca la fila que coincida con la contraseña
-      const matchedUser = users.find(u => u.password_hash === password) || users[0];
-
-      if (matchedUser.password_hash !== password) {
-        throw new Error('Contraseña incorrecta. Verifique sus datos.');
-      }
-
-      return {
-        success: true,
-        user: {
-          id: matchedUser.id,
-          name: matchedUser.name,
-          email: matchedUser.email,
-          role: matchedUser.role,
-          token: `token-${matchedUser.id}-${Date.now()}`
-        }
-      };
     } catch (err) {
       if (err.message.includes('Credenciales') || err.message.includes('Contraseña')) {
         throw err;
@@ -60,14 +68,14 @@ export async function loginApi(email, password) {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
     });
     const data = await res.json();
     if (res.ok) return data;
   } catch (e) {}
 
   // Fallback estático demo si no hay servidor accesible
-  if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && password === 'admin123') {
+  if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && cleanPassword === 'admin123') {
     return {
       success: true,
       user: {
@@ -85,6 +93,7 @@ export async function loginApi(email, password) {
 
 export async function registerApi(name, email, password) {
   const cleanEmail = email.trim().toLowerCase();
+  const cleanPassword = String(password).trim();
 
   // Supabase Cloud Registration
   if (supabase) {
@@ -103,7 +112,8 @@ export async function registerApi(name, email, password) {
         .insert([{
           name: name.trim(),
           email: cleanEmail,
-          password_hash: password,
+          password_hash: cleanPassword,
+          password: cleanPassword,
           role: 'Administrador'
         }])
         .select();
@@ -153,12 +163,14 @@ export async function fetchUsersApi() {
 }
 
 export async function createUserApi(userData) {
+  const cleanPassword = String(userData.password).trim();
   if (supabase) {
     try {
       const { data, error } = await supabase.from('users').insert([{
         name: userData.name,
         email: userData.email.trim().toLowerCase(),
-        password_hash: userData.password,
+        password_hash: cleanPassword,
+        password: cleanPassword,
         role: userData.role || 'Administrador'
       }]).select();
       
@@ -183,7 +195,9 @@ export async function updateUserApi(id, userData) {
         role: userData.role
       };
       if (userData.password) {
-        updatePayload.password_hash = userData.password;
+        const cleanPass = String(userData.password).trim();
+        updatePayload.password_hash = cleanPass;
+        updatePayload.password = cleanPass;
       }
       const { data, error } = await supabase.from('users').update(updatePayload).eq('id', id).select();
       if (!error && data && data.length > 0) return data[0];
