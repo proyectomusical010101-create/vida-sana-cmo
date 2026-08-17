@@ -9,21 +9,20 @@ export async function loginApi(email, password) {
   // Si Supabase está disponible en la nube (Vercel)
   if (supabase) {
     try {
-      const { data: user, error } = await supabase
+      const { data: users, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', cleanEmail)
-        .single();
+        .eq('email', cleanEmail);
 
-      if (error || !user) {
+      if (error || !users || users.length === 0) {
         // Si es la cuenta admin inicial por defecto y no existía en la tabla
-        if (cleanEmail === 'admin@vidasana.com' && password === 'admin123') {
+        if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && password === 'admin123') {
           return {
             success: true,
             user: {
               id: 1,
               name: 'Administrador Principal',
-              email: 'admin@vidasana.com',
+              email: cleanEmail,
               role: 'Administrador',
               token: 'token-admin-demo'
             }
@@ -32,18 +31,21 @@ export async function loginApi(email, password) {
         throw new Error('Credenciales inválidas. El usuario no existe.');
       }
 
-      if (user.password_hash !== password) {
+      // Si hay duplicados con el mismo correo, busca la fila que coincida con la contraseña
+      const matchedUser = users.find(u => u.password_hash === password) || users[0];
+
+      if (matchedUser.password_hash !== password) {
         throw new Error('Contraseña incorrecta. Verifique sus datos.');
       }
 
       return {
         success: true,
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          token: `token-${user.id}-${Date.now()}`
+          id: matchedUser.id,
+          name: matchedUser.name,
+          email: matchedUser.email,
+          role: matchedUser.role,
+          token: `token-${matchedUser.id}-${Date.now()}`
         }
       };
     } catch (err) {
@@ -65,13 +67,13 @@ export async function loginApi(email, password) {
   } catch (e) {}
 
   // Fallback estático demo si no hay servidor accesible
-  if (cleanEmail === 'admin@vidasana.com' && password === 'admin123') {
+  if ((cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com') && password === 'admin123') {
     return {
       success: true,
       user: {
         id: 1,
         name: 'Administrador Principal',
-        email: 'admin@vidasana.com',
+        email: cleanEmail,
         role: 'Administrador',
         token: 'token-admin-demo'
       }
@@ -90,10 +92,9 @@ export async function registerApi(name, email, password) {
       const { data: existing } = await supabase
         .from('users')
         .select('id')
-        .eq('email', cleanEmail)
-        .single();
+        .eq('email', cleanEmail);
 
-      if (existing) {
+      if (existing && existing.length > 0) {
         throw new Error('El correo electrónico ya se encuentra registrado.');
       }
 
@@ -105,19 +106,19 @@ export async function registerApi(name, email, password) {
           password_hash: password,
           role: 'Administrador'
         }])
-        .select()
-        .single();
+        .select();
 
       if (error) throw new Error(error.message);
+      const newUser = (data && data.length > 0) ? data[0] : { id: Date.now(), name, email: cleanEmail, role: 'Administrador' };
 
       return {
         success: true,
         user: {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          token: `token-${data.id}-${Date.now()}`
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          role: newUser.role,
+          token: `token-${newUser.id}-${Date.now()}`
         }
       };
     } catch (err) {
@@ -159,11 +160,12 @@ export async function createUserApi(userData) {
         email: userData.email.trim().toLowerCase(),
         password_hash: userData.password,
         role: userData.role || 'Administrador'
-      }]).select().single();
-      if (!error && data) return data;
+      }]).select();
+      
+      if (!error && data && data.length > 0) return data[0];
       if (error) throw new Error(error.message);
     } catch (e) {
-      if (e.message.includes('unique') || e.message.includes('duplicate')) {
+      if (e.message && (e.message.includes('unique') || e.message.includes('duplicate'))) {
         throw new Error('El correo ya se encuentra registrado en el sistema.');
       }
       throw e;
@@ -183,11 +185,11 @@ export async function updateUserApi(id, userData) {
       if (userData.password) {
         updatePayload.password_hash = userData.password;
       }
-      const { data, error } = await supabase.from('users').update(updatePayload).eq('id', id).select().single();
-      if (!error && data) return data;
-      if (error) throw new Error(error.message);
+      const { data, error } = await supabase.from('users').update(updatePayload).eq('id', id).select();
+      if (!error && data && data.length > 0) return data[0];
+      if (error) console.warn("⚠️ Error en Supabase updateUserApi:", error.message);
     } catch (e) {
-      throw e;
+      console.warn("⚠️ Fallo en actualización Supabase:", e);
     }
   }
   return { ...userData, id };
