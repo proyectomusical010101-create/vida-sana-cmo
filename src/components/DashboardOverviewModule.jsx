@@ -16,30 +16,39 @@ export default function DashboardOverviewModule({
 }) {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
 
-  // Ranking de Rendimiento Médico (Médicos con más servicios realizados)
-  const doctorsRanking = [
-    { name: 'Dra. Adriana Leal', division: 'Odontología', servicesCount: 28, revenue: 1420.00, avatarBg: 'bg-emerald-600' },
-    { name: 'Dr. Carlos Mendoza', division: 'Odontología (Ortodoncia)', servicesCount: 22, revenue: 1150.00, avatarBg: 'bg-teal-600' },
-    { name: 'Dra. Vanessa Rivas', division: 'Endodoncia & Cirugía', servicesCount: 18, revenue: 940.00, avatarBg: 'bg-blue-600' },
-    { name: 'Dr. Alejandro Ruiz', division: 'Medicina General', servicesCount: 14, revenue: 650.00, avatarBg: 'bg-indigo-600' },
-    { name: 'Od. Viviana', division: 'Rayos X & Imagenología', servicesCount: 12, revenue: 420.00, avatarBg: 'bg-amber-600' }
-  ];
-
-  // Pacientes este mes
-  const totalPatients = patients.length || 24;
+  // Pacientes este mes (Real)
+  const totalPatients = patients.length;
   
-  // Ingresos Totales Calculados
-  const totalRevenueUsd = transactions.reduce((acc, t) => acc + (t.total || 0), 0) || 3450.00;
+  // Ingresos Totales Calculados (Real)
+  const totalRevenueUsd = transactions.reduce((acc, t) => acc + (parseFloat(t.total || t.amount) || 0), 0);
   const totalRevenueBs = totalRevenueUsd * bcvRate;
 
-  // Citas Pendientes
-  const pendingAppointmentsList = appointments.length > 0 ? appointments : [
-    { id: 'APT-101', patientName: 'Santiago Andrés Peña', doctor: 'Dr. Carlos Mendoza', specialty: 'Odontología (Ortodoncia)', time: '09:00 AM', status: 'En Espera', area: 'ODONTOLOGIA' },
-    { id: 'APT-102', patientName: 'María Fernanda Gómez', doctor: 'Dra. Vanessa Rivas', specialty: 'Endodoncia Molar', time: '10:30 AM', status: 'Confirmada', area: 'ODONTOLOGIA' },
-    { id: 'APT-103', patientName: 'Carlos Eduardo López', doctor: 'Dr. Alejandro Ruiz', specialty: 'Evaluación Médica General', time: '11:15 AM', status: 'Confirmada', area: 'MEDICINA' },
-    { id: 'APT-104', patientName: 'Valentina Martínez', doctor: 'Od. Viviana', specialty: 'Rayos X Panorámico', time: '02:00 PM', status: 'En Espera', area: 'RAYOS_X' },
-    { id: 'APT-105', patientName: 'José Luis Rodríguez', doctor: 'Dra. Adriana Leal', specialty: 'Perfil 20 Completo', time: '03:30 PM', status: 'Confirmada', area: 'LABORATORIO' }
-  ];
+  // Citas Pendientes (Real)
+  const pendingAppointmentsList = appointments || [];
+
+  // Ranking Dinámico de Médicos según Transacciones Reales
+  const doctorsMap = {};
+  transactions.forEach(t => {
+    const docName = t.doctor || 'Especialista General';
+    if (!doctorsMap[docName]) {
+      doctorsMap[docName] = { name: docName, division: t.specialty || 'General', servicesCount: 0, revenue: 0, avatarBg: 'bg-teal-600' };
+    }
+    doctorsMap[docName].servicesCount += 1;
+    doctorsMap[docName].revenue += parseFloat(t.total || t.amount) || 0;
+  });
+
+  const doctorsRanking = Object.values(doctorsMap).sort((a, b) => b.revenue - a.revenue);
+
+  // Distribución Real de Ingresos por Área
+  const revenueByDivision = { ODONTOLOGIA: 0, MEDICINA: 0, RAYOS_X: 0, LABORATORIO: 0 };
+  transactions.forEach(t => {
+    const div = t.area || t.division || 'ODONTOLOGIA';
+    if (revenueByDivision[div] !== undefined) {
+      revenueByDivision[div] += parseFloat(t.total || t.amount) || 0;
+    } else {
+      revenueByDivision.ODONTOLOGIA += parseFloat(t.total || t.amount) || 0;
+    }
+  });
 
   const filteredAppointments = selectedStatusFilter === 'ALL'
     ? pendingAppointmentsList
@@ -181,10 +190,12 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
                   Odontología General & Especialidades
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}1,820.00 {selectedCurrency} (53%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">
+                  {currencySymbol}{(revenueByDivision.ODONTOLOGIA || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCurrency} ({totalRevenueUsd > 0 ? Math.round(((revenueByDivision.ODONTOLOGIA || 0) / totalRevenueUsd) * 100) : 0}%)
+                </span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-600 rounded-full w-[53%]"></div>
+                <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${totalRevenueUsd > 0 ? Math.round(((revenueByDivision.ODONTOLOGIA || 0) / totalRevenueUsd) * 100) : 0}%` }}></div>
               </div>
             </div>
 
@@ -195,10 +206,12 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                   Medicina Especializada
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}650.00 {selectedCurrency} (19%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">
+                  {currencySymbol}{(revenueByDivision.MEDICINA || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCurrency} ({totalRevenueUsd > 0 ? Math.round(((revenueByDivision.MEDICINA || 0) / totalRevenueUsd) * 100) : 0}%)
+                </span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full w-[19%]"></div>
+                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${totalRevenueUsd > 0 ? Math.round(((revenueByDivision.MEDICINA || 0) / totalRevenueUsd) * 100) : 0}%` }}></div>
               </div>
             </div>
 
@@ -209,10 +222,12 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-yellow-600"></span>
                   Rayos X & Imagenología
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}420.00 {selectedCurrency} (12%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">
+                  {currencySymbol}{(revenueByDivision.RAYOS_X || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCurrency} ({totalRevenueUsd > 0 ? Math.round(((revenueByDivision.RAYOS_X || 0) / totalRevenueUsd) * 100) : 0}%)
+                </span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-yellow-600 rounded-full w-[12%]"></div>
+                <div className="h-full bg-yellow-600 rounded-full" style={{ width: `${totalRevenueUsd > 0 ? Math.round(((revenueByDivision.RAYOS_X || 0) / totalRevenueUsd) * 100) : 0}%` }}></div>
               </div>
             </div>
 
@@ -223,10 +238,12 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
                   Laboratorio Clínico
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}230.00 {selectedCurrency} (7%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">
+                  {currencySymbol}{(revenueByDivision.LABORATORIO || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCurrency} ({totalRevenueUsd > 0 ? Math.round(((revenueByDivision.LABORATORIO || 0) / totalRevenueUsd) * 100) : 0}%)
+                </span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-purple-600 rounded-full w-[7%]"></div>
+                <div className="h-full bg-purple-600 rounded-full" style={{ width: `${totalRevenueUsd > 0 ? Math.round(((revenueByDivision.LABORATORIO || 0) / totalRevenueUsd) * 100) : 0}%` }}></div>
               </div>
             </div>
 
@@ -250,34 +267,41 @@ export default function DashboardOverviewModule({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-            {doctorsRanking.map((doc, idx) => (
-              <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 relative overflow-hidden">
-                <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-xl ${doc.avatarBg} text-white font-black flex items-center justify-center text-xs shadow-sm`}>
-                    #{idx + 1}
+          {doctorsRanking.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              {doctorsRanking.map((doc, idx) => (
+                <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 relative overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-xl ${doc.avatarBg} text-white font-black flex items-center justify-center text-xs shadow-sm`}>
+                      #{idx + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 dark:text-white text-xs line-clamp-1">{doc.name}</h4>
+                      <span className="text-[10px] text-slate-500 block font-semibold">{doc.division}</span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs line-clamp-1">{doc.name}</h4>
-                    <span className="text-[10px] text-slate-500 block font-semibold">{doc.division}</span>
-                  </div>
-                </div>
 
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1">
-                  <div className="flex justify-between text-[11px] font-bold">
-                    <span className="text-slate-500">Servicios:</span>
-                    <span className="text-slate-900 dark:text-white font-mono">{doc.servicesCount} Atenciones</span>
-                  </div>
-                  <div className="flex justify-between text-[11px] font-bold">
-                    <span className="text-slate-500">Recaudado:</span>
-                    <span className="text-emerald-700 dark:text-emerald-300 font-mono font-black">
-                      {currencySymbol}{doc.revenue.toFixed(2)} {selectedCurrency}
-                    </span>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1">
+                    <div className="flex justify-between text-[11px] font-bold">
+                      <span className="text-slate-500">Servicios:</span>
+                      <span className="text-slate-900 dark:text-white font-mono">{doc.servicesCount} Atenciones</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold">
+                      <span className="text-slate-500">Recaudado:</span>
+                      <span className="text-emerald-700 dark:text-emerald-300 font-mono font-black">
+                        {currencySymbol}{doc.revenue.toFixed(2)} {selectedCurrency}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center space-y-1">
+              <span className="text-xs font-bold text-slate-500 block">Sin recaudaciones registradas en este período</span>
+              <p className="text-[11px] text-slate-400">A medida que registres atenciones en Caja, aparecerá aquí el ranking de producción de tus especialistas.</p>
+            </div>
+          )}
         </div>
 
       </div>
