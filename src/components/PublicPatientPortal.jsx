@@ -187,6 +187,14 @@ export default function PublicPatientPortal({ procedures = [], specialists = [],
                         <div>
                           <div className="font-extrabold text-xs text-slate-900 dark:text-white">{p.name}</div>
                           <div className="text-[11px] text-slate-500 font-medium">{p.category || 'Consulta General'}</div>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#85a738]/20 text-[#476016] dark:text-[#a2d034] border border-[#85a738]/40">
+                              📅 {Array.isArray(p.availableDays) ? p.availableDays.join(', ') : 'Lun a Vie'}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 font-bold">
+                              🕒 {p.startTime || '08:00'} - {p.endTime || '17:00'}
+                            </span>
+                          </div>
                         </div>
                         {showPricesPublicly && (
                           <div className="font-mono font-black text-teal-700 dark:text-teal-300 text-sm">

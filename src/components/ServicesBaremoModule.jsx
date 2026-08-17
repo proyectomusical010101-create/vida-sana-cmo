@@ -21,6 +21,11 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
   const [formMaterialsCost, setFormMaterialsCost] = useState('5');
   const [formHygienistBonus, setFormHygienistBonus] = useState('5.00');
 
+  // Disponibilidad de Atención al Público (Días y Horarios)
+  const [formDays, setFormDays] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']);
+  const [formStartTime, setFormStartTime] = useState('08:00');
+  const [formEndTime, setFormEndTime] = useState('17:00');
+
   // Pestañas Módulo 2: 'services' | 'consultorios'
   const [activeTab, setActiveTab] = useState('services');
 
@@ -171,6 +176,11 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
 
   const handleSaveProcSubmit = (e) => {
     e.preventDefault();
+    if (formDays.length === 0) {
+      Swal.fire('Atención', 'Debe seleccionar al menos un día disponible para atención al público.', 'warning');
+      return;
+    }
+
     const procObj = {
       id: editingProc ? editingProc.id : `PROC-${Date.now()}`,
       code: formCode || `SERV-${Date.now().toString().slice(-4)}`,
@@ -182,6 +192,9 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       doctorCommissionPercent: parseFloat(formCommission) || 50,
       estimatedMaterialsCost: parseFloat(formMaterialsCost) || 0,
       hygienistBonus: parseFloat(formHygienistBonus) || 0,
+      availableDays: formDays,
+      startTime: formStartTime || '08:00',
+      endTime: formEndTime || '17:00',
       materials: editingProc ? editingProc.materials : []
     };
 
@@ -387,6 +400,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               <tr>
                 <th className="p-3">Código</th>
                 <th className="p-3">Servicio / Tratamiento</th>
+                <th className="p-3">Disponibilidad Público</th>
                 <th className="p-3">División / Área</th>
                 <th className="p-3">Categoría / Especialidad</th>
                 <th className="p-3 text-right">Precio Público ($)</th>
@@ -401,6 +415,16 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 <tr key={proc.id} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3 font-mono font-bold text-slate-700">{proc.code || proc.id}</td>
                   <td className="p-3 font-extrabold text-slate-900">{proc.name}</td>
+                  <td className="p-3">
+                    <div className="space-y-0.5">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#85a738]/20 text-[#476016] border border-[#85a738]/40 block w-max">
+                        📅 {Array.isArray(proc.availableDays) ? proc.availableDays.join(', ') : 'Lun a Vie'}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 font-bold block">
+                        🕒 {proc.startTime || '08:00'} - {proc.endTime || '17:00'}
+                      </span>
+                    </div>
+                  </td>
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300">
                       {proc.division || 'ODONTOLOGIA'}
@@ -423,6 +447,9 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                         setFormCommission(proc.doctorCommissionPercent?.toString() || '50');
                         setFormMaterialsCost(proc.estimatedMaterialsCost?.toString() || '5');
                         setFormHygienistBonus(proc.hygienistBonus?.toString() || '5.00');
+                        setFormDays(Array.isArray(proc.availableDays) ? proc.availableDays : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']);
+                        setFormStartTime(proc.startTime || '08:00');
+                        setFormEndTime(proc.endTime || '17:00');
                         setShowModal(true);
                       }}
                       className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block"
@@ -690,6 +717,72 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
               </div>
 
+              {/* SECCIÓN DISPONIBILIDAD DE HORARIO Y DÍAS PARA ATENCIÓN AL PÚBLICO */}
+              <div className="p-3.5 bg-[#85a738]/10 border border-[#85a738]/30 rounded-xl space-y-2 text-xs">
+                <label className="block font-black text-slate-900 text-xs flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#476016]" />
+                  Disponibilidad para Atención al Público (Días y Horario)
+                </label>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Seleccione los días de la semana y la franja horaria en que este servicio estará disponible para agendamiento del público.
+                </p>
+
+                {/* DÍAS DE LA SEMANA */}
+                <div className="space-y-1">
+                  <span className="block text-[11px] font-extrabold text-slate-800">Días Disponibles:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => {
+                      const isSelected = formDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setFormDays(formDays.filter(d => d !== day));
+                            } else {
+                              setFormDays([...formDays, day]);
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#85a738] text-white shadow-sm'
+                              : 'bg-slate-100 text-slate-600 border border-slate-300 hover:bg-slate-200'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* RANGO DE HORAS DE ATENCIÓN */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Hora Inicio Disponibilidad</label>
+                    <input
+                      type="time"
+                      required
+                      value={formStartTime}
+                      onChange={(e) => setFormStartTime(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Hora Fin Disponibilidad</label>
+                    <input
+                      type="time"
+                      required
+                      value={formEndTime}
+                      onChange={(e) => setFormEndTime(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
@@ -700,7 +793,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-lg shadow-sm"
+                  className="px-5 py-2 bg-[#85a738] hover:bg-[#72912f] text-white font-extrabold rounded-lg shadow-sm"
                 >
                   Guardar Servicio
                 </button>
