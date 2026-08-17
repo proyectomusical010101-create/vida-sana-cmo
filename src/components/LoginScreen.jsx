@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, Eye, EyeOff, Activity, CheckCircle2, ArrowRight, Stethoscope, Building2, Loader2 } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, Eye, EyeOff, Activity, CheckCircle2, ArrowRight, Stethoscope, Building2, Loader2, Sparkles } from 'lucide-react';
 import { loginApi } from '../api';
+import logoImg from '../assets/logo.jpeg';
 
 export default function LoginScreen({ onLoginSuccess }) {
   // Login State
@@ -17,7 +18,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     setErrorMsg('');
     setLoading(true);
 
-    // Validación estricta con API Backend / Supabase
+    // Validación con API Backend / Supabase
     setTimeout(async () => {
       try {
         const response = await loginApi(email, password);
@@ -32,68 +33,81 @@ export default function LoginScreen({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-slate-900 text-slate-100 font-sans overflow-hidden">
+    <div className="min-h-screen w-full flex bg-[#161a1d] text-slate-100 font-sans overflow-hidden">
       
-      {/* Background Decorative Lighting */}
+      {/* Background Decorative Lighting in Brand Colors (#84a93c & #2b3036) */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-teal-500/20 blur-3xl"></div>
-        <div className="absolute top-1/2 -right-40 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl"></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl"></div>
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#84a93c]/20 blur-[120px]"></div>
+        <div className="absolute top-1/2 -right-40 w-[450px] h-[450px] rounded-full bg-[#94c120]/15 blur-[100px]"></div>
+        <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-[#84a93c]/15 blur-[140px]"></div>
       </div>
 
       {/* Main Container Split View */}
       <div className="relative z-10 w-full min-h-screen grid grid-cols-1 lg:grid-cols-12">
         
-        {/* Left Side: Medical Hero Section */}
-        <div className="hidden lg:flex lg:col-span-6 bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950/80 p-12 flex-col justify-between border-r border-slate-800/80 relative overflow-hidden">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-teal-500/20">
-                VS
-              </div>
-              <div>
-                <h1 className="text-xl font-black tracking-tight text-white">Centro Médico Odontológico</h1>
-                <span className="text-xs font-mono text-teal-400 font-bold">Vida Sana CMO, C.A. • RIF: J-50781755-5</span>
-              </div>
+        {/* Left Side: Medical Hero Section with Official Logo */}
+        <div className="hidden lg:flex lg:col-span-6 bg-gradient-to-br from-[#121619] via-[#1a1f23] to-[#121619] p-12 flex-col justify-between border-r border-[#2b3036]/60 relative overflow-hidden">
+          <div className="space-y-8">
+            
+            {/* Header with Brand Logo */}
+            <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 inline-block max-w-sm">
+              <img
+                src={logoImg}
+                alt="VidaSana Centro Médico Odontológico"
+                className="h-16 w-auto object-contain"
+              />
             </div>
 
-            <div className="space-y-4 pt-12">
-              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-teal-500/10 text-teal-300 border border-teal-500/30 inline-flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-teal-400" />
-                Acceso Seguro a la Plataforma Médica
+            <div className="space-y-4 pt-6">
+              <span className="px-4 py-1.5 rounded-full text-xs font-black bg-[#84a93c]/15 text-[#a2d034] border border-[#84a93c]/40 inline-flex items-center gap-2 tracking-wide uppercase">
+                <ShieldCheck className="w-4 h-4 text-[#84a93c]" />
+                Acceso Plataforma Médica Oficial
               </span>
-              <h2 className="text-4xl font-extrabold text-white leading-tight">
+              
+              <h2 className="text-4xl font-black text-white leading-tight">
                 Control Administrativo & Odontológico Integral
               </h2>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-lg font-medium">
-                Plataforma centralizada para la administración de expedientes digitales, odontogramas 2D, caja multi-moneda, financiamiento Cashea y liquidación de honorarios médicos.
+              
+              <p className="text-slate-300 text-sm leading-relaxed max-w-lg font-medium">
+                Plataforma centralizada para la gestión de expedientes digitales, odontogramas 2D, caja multi-moneda, financiamiento Cashea y liquidación de honorarios médicos.
               </p>
             </div>
 
-            {/* Feature List */}
-            <div className="grid grid-cols-2 gap-4 pt-6 text-xs font-bold text-slate-300">
-              <div className="flex items-center gap-2.5 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <Activity className="w-4 h-4 text-teal-400" />
+            {/* Feature List in Brand Colors */}
+            <div className="grid grid-cols-2 gap-4 pt-4 text-xs font-bold text-slate-200">
+              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-[#84a93c]/20 flex items-center justify-center text-[#94c120]">
+                  <Activity className="w-4 h-4" />
+                </div>
                 <span>Odontograma 2D</span>
               </div>
-              <div className="flex items-center gap-2.5 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <Building2 className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-[#94c120]/20 flex items-center justify-center text-[#a2d034]">
+                  <Building2 className="w-4 h-4" />
+                </div>
                 <span>Caja Multi-moneda</span>
               </div>
-              <div className="flex items-center gap-2.5 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <CheckCircle2 className="w-4 h-4 text-amber-400" />
+              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-[#84a93c]/20 flex items-center justify-center text-[#94c120]">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
                 <span>Conciliación Cashea</span>
               </div>
-              <div className="flex items-center gap-2.5 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                <Stethoscope className="w-4 h-4 text-blue-400" />
-                <span>Liquidación SENIAT</span>
+              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-[#94c120]/20 flex items-center justify-center text-[#a2d034]">
+                  <Stethoscope className="w-4 h-4" />
+                </div>
+                <span>Honorarios Médicos</span>
               </div>
             </div>
           </div>
 
-          <div className="text-xs text-slate-500 font-mono flex items-center justify-between border-t border-slate-800/80 pt-6">
-            <span>© 2026 Vida Sana CMO v2.0</span>
-            <span className="text-teal-400 font-semibold">Sistema Activo</span>
+          <div className="text-xs text-slate-400 font-mono flex items-center justify-between border-t border-[#2b3036] pt-6">
+            <span>© 2026 Vida Sana CMO v2.0 • RIF: J-50781755-5</span>
+            <span className="text-[#a2d034] font-black flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#84a93c] animate-pulse"></span>
+              Sistema Activo
+            </span>
           </div>
         </div>
 
@@ -102,21 +116,28 @@ export default function LoginScreen({ onLoginSuccess }) {
           <div className="w-full max-w-md space-y-6">
             
             {/* Mobile Header Logo */}
-            <div className="lg:hidden text-center space-y-2 mb-6">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-2xl shadow-lg">
-                VS
+            <div className="lg:hidden text-center space-y-3 mb-6">
+              <div className="bg-white p-4 rounded-2xl shadow-xl inline-block">
+                <img
+                  src={logoImg}
+                  alt="VidaSana Logo"
+                  className="h-14 w-auto mx-auto object-contain"
+                />
               </div>
-              <h2 className="text-xl font-extrabold text-white">Vida Sana CMO, C.A.</h2>
-              <span className="text-xs font-mono text-teal-400 block font-bold">Plataforma Administrativa v2.0</span>
+              <span className="text-xs font-mono text-[#a2d034] block font-extrabold uppercase tracking-wider">
+                Plataforma Administrativa v2.0
+              </span>
             </div>
 
             {/* Form Card Container */}
-            <div className="bg-slate-900/80 border border-slate-800 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6">
+            <div className="bg-[#1f2428]/90 border border-[#343b42] backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#84a93c] via-[#94c120] to-[#a2d034]"></div>
               
               {/* Title Header */}
               <div>
-                <h3 className="text-2xl font-extrabold text-white">
+                <h3 className="text-2xl font-black text-white flex items-center gap-2">
                   Iniciar Sesión
+                  <Sparkles className="w-5 h-5 text-[#94c120]" />
                 </h3>
                 <p className="text-xs text-slate-400 mt-1 font-medium">
                   Ingrese sus credenciales de Administrador para acceder al sistema.
@@ -133,36 +154,36 @@ export default function LoginScreen({ onLoginSuccess }) {
               {/* FORM: INICIAR SESIÓN CON INDICADOR DINÁMICO */}
               <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-bold mb-1.5 text-slate-300">Correo Electrónico Corporativo</label>
+                  <label className="block font-extrabold mb-1.5 text-slate-300">Correo Electrónico Corporativo</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
                       required
-                      placeholder="admin@vidasana.com"
+                      placeholder="admin@vidasanacmo.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:border-teal-500 text-sm transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-[#121619] border border-[#343b42] rounded-xl text-white font-medium focus:outline-none focus:border-[#84a93c] focus:ring-1 focus:ring-[#84a93c] text-sm transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1.5 text-slate-300">Contraseña</label>
+                  <label className="block font-extrabold mb-1.5 text-slate-300">Contraseña</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-10 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-medium focus:outline-none focus:border-teal-500 text-sm transition-all"
+                      className="w-full pl-10 pr-10 py-3 bg-[#121619] border border-[#343b42] rounded-xl text-white font-medium focus:outline-none focus:border-[#84a93c] focus:ring-1 focus:ring-[#84a93c] text-sm transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -172,15 +193,15 @@ export default function LoginScreen({ onLoginSuccess }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-3.5 text-slate-950 font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-6 cursor-pointer ${
+                  className={`w-full py-3.5 text-[#121619] font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-6 cursor-pointer ${
                     loading
-                      ? 'bg-teal-400 opacity-90 cursor-wait'
-                      : 'bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-teal-500/20 active:scale-[0.99]'
+                      ? 'bg-[#84a93c] opacity-90 cursor-wait'
+                      : 'bg-gradient-to-r from-[#84a93c] via-[#94c120] to-[#a2d034] hover:from-[#759733] hover:to-[#8cb81c] shadow-[#84a93c]/25 active:scale-[0.99]'
                   }`}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
+                      <Loader2 className="w-5 h-5 animate-spin text-[#121619]" />
                       <span>Ingresando al Sistema...</span>
                     </>
                   ) : (

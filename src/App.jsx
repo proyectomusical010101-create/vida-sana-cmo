@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import PaperworkCustomizationModule from './components/PaperworkCustomizationModule';
 
+import logoImg from './assets/logo.jpeg';
+
 import {
   INITIAL_SPECIALISTS, INITIAL_PATIENTS, INITIAL_INVENTORY,
   INITIAL_PROCEDURES, INITIAL_CASHEA_TRANSACTIONS, INITIAL_TRANSACTIONS_LOG,
@@ -564,8 +566,8 @@ export default function App() {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-teal-500/20 shrink-0">
-              VS
+            <div className="bg-white p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0 flex items-center justify-center">
+              <img src={logoImg} alt="VidaSana Logo" className="h-8 w-auto object-contain" />
             </div>
             <div>
               <h1 className={`font-extrabold text-sm sm:text-base leading-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{CLINIC_INFO.name}</h1>
