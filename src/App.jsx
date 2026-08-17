@@ -101,14 +101,8 @@ class ModuleBoundary extends React.Component {
 }
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('cmo_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  // Garantizar ingreso por LoginScreen en cada acceso inicial
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeModule, setActiveModule] = useState('dashboard');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -245,6 +239,44 @@ export default function App() {
     if (currentUser) {
       loadDatabaseData();
     }
+  }, [currentUser]);
+
+  // CONTROL DE INACTIVIDAD AUTOMÁTICA DE 15 MINUTOS
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // 15 Minutos de Inactividad (15 * 60 * 1000 = 900.000 ms)
+    const INACTIVITY_LIMIT = 15 * 60 * 1000;
+    let timeoutId;
+
+    const resetInactivityTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        // Cerrar sesión por inactividad
+        try {
+          localStorage.removeItem('cmo_user');
+        } catch (e) {}
+        setCurrentUser(null);
+        Swal.fire({
+          title: 'Sesión Cerrada por Inactividad',
+          text: 'Por la seguridad de los expedientes médicos, su sesión fue cerrada automáticamente tras 15 minutos sin interacción.',
+          icon: 'warning',
+          confirmButtonColor: '#84a93c',
+          confirmButtonText: 'Iniciar Sesión Nuevamente'
+        });
+      }, INACTIVITY_LIMIT);
+    };
+
+    // Eventos de interacción activa del usuario
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(evt => window.addEventListener(evt, resetInactivityTimer));
+
+    resetInactivityTimer();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(evt => window.removeEventListener(evt, resetInactivityTimer));
+    };
   }, [currentUser]);
 
   const handleLoginSuccess = (userObj) => {
