@@ -452,6 +452,11 @@ export default function App() {
               specialists={safeSpecialists}
               procedures={safeProcedures}
               onRegisterPayment={handleRegisterPayment}
+              selectedCurrency={selectedCurrency}
+              setSelectedCurrency={setSelectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              bcvRateUsd={bcvRateUsd}
+              bcvRateEur={bcvRateEur}
             />
           );
         case 'cashea':

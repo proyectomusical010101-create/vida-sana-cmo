@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2, RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, Trash2, Edit, Search } from 'lucide-react';
+import { DollarSign, Printer, Plus, CreditCard, ShieldCheck, FileText, CheckCircle2, RefreshCw, Landmark, Filter, ArrowUpRight, ArrowDownRight, Trash2, Edit, Search, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-export default function BillingCashModule({ transactions, setTransactions, patients, specialists, procedures, onRegisterPayment }) {
+export default function BillingCashModule({
+  transactions,
+  setTransactions,
+  patients,
+  specialists,
+  procedures,
+  onRegisterPayment,
+  selectedCurrency = 'USD',
+  setSelectedCurrency,
+  currencySymbol = '$',
+  bcvRateUsd: propBcvUsd = 755.90,
+  bcvRateEur: propBcvEur = 879.35
+}) {
   const [activeTab, setActiveTab] = useState('register'); // 'register' | 'history' | 'closeout' | 'expenses'
 
   // Form registrar cobro
@@ -19,11 +31,13 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [paymentCashea, setPaymentCashea] = useState('0');
 
   // Tasa de Cambio Global: Dólar BCV o Euro BCV
-  const [currencyMode, setCurrencyMode] = useState('USD_BCV'); // 'USD_BCV' | 'EUR_BCV'
-  const [bcvRateUsd, setBcvRateUsd] = useState(755.90);
-  const [bcvRateEur, setBcvRateEur] = useState(820.50);
+  const [bcvRateUsd, setBcvRateUsd] = useState(propBcvUsd);
+  const [bcvRateEur, setBcvRateEur] = useState(propBcvEur);
   const [rateDate, setRateDate] = useState('');
   const [loadingRate, setLoadingRate] = useState(false);
+
+  // Filtro por Fecha para Cierre de Caja
+  const [closeoutDateFilter, setCloseoutDateFilter] = useState('');
 
   // Formato de Moneda para Impresión de Comprobante / Recibo: 'BOTH' (Ambos Bs & $) | 'BS' (Solo Bs) | 'REF' (Solo $)
   const [docCurrencyFormat, setDocCurrencyFormat] = useState('BOTH');
@@ -45,7 +59,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const [showFullExcelSheet, setShowFullExcelSheet] = useState(false);
   const [expandedArea, setExpandedArea] = useState('ODONTOLOGIA'); // 'ODONTOLOGIA' | 'MEDICINA' | 'LABORATORIO' | 'RAYOS_X' | null
 
-  const activeRate = currencyMode === 'USD_BCV' ? bcvRateUsd : bcvRateEur;
+  const activeRate = selectedCurrency === 'USD' ? bcvRateUsd : bcvRateEur;
 
   const fetchBcvRate = async () => {
     setLoadingRate(true);
@@ -75,8 +89,9 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const totalAmount = currentProc ? currentProc.price : 0;
   const currentPatientObj = patients.find(p => p.id === selectedPatientId);
 
-  const handleSubmitPayment = (e) => {
-    e.preventDefault();
+  // Registrar cobro (opción autoPrint = false solo registra, true imprime de una vez)
+  const handleSubmitPayment = (e, autoPrint = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     const usd = parseFloat(paymentUsdCash) || 0;
     const bsPosUsd = (parseFloat(paymentBsPos) || 0) / activeRate;
     const bsMobUsd = (parseFloat(paymentBsMobile) || 0) / activeRate;
@@ -88,7 +103,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
     const totalPaid = usd + bsPosUsd + bsMobUsd + zelle + casheaUsd;
 
     if (totalPaid < totalAmount - 0.5) {
-      alert(`⚠️ El monto cobrado ($${totalPaid.toFixed(2)}) es menor al precio del procedimiento ($${totalAmount.toFixed(2)} USD).`);
+      alert(`⚠️ El monto cobrado (${currencySymbol}${totalPaid.toFixed(2)}) es menor al precio del procedimiento (${currencySymbol}${totalAmount.toFixed(2)}).`);
       return;
     }
 
@@ -102,7 +117,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
       doctor: selectedDoctor,
       total: totalAmount,
       paymentMethods: [
-        { method: 'Efectivo USD', amount: usd },
+        { method: `Efectivo ${selectedCurrency}`, amount: usd },
         { method: 'Punto de Venta (Bs)', amount: bsPosUsd },
         { method: 'Pago Móvil (Bs)', amount: bsMobUsd },
         { method: 'Zelle (USD)', amount: zelle },
@@ -114,40 +129,30 @@ export default function BillingCashModule({ transactions, setTransactions, patie
 
     onRegisterPayment(newTx);
 
-    // Muestra alerta interactiva con botones SEPARADOS de Imprimir y Descargar PDF
-    Swal.fire({
-      title: '¡Cobro Procesado Exitosamente!',
-      html: `
-        <div class="text-left text-xs font-bold space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <p>🧾 <strong>Recibo ID:</strong> ${newTx.id}</p>
-          <p>👤 <strong>Paciente:</strong> ${newTx.patient}</p>
-          <p>🩺 <strong>Servicio:</strong> ${newTx.procedure}</p>
-          <p>💵 <strong>Total Procesado:</strong> $${totalAmount.toFixed(2)} USD / ${(totalAmount * activeRate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</p>
-          <p>💱 <strong>Formato Seleccionado:</strong> ${docCurrencyFormat === 'BOTH' ? 'Ambos (Bs & $)' : docCurrencyFormat === 'BS' ? 'Solo Bolívares (Bs)' : 'Solo REF ($ USD)'}</p>
-        </div>
-      `,
-      icon: 'success',
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: '🖨️ Imprimir Recibo',
-      denyButtonText: '📥 Descargar PDF',
-      cancelButtonText: 'Cerrar',
-      confirmButtonColor: '#0f172a',
-      denyButtonColor: '#0d9488'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.print();
-      } else if (result.isDenied) {
-        Swal.fire({
-          title: 'Descargando PDF Oficial...',
-          text: `Recibo ${newTx.id} descargado en formato PDF.`,
-          icon: 'info',
-          timer: 1800,
-          showConfirmButton: false
-        });
-        setTimeout(() => window.print(), 500);
-      }
-    });
+    if (autoPrint) {
+      window.print();
+    } else {
+      Swal.fire({
+        title: '¡Cobro Procesado Exitosamente!',
+        html: `
+          <div class="text-left text-xs font-bold space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p>🧾 <strong>Recibo ID:</strong> ${newTx.id}</p>
+            <p>👤 <strong>Paciente:</strong> ${newTx.patient}</p>
+            <p>🩺 <strong>Servicio:</strong> ${newTx.procedure}</p>
+            <p>💵 <strong>Total Procesado:</strong> ${currencySymbol}${totalAmount.toFixed(2)} ${selectedCurrency} / ${(totalAmount * activeRate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</p>
+          </div>
+        `,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: '🖨️ Imprimir Recibo',
+        cancelButtonText: 'Cerrar',
+        confirmButtonColor: '#0d9488'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.print();
+        }
+      });
+    }
 
     setPaymentUsdCash('0');
     setPaymentBsPos('0');
@@ -159,7 +164,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
   const handleDeleteTransaction = (tx) => {
     Swal.fire({
       title: '¿Eliminar Transacción de Caja?',
-      text: `¿Deseas anular y eliminar la transacción ${tx.id} de $${tx.total.toFixed(2)} USD?`,
+      text: `¿Deseas anular y eliminar la transacción ${tx.id} de ${currencySymbol}${tx.total.toFixed(2)} ${selectedCurrency}?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
@@ -208,17 +213,18 @@ export default function BillingCashModule({ transactions, setTransactions, patie
     alert('✅ Egreso / Comisión bancaria registrada.');
   };
 
-  // Filtrado de Asientos para Cierre de Caja Auditado
+  // Filtrado de Asientos para Cierre de Caja Auditado (incluye filtro por fecha)
   const filteredTransactions = transactions.filter(t => {
     const matchesDiv = filterDivision === 'ALL' || t.division === filterDivision;
     const matchesShift = filterShift === 'ALL' || t.shift === filterShift;
+    const matchesDate = !closeoutDateFilter || (t.date && t.date.startsWith(closeoutDateFilter));
     const search = txSearchTerm.toLowerCase();
     const matchesSearch = !search ||
       (t.patient && t.patient.toLowerCase().includes(search)) ||
       (t.procedure && t.procedure.toLowerCase().includes(search)) ||
       (t.id && t.id.toLowerCase().includes(search)) ||
       (t.doctor && t.doctor.toLowerCase().includes(search));
-    return matchesDiv && matchesShift && matchesSearch;
+    return matchesDiv && matchesShift && matchesDate && matchesSearch;
   });
 
   const totalCollectedFiltered = filteredTransactions.reduce((acc, t) => acc + t.total, 0);
@@ -482,12 +488,25 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-md text-sm mt-4 transition-all"
-              >
-                Procesar Cobro e Imprimir Recibo
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmitPayment(e, false)}
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl shadow-md text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  1. Procesar Cobro
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmitPayment(e, true)}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl shadow-md text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-teal-400" />
+                  2. Imprimir
+                </button>
+              </div>
             </div>
           </div>
         </form>
@@ -510,12 +529,33 @@ export default function BillingCashModule({ transactions, setTransactions, patie
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {/* FILTRO POR FECHA DE CIERRE DE CAJA */}
+              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold shadow-xs">
+                <Calendar className="w-4 h-4 text-teal-600 shrink-0" />
+                <span className="text-slate-700 dark:text-slate-300 hidden sm:inline">Filtrar Fecha:</span>
+                <input
+                  type="date"
+                  value={closeoutDateFilter}
+                  onChange={(e) => setCloseoutDateFilter(e.target.value)}
+                  className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-mono font-extrabold focus:outline-none"
+                  title="Selecciona una fecha para ver el cierre de caja de días pasados"
+                />
+                {closeoutDateFilter && (
+                  <button
+                    onClick={() => setCloseoutDateFilter('')}
+                    className="text-[11px] text-rose-600 hover:text-rose-700 font-black ml-1 uppercase"
+                  >
+                    Ver Hoy
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowFullExcelSheet(!showFullExcelSheet)}
                 className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 hover:bg-slate-200 transition-all cursor-pointer"
               >
                 <FileText className="w-4 h-4 text-teal-600" />
-                {showFullExcelSheet ? '📱 Vista Tarjetas Simplificada' : '📊 Ver Matriz Excel Completa'}
+                {showFullExcelSheet ? '📱 Vista Tarjetas' : '📊 Matriz Excel'}
               </button>
 
               <button
@@ -523,7 +563,7 @@ export default function BillingCashModule({ transactions, setTransactions, patie
                 className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
               >
                 <Printer className="w-4 h-4 text-teal-400" />
-                Exportar Cierre (PDF / Excel)
+                Exportar Cierre
               </button>
             </div>
           </div>
