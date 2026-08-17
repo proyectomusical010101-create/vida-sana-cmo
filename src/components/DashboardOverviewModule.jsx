@@ -116,7 +116,7 @@ export default function DashboardOverviewModule({
           </div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>+14% vs mes anterior</span>
+            <span>{totalPatients > 0 ? `${totalPatients} expediente(s) activo(s)` : 'Sin pacientes registrados'}</span>
           </div>
         </div>
 
@@ -149,11 +149,11 @@ export default function DashboardOverviewModule({
           </div>
           <div className="text-xs text-blue-600 font-bold flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            <span>5 Pendientes para hoy</span>
+            <span>{pendingAppointmentsList.filter(a => a.status !== 'Atendida' && a.status !== 'Cancelada').length} Pendientes para hoy</span>
           </div>
         </div>
 
-        {/* KPI 4 */}
+        {/* KPI 4 - EFICIENCIA CLÍNICA DINÁMICA */}
         <div className="p-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl shadow-sm hover:shadow-md transition-all space-y-2">
           <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
             <span className="text-xs font-black uppercase tracking-wider">Eficiencia Clínica</span>
@@ -162,11 +162,17 @@ export default function DashboardOverviewModule({
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-            98.5%
+            {pendingAppointmentsList.length > 0
+              ? `${(((pendingAppointmentsList.length - pendingAppointmentsList.filter(a => a.status === 'Cancelada').length) / pendingAppointmentsList.length) * 100).toFixed(1)}%`
+              : '100.0%'}
           </div>
           <div className="text-xs text-emerald-600 font-bold flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Sin devoluciones</span>
+            <span>
+              {pendingAppointmentsList.filter(a => a.status === 'Cancelada').length === 0
+                ? 'Sin cancelaciones ni devoluciones'
+                : `${pendingAppointmentsList.filter(a => a.status === 'Cancelada').length} cita(s) cancelada(s)`}
+            </span>
           </div>
         </div>
 
