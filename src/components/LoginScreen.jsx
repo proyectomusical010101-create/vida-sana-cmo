@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, Mail, Eye, EyeOff, Activity, CheckCircle2, ArrowRight, Stethoscope, Building2, Loader2, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { loginApi } from '../api';
 import logoImg from '../assets/logo.jpeg';
 
@@ -18,7 +18,6 @@ export default function LoginScreen({ onLoginSuccess }) {
     setErrorMsg('');
     setLoading(true);
 
-    // Validación con API Backend / Supabase
     setTimeout(async () => {
       try {
         const response = await loginApi(email, password);
@@ -33,192 +32,223 @@ export default function LoginScreen({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#161a1d] text-slate-100 font-sans overflow-hidden">
+    <div className="min-h-screen w-full bg-[#f4f5f7] flex items-center justify-center p-0 font-sans relative overflow-hidden">
       
-      {/* Background Decorative Lighting in Brand Colors (#84a93c & #2b3036) */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#84a93c]/20 blur-[120px]"></div>
-        <div className="absolute top-1/2 -right-40 w-[450px] h-[450px] rounded-full bg-[#94c120]/15 blur-[100px]"></div>
-        <div className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-[#84a93c]/15 blur-[140px]"></div>
+      {/* ===== ESCRITORIO (LG+) BANNER EXACTO ===== */}
+      <div className="hidden lg:flex w-full max-w-5xl h-[560px] bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 relative">
+        
+        {/* Lado Izquierdo: Verde Gradiente con Logo Central Blanco */}
+        <div className="w-1/2 bg-gradient-to-b from-[#76b82a] via-[#65a31f] to-[#558c17] p-10 flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Marca de agua sutil bambú al fondo */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_70%)] pointer-events-none"></div>
+          
+          {/* Tarjeta Logo Blanco Enmarcado */}
+          <div className="bg-white px-8 py-5 rounded-2xl shadow-xl flex items-center justify-center z-10 border border-white/40">
+            <img
+              src={logoImg}
+              alt="VidaSana Centro Médico Odontológico"
+              className="h-20 w-auto object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Lado Derecho: Fondo Claro con Ilustración Bambú & Formulario Flotante */}
+        <div className="w-1/2 bg-[#fafbfc] p-10 flex items-center justify-center relative">
+          
+          {/* Marca de Agua Bambú al Fondo Derecho */}
+          <div className="absolute right-0 bottom-0 top-0 w-64 opacity-20 pointer-events-none overflow-hidden flex items-center justify-end">
+            <svg viewBox="0 0 200 400" className="h-full w-auto text-[#65a31f] fill-current">
+              <path d="M120 40 Q160 80 140 160 Q180 100 190 40 Z" />
+              <path d="M100 120 Q150 180 130 280 Q170 200 180 120 Z" />
+              <rect x="150" y="0" width="8" height="400" rx="4" />
+            </svg>
+          </div>
+
+          {/* Tarjeta Flotante Blanca EXACTA */}
+          <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-xl border border-slate-100 z-10 space-y-5">
+            
+            {errorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs font-medium text-slate-700">
+              
+              {/* Campo Correo Electronico */}
+              <div className="space-y-1.5">
+                <label className="block font-bold text-slate-700 text-xs">Correo Electrónico</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border-2 border-[#65a31f] rounded-xl text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[#65a31f]/30 text-sm"
+                />
+              </div>
+
+              {/* Campo Contraseña */}
+              <div className="space-y-1.5">
+                <label className="block font-bold text-slate-700 text-xs">Contraseña</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-white border-2 border-slate-300 focus:border-[#65a31f] rounded-xl text-slate-800 font-bold focus:outline-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#65a31f] hover:text-[#558c17]"
+                  >
+                    {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Boton Iniciar Sesion Verde solido redondeado */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-[#65a31f] hover:bg-[#558c17] text-white font-extrabold rounded-xl shadow-md text-sm transition-all mt-2 flex items-center justify-center cursor-pointer active:scale-[0.98]"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Iniciando...</span>
+                  </div>
+                ) : (
+                  <span>Iniciar Sesión</span>
+                )}
+              </button>
+
+              {/* Enlaces Olvide mi contraseña / Crear cuenta */}
+              <div className="text-center pt-2 space-y-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
+                  className="block w-full text-slate-600 hover:text-slate-900 font-bold transition-colors"
+                >
+                  Olvidé mi contraseña
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => alert('La creación de nuevas cuentas de acceso debe ser procesada por Gerencia.')}
+                  className="block w-full text-slate-600 hover:text-slate-900 font-bold transition-colors"
+                >
+                  Crear cuenta
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+        </div>
+
       </div>
 
-      {/* Main Container Split View */}
-      <div className="relative z-10 w-full min-h-screen grid grid-cols-1 lg:grid-cols-12">
+      {/* ===== VERSION MOVIL EXACTA ===== */}
+      <div className="lg:hidden w-full min-h-screen bg-gradient-to-b from-[#76b82a] via-[#65a31f] to-[#558c17] flex flex-col items-center justify-between p-6 relative">
         
-        {/* Left Side: Medical Hero Section with Official Logo */}
-        <div className="hidden lg:flex lg:col-span-6 bg-gradient-to-br from-[#121619] via-[#1a1f23] to-[#121619] p-12 flex-col justify-between border-r border-[#2b3036]/60 relative overflow-hidden">
-          <div className="space-y-8">
+        {/* Banner Superior Verde con Logo Central */}
+        <div className="w-full flex-1 flex flex-col items-center justify-center py-8">
+          <div className="bg-white px-7 py-4 rounded-2xl shadow-xl border border-white/40 mb-2">
+            <img
+              src={logoImg}
+              alt="VidaSana"
+              className="h-16 w-auto object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Tarjeta Flotante Inferior Blanca EXACTA */}
+        <div className="w-full max-w-sm bg-white p-7 rounded-3xl shadow-2xl space-y-5 mb-4 z-10 border border-slate-100">
+          
+          {errorMsg && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold">
+              ⚠️ {errorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs font-medium">
             
-            {/* Header with Brand Logo */}
-            <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 inline-block max-w-sm">
-              <img
-                src={logoImg}
-                alt="VidaSana Centro Médico Odontológico"
-                className="h-16 w-auto object-contain"
+            {/* Campo Correo Electronico */}
+            <div className="space-y-1.5">
+              <label className="block font-bold text-slate-700 text-xs">Correo Electrónico</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3.5 py-3 bg-white border-2 border-[#65a31f] rounded-xl text-slate-800 font-bold focus:outline-none text-base"
               />
             </div>
 
-            <div className="space-y-4 pt-6">
-              <span className="px-4 py-1.5 rounded-full text-xs font-black bg-[#84a93c]/15 text-[#a2d034] border border-[#84a93c]/40 inline-flex items-center gap-2 tracking-wide uppercase">
-                <ShieldCheck className="w-4 h-4 text-[#84a93c]" />
-                Acceso Plataforma Médica Oficial
-              </span>
-              
-              <h2 className="text-4xl font-black text-white leading-tight">
-                Control Administrativo & Odontológico Integral
-              </h2>
-              
-              <p className="text-slate-300 text-sm leading-relaxed max-w-lg font-medium">
-                Plataforma centralizada para la gestión de expedientes digitales, odontogramas 2D, caja multi-moneda, financiamiento Cashea y liquidación de honorarios médicos.
-              </p>
-            </div>
-
-            {/* Feature List in Brand Colors */}
-            <div className="grid grid-cols-2 gap-4 pt-4 text-xs font-bold text-slate-200">
-              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-[#84a93c]/20 flex items-center justify-center text-[#94c120]">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <span>Odontograma 2D</span>
-              </div>
-              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-[#94c120]/20 flex items-center justify-center text-[#a2d034]">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <span>Caja Multi-moneda</span>
-              </div>
-              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-[#84a93c]/20 flex items-center justify-center text-[#94c120]">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <span>Conciliación Cashea</span>
-              </div>
-              <div className="flex items-center gap-3 bg-[#24292e]/80 p-3.5 rounded-2xl border border-[#343b42] shadow-sm">
-                <div className="w-8 h-8 rounded-xl bg-[#94c120]/20 flex items-center justify-center text-[#a2d034]">
-                  <Stethoscope className="w-4 h-4" />
-                </div>
-                <span>Honorarios Médicos</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-xs text-slate-400 font-mono flex items-center justify-between border-t border-[#2b3036] pt-6">
-            <span>© 2026 Vida Sana CMO v2.0 • RIF: J-50781755-5</span>
-            <span className="text-[#a2d034] font-black flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#84a93c] animate-pulse"></span>
-              Sistema Activo
-            </span>
-          </div>
-        </div>
-
-        {/* Right Side: Interactive Login Form ONLY */}
-        <div className="lg:col-span-6 flex items-center justify-center p-6 sm:p-12">
-          <div className="w-full max-w-md space-y-6">
-            
-            {/* Mobile Header Logo */}
-            <div className="lg:hidden text-center space-y-3 mb-6">
-              <div className="bg-white p-4 rounded-2xl shadow-xl inline-block">
-                <img
-                  src={logoImg}
-                  alt="VidaSana Logo"
-                  className="h-14 w-auto mx-auto object-contain"
+            {/* Campo Contraseña */}
+            <div className="space-y-1.5">
+              <label className="block font-bold text-slate-700 text-xs">Contraseña</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-3.5 pr-10 py-3 bg-white border-2 border-slate-300 focus:border-[#65a31f] rounded-xl text-slate-800 font-bold focus:outline-none text-base"
                 />
-              </div>
-              <span className="text-xs font-mono text-[#a2d034] block font-extrabold uppercase tracking-wider">
-                Plataforma Administrativa v2.0
-              </span>
-            </div>
-
-            {/* Form Card Container */}
-            <div className="bg-[#1f2428]/90 border border-[#343b42] backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#84a93c] via-[#94c120] to-[#a2d034]"></div>
-              
-              {/* Title Header */}
-              <div>
-                <h3 className="text-2xl font-black text-white flex items-center gap-2">
-                  Iniciar Sesión
-                  <Sparkles className="w-5 h-5 text-[#94c120]" />
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 font-medium">
-                  Ingrese sus credenciales de Administrador para acceder al sistema.
-                </p>
-              </div>
-
-              {/* Error Alert */}
-              {errorMsg && (
-                <div className="p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold animate-fadeIn">
-                  ⚠️ {errorMsg}
-                </div>
-              )}
-
-              {/* FORM: INICIAR SESIÓN CON INDICADOR DINÁMICO */}
-              <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-extrabold mb-1.5 text-slate-300">Correo Electrónico Corporativo</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="email"
-                      required
-                      placeholder="admin@vidasanacmo.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-[#121619] border border-[#343b42] rounded-xl text-white font-medium focus:outline-none focus:border-[#84a93c] focus:ring-1 focus:ring-[#84a93c] text-sm transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-extrabold mb-1.5 text-slate-300">Contraseña</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-10 py-3 bg-[#121619] border border-[#343b42] rounded-xl text-white font-medium focus:outline-none focus:border-[#84a93c] focus:ring-1 focus:ring-[#84a93c] text-sm transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-3.5 text-[#121619] font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-6 cursor-pointer ${
-                    loading
-                      ? 'bg-[#84a93c] opacity-90 cursor-wait'
-                      : 'bg-gradient-to-r from-[#84a93c] via-[#94c120] to-[#a2d034] hover:from-[#759733] hover:to-[#8cb81c] shadow-[#84a93c]/25 active:scale-[0.99]'
-                  }`}
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#65a31f]"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin text-[#121619]" />
-                      <span>Ingresando al Sistema...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Ingresar a la Plataforma</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
-              </form>
-
+              </div>
             </div>
 
-          </div>
+            {/* Boton Iniciar Sesion Verde solido */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-[#65a31f] hover:bg-[#558c17] text-white font-extrabold rounded-xl shadow-md text-sm transition-all mt-2 flex items-center justify-center cursor-pointer"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Iniciando...</span>
+                </div>
+              ) : (
+                <span>Iniciar Sesión</span>
+              )}
+            </button>
+
+            {/* Enlaces Olvide mi contraseña / Crear cuenta */}
+            <div className="text-center pt-2 space-y-2 text-xs">
+              <button
+                type="button"
+                onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
+                className="block w-full text-slate-600 font-bold"
+              >
+                Olvidé mi contraseña
+              </button>
+
+              <button
+                type="button"
+                onClick={() => alert('La creación de nuevas cuentas de acceso debe ser procesada por Gerencia.')}
+                className="block w-full text-slate-600 font-bold"
+              >
+                Crear cuenta
+              </button>
+            </div>
+
+          </form>
+
         </div>
 
       </div>
+
     </div>
   );
 }
