@@ -213,27 +213,27 @@ export default function App() {
         pts, procs, specs, cash, cashea,
         rentals, lab, pay, inv, appts
       ] = await Promise.all([
-        fetchPatients().catch(() => INITIAL_PATIENTS),
-        fetchProcedures().catch(() => INITIAL_PROCEDURES),
-        fetchSpecialists().catch(() => INITIAL_SPECIALISTS),
-        fetchCashTransactions().catch(() => INITIAL_TRANSACTIONS_LOG),
-        fetchCasheaTransactions().catch(() => INITIAL_CASHEA_TRANSACTIONS),
-        fetchConsultoryRentals().catch(() => INITIAL_CONSULTORY_RENTALS),
-        fetchExtramuralLabOrders().catch(() => INITIAL_EXTRAMURAL_LAB_ORDERS),
-        fetchPayroll().catch(() => INITIAL_PAYROLL),
-        fetchInventory().catch(() => INITIAL_INVENTORY),
+        fetchPatients().catch(() => []),
+        fetchProcedures().catch(() => []),
+        fetchSpecialists().catch(() => []),
+        fetchCashTransactions().catch(() => []),
+        fetchCasheaTransactions().catch(() => []),
+        fetchConsultoryRentals().catch(() => []),
+        fetchExtramuralLabOrders().catch(() => []),
+        fetchPayroll().catch(() => []),
+        fetchInventory().catch(() => []),
         fetchAppointmentsApi().catch(() => [])
       ]);
 
-      setPatients(pts || INITIAL_PATIENTS);
-      setProcedures(procs || INITIAL_PROCEDURES);
-      setSpecialists(specs || INITIAL_SPECIALISTS);
-      setTransactions(cash || INITIAL_TRANSACTIONS_LOG);
-      setCasheaTransactions(cashea || INITIAL_CASHEA_TRANSACTIONS);
-      setConsultoryRentals(rentals || INITIAL_CONSULTORY_RENTALS);
-      setExtramuralLabOrders(lab || INITIAL_EXTRAMURAL_LAB_ORDERS);
-      setPayroll(pay || INITIAL_PAYROLL);
-      setInventory(inv || INITIAL_INVENTORY);
+      setPatients(pts || []);
+      setProcedures(procs || []);
+      setSpecialists(specs || []);
+      setTransactions(cash || []);
+      setCasheaTransactions(cashea || []);
+      setConsultoryRentals(rentals || []);
+      setExtramuralLabOrders(lab || []);
+      setPayroll(pay || []);
+      setInventory(inv || []);
       setAppointments(appts || []);
     } catch (e) {
       console.error("Error cargando base de datos:", e);
