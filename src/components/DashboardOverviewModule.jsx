@@ -70,7 +70,7 @@ export default function DashboardOverviewModule({
             <span className="px-2.5 py-0.5 bg-teal-500/20 text-teal-300 font-extrabold text-[10px] rounded-full uppercase border border-teal-500/40">
               Centro Médico Odontológico Vida Sana
             </span>
-            <span className="text-xs text-slate-400">Tasa Oficial BCV: {bcvRate.toFixed(2)} Bs/$</span>
+            <span className="text-xs text-slate-400">Tasa Oficial BCV: {bcvRate.toFixed(2)} Bs / {selectedCurrency}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black tracking-tight">
             Dashboard Ejecutivo & Panel de Control General
@@ -111,16 +111,16 @@ export default function DashboardOverviewModule({
           </div>
         </div>
 
-        {/* KPI 2 */}
+        {/* KPI 2 - CON MONEDA DINÁMICA ($ vs €) */}
         <div className="p-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl shadow-sm hover:shadow-md transition-all space-y-2">
           <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-black uppercase tracking-wider">Recaudado este Mes</span>
+            <span className="text-xs font-black uppercase tracking-wider">Recaudado este Mes ({selectedCurrency})</span>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-            ${totalRevenueUsd.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+          <div className="text-2xl font-black text-[#84a93c] dark:text-[#a2d034] font-mono">
+            {currencySymbol}{totalRevenueUsd.toLocaleString('es-VE', { minimumFractionDigits: 2 })} {selectedCurrency}
           </div>
           <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
             Eq: {totalRevenueBs.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs
@@ -149,61 +149,53 @@ export default function DashboardOverviewModule({
           <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
             <span className="text-xs font-black uppercase tracking-wider">Eficiencia Clínica</span>
             <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 flex items-center justify-center text-purple-600 dark:text-purple-400 font-black">
-              <Activity className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-            96.8%
+            98.5%
           </div>
-          <div className="text-xs text-purple-600 font-bold">
-            Ocupación óptima de consultorios
+          <div className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Sin devoluciones</span>
           </div>
         </div>
 
       </div>
 
-      {/* 3. GRÁFICAS & DESGLOSE ESTADÍSTICO */}
+      {/* 3. DISTRIBUCIÓN DE INGRESOS POR ÁREA MÉDICA */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* DISTRIBUCIÓN DE INGRESOS POR ÁREA */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-6 rounded-3xl shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-teal-600" />
-                Distribución de Ingresos por Área Médica
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">Comparativo mensual de recaudación por especialidad</p>
-            </div>
-            <span className="text-xs font-mono font-black text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950 px-3 py-1 rounded-xl">
-              Mes Actual
-            </span>
-          </div>
-
-          <div className="space-y-4">
+        <div className="lg:col-span-12 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-6 rounded-3xl shadow-sm space-y-4">
+          <h3 className="text-base font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+            <Activity className="w-5 h-5 text-teal-600" />
+            Distribución de Ingresos por Especialidad ({selectedCurrency})
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            {/* ODONTOLOGÍA */}
+            {/* ODONTOLOGIA */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs font-bold">
                 <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  Odontología Integral
+                  Odontología General & Especialidades
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">$2,150.00 USD (62%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}1,820.00 {selectedCurrency} (53%)</span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-600 rounded-full w-[62%]"></div>
+                <div className="h-full bg-emerald-600 rounded-full w-[53%]"></div>
               </div>
             </div>
 
-            {/* MEDICINA */}
+            {/* MEDICINA ESPECIALIZADA */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs font-bold">
                 <span className="text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                   Medicina Especializada
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">$650.00 USD (19%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}650.00 {selectedCurrency} (19%)</span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-600 rounded-full w-[19%]"></div>
@@ -217,7 +209,7 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-yellow-600"></span>
                   Rayos X & Imagenología
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">$420.00 USD (12%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}420.00 {selectedCurrency} (12%)</span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-yellow-600 rounded-full w-[12%]"></div>
@@ -231,7 +223,7 @@ export default function DashboardOverviewModule({
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
                   Laboratorio Clínico
                 </span>
-                <span className="font-mono text-slate-900 dark:text-white">$230.00 USD (7%)</span>
+                <span className="font-mono text-slate-900 dark:text-white">{currencySymbol}230.00 {selectedCurrency} (7%)</span>
               </div>
               <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-purple-600 rounded-full w-[7%]"></div>
@@ -241,7 +233,7 @@ export default function DashboardOverviewModule({
           </div>
         </div>
 
-        {/* 🏆 NUEVA SECCIÓN: RANKING DE RENDIMIENTO DE MÉDICOS Y MÁS ACTIVOS */}
+        {/* 🏆 RANKING DE RENDIMIENTO DE MÉDICOS Y MÁS ACTIVOS CON MONEDA DINÁMICA */}
         <div className="lg:col-span-12 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-6 rounded-3xl shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
             <div>
@@ -250,7 +242,7 @@ export default function DashboardOverviewModule({
                 Rendimiento de Médicos & Especialistas Más Activos
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Ranking de producción según cantidad de procedimientos realizados y recaudación generada
+                Ranking de producción según cantidad de procedimientos realizados y recaudación generada ({selectedCurrency})
               </p>
             </div>
             <span className="text-xs font-mono font-black text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">

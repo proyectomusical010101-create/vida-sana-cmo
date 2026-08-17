@@ -471,10 +471,19 @@ export default function App() {
               setSpecialists={setSpecialists}
               procedures={safeProcedures}
               onRegisterProcedure={handleRegisterProcedure}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
         case 'baremos':
-          return <ServicesBaremoModule procedures={safeProcedures} setProcedures={setProcedures} />;
+          return (
+            <ServicesBaremoModule
+              procedures={safeProcedures}
+              setProcedures={setProcedures}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+            />
+          );
         case 'schedules':
           return <ScheduleCoverageModule specialists={safeSpecialists} />;
         case 'billing':
@@ -507,7 +516,14 @@ export default function App() {
             />
           );
         case 'seniat':
-          return <SpecialistSettlementModule specialists={safeSpecialists} transactions={safeTransactions} />;
+          return (
+            <SpecialistSettlementModule
+              specialists={safeSpecialists}
+              transactions={safeTransactions}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+            />
+          );
         case 'payroll':
           return (
             <PayrollModule
@@ -516,10 +532,21 @@ export default function App() {
               transactions={safeTransactions}
               setTransactions={setTransactions}
               bcvRate={safeNum(bcvRate, 755.90)}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
         case 'profitability':
-          return <ProfitabilityDashboard transactions={safeTransactions} casheaTransactions={safeCashea} consultoryRentals={safeRentals} extramuralLabOrders={safeLabOrders} />;
+          return (
+            <ProfitabilityDashboard
+              transactions={safeTransactions}
+              casheaTransactions={safeCashea}
+              consultoryRentals={safeRentals}
+              extramuralLabOrders={safeLabOrders}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+            />
+          );
         case 'inventory':
           return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
         case 'whatsapp':
@@ -531,6 +558,8 @@ export default function App() {
               procedures={safeProcedures}
               specialists={safeSpecialists}
               bcvRate={safeNum(bcvRate, 755.90)}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
               paperworkSettings={paperworkSettings}
             />
           );
@@ -540,6 +569,8 @@ export default function App() {
               paperworkSettings={paperworkSettings}
               setPaperworkSettings={setPaperworkSettings}
               bcvRate={safeNum(bcvRate, 755.90)}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
         default:
