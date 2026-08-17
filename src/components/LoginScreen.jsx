@@ -36,17 +36,17 @@ export default function LoginScreen({ onLoginSuccess }) {
     <div className="min-h-screen w-full bg-gradient-to-br from-[#eaf5d6] via-[#dcebbd] to-[#cbe0a3] flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
       
       {/* ========================================================================= */}
-      {/* VISTA ESCRITORIO (LG+) - RÉPLICA EXACTA DE LA IMAGEN DE REFERENCIA */}
+      {/* VISTA ESCRITORIO (LG+) - CON "Inicio de Sesión" Y LOGO SIN RECUADRO */}
       {/* ========================================================================= */}
       <div className="hidden lg:flex w-full max-w-4xl h-[500px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
         
-        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado */}
+        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado Transparente */}
         <div 
           className="w-1/2 relative flex items-center justify-center p-8 bg-cover bg-left bg-no-repeat"
           style={{ backgroundImage: `url(${bambooBg})` }}
         >
-          {/* Logo Oficial VidaSana Centrado con Blend Transparente */}
-          <div className="z-10 p-2">
+          {/* Logo Oficial VidaSana Centrado con Blend Transparente Impoluto */}
+          <div className="z-10 p-2 flex items-center justify-center">
             <img
               src={logoImg}
               alt="VidaSana Centro Médico Odontológico"
@@ -59,7 +59,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         <div className="w-1/2 bg-white p-10 flex flex-col items-center justify-center relative">
           
           <h2 className="text-2xl font-extrabold text-[#384148] mb-8 tracking-wide">
-            Sesión
+            Inicio de Sesión
           </h2>
 
           {errorMsg && (
