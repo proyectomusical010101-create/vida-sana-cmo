@@ -33,24 +33,24 @@ export default function LoginScreen({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#eaf5d6] via-[#dcebbd] to-[#cbe0a3] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#eaf5d6] via-[#dcebbd] to-[#cbe0a3] flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
       
       {/* ========================================================================= */}
       {/* VISTA ESCRITORIO (LG+) - RÉPLICA EXACTA DE LA IMAGEN DE REFERENCIA */}
       {/* ========================================================================= */}
       <div className="hidden lg:flex w-full max-w-4xl h-[520px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
         
-        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado */}
+        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado con Blend Transparente */}
         <div 
           className="w-1/2 relative flex items-center justify-center p-8 bg-cover bg-left bg-no-repeat"
           style={{ backgroundImage: `url(${bambooBg})` }}
         >
-          {/* Logo Oficial VidaSana Centrado */}
+          {/* Logo Oficial VidaSana Centrado con Blend Transparente */}
           <div className="z-10 p-2">
             <img
               src={logoImg}
               alt="VidaSana Centro Médico Odontológico"
-              className="h-24 w-auto object-contain drop-shadow-md"
+              className="h-24 w-auto object-contain mix-blend-multiply"
             />
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Lado Derecho (50%): Formulario Fondo Blanco Impoluto */}
         <div className="w-1/2 bg-white p-10 flex flex-col items-center justify-center relative">
           
-          <h2 className="text-xl font-extrabold text-[#384148] mb-6 tracking-wide">
+          <h2 className="text-2xl font-extrabold text-[#384148] mb-6 tracking-wide">
             Sesión
           </h2>
 
@@ -105,11 +105,11 @@ export default function LoginScreen({ onLoginSuccess }) {
               </div>
             </div>
 
-            {/* Botón 1: Iniciar Sesión */}
+            {/* Botón Único: Iniciar Sesión */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#85a738] hover:bg-[#74952e] text-white font-extrabold rounded-full text-xs shadow-md transition-all mt-3 flex items-center justify-center cursor-pointer active:scale-[0.98]"
+              className="w-full py-3 bg-[#85a738] hover:bg-[#74952e] text-white font-extrabold rounded-full text-xs shadow-md transition-all mt-4 flex items-center justify-center cursor-pointer active:scale-[0.98]"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -121,14 +121,16 @@ export default function LoginScreen({ onLoginSuccess }) {
               )}
             </button>
 
-            {/* Botón 2: Crear Cuenta (Omitiendo botones de redes sociales) */}
-            <button
-              type="button"
-              onClick={() => alert('La creación de nuevas cuentas debe ser gestionada por Administración.')}
-              className="w-full py-3 bg-[#85a738] hover:bg-[#74952e] text-white font-extrabold rounded-full text-xs shadow-md transition-all mt-4 flex items-center justify-center cursor-pointer active:scale-[0.98]"
-            >
-              Crear Cuenta
-            </button>
+            {/* Enlace Olvidaste tu contraseña */}
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
+                className="text-xs font-extrabold text-[#384148] hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
 
           </form>
         </div>
@@ -136,26 +138,26 @@ export default function LoginScreen({ onLoginSuccess }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA MÓVIL (LG:HIDDEN) - RÉPLICA EXACTA DEL MOCKUP MÓVIL */}
+      {/* VISTA MÓVIL (LG:HIDDEN) - DISEÑO LIMPIO Y MEZCLA PERFECTA SIN RECTÁNGULOS */}
       {/* ========================================================================= */}
-      <div className="lg:hidden w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-8 relative overflow-hidden border border-slate-100 flex flex-col items-center">
+      <div className="lg:hidden w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-7 relative overflow-hidden border border-white/80 flex flex-col items-center">
         
-        {/* Fondo sutil de bambú en esquinas */}
+        {/* Marca de agua suave de bambú integrada con mezcla perfecta */}
         <div 
-          className="absolute top-0 right-0 w-36 h-36 opacity-30 bg-cover bg-no-repeat pointer-events-none"
+          className="absolute -top-10 -right-10 w-44 h-44 opacity-25 bg-cover bg-no-repeat pointer-events-none mix-blend-multiply"
           style={{ backgroundImage: `url(${bambooBg})` }}
         ></div>
         <div 
-          className="absolute bottom-0 left-0 w-36 h-36 opacity-30 bg-cover bg-no-repeat pointer-events-none"
+          className="absolute -bottom-10 -left-10 w-44 h-44 opacity-25 bg-cover bg-no-repeat pointer-events-none mix-blend-multiply"
           style={{ backgroundImage: `url(${bambooBg})` }}
         ></div>
 
-        {/* Logo Oficial Centrado Superior */}
-        <div className="mb-8 z-10">
+        {/* Logo Oficial Centrado con Mezcla Transparente (Sin recuadro blanco) */}
+        <div className="mb-6 z-10 pt-2 flex items-center justify-center">
           <img
             src={logoImg}
             alt="VidaSana Logo"
-            className="h-16 w-auto object-contain"
+            className="h-16 w-auto object-contain mix-blend-multiply"
           />
         </div>
 
@@ -200,7 +202,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             </div>
           </div>
 
-          {/* Botón Iniciar Sesión Ovalado Verde */}
+          {/* Botón Único Iniciar Sesión Ovalado Verde */}
           <button
             type="submit"
             disabled={loading}
@@ -216,22 +218,14 @@ export default function LoginScreen({ onLoginSuccess }) {
             )}
           </button>
 
-          {/* Enlaces ¿Olvidaste tu contraseña? / Crear Cuenta */}
-          <div className="text-center pt-3 space-y-2">
+          {/* Único enlace: ¿Olvidaste tu contraseña? (Sin botón de Crear Cuenta) */}
+          <div className="text-center pt-3">
             <button
               type="button"
-              onClick={() => alert('Por favor contacte al Administrador de Sistemas.')}
-              className="block w-full text-xs font-extrabold text-[#384148] hover:underline"
+              onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
+              className="text-xs font-extrabold text-[#384148] hover:underline"
             >
               ¿Olvidaste tu contraseña?
-            </button>
-
-            <button
-              type="button"
-              onClick={() => alert('La creación de nuevas cuentas debe ser gestionada por Administración.')}
-              className="block w-full text-xs font-extrabold text-[#85a738] hover:underline mt-2"
-            >
-              Crear Cuenta
             </button>
           </div>
 
