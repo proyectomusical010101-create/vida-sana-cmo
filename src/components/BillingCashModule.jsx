@@ -251,17 +251,17 @@ export default function BillingCashModule({
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] font-bold text-blue-900">Tasa Oficial Clínica:</span>
                 <select
-                  value={currencyMode}
-                  onChange={(e) => setCurrencyMode(e.target.value)}
-                  className="bg-blue-100 text-blue-950 font-extrabold text-[10px] rounded px-1.5 py-0.5 border border-blue-300"
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency && setSelectedCurrency(e.target.value)}
+                  className="bg-blue-100 text-blue-950 font-extrabold text-[10px] rounded px-1.5 py-0.5 border border-blue-300 outline-none cursor-pointer"
                 >
-                  <option value="USD_BCV">Dólar BCV ($)</option>
-                  <option value="EUR_BCV">Euro BCV (€)</option>
+                  <option value="USD">Dólar BCV ($)</option>
+                  <option value="EUR">Euro BCV (€)</option>
                 </select>
               </div>
 
               <div className="text-base font-extrabold font-mono text-blue-950 flex items-center gap-1.5">
-                <span>{activeRate.toFixed(2)} Bs / {currencyMode === 'USD_BCV' ? 'USD' : 'EUR'}</span>
+                <span>{activeRate.toFixed(2)} Bs / {selectedCurrency}</span>
                 <button
                   type="button"
                   onClick={fetchBcvRate}
