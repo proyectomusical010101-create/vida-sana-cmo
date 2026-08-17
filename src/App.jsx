@@ -101,8 +101,15 @@ class ModuleBoundary extends React.Component {
 }
 
 export default function App() {
-  // Garantizar ingreso por LoginScreen en cada acceso inicial
-  const [currentUser, setCurrentUser] = useState(null);
+  // Mantener sesión activa al refrescar (F5) leyendo de localStorage
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cmo_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [activeModule, setActiveModule] = useState('dashboard');
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
