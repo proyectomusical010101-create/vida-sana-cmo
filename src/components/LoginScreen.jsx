@@ -38,9 +38,9 @@ export default function LoginScreen({ onLoginSuccess }) {
       {/* ========================================================================= */}
       {/* VISTA ESCRITORIO (LG+) - RÉPLICA EXACTA DE LA IMAGEN DE REFERENCIA */}
       {/* ========================================================================= */}
-      <div className="hidden lg:flex w-full max-w-4xl h-[520px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
+      <div className="hidden lg:flex w-full max-w-4xl h-[500px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
         
-        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado con Blend Transparente */}
+        {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado */}
         <div 
           className="w-1/2 relative flex items-center justify-center p-8 bg-cover bg-left bg-no-repeat"
           style={{ backgroundImage: `url(${bambooBg})` }}
@@ -58,7 +58,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Lado Derecho (50%): Formulario Fondo Blanco Impoluto */}
         <div className="w-1/2 bg-white p-10 flex flex-col items-center justify-center relative">
           
-          <h2 className="text-2xl font-extrabold text-[#384148] mb-6 tracking-wide">
+          <h2 className="text-2xl font-extrabold text-[#384148] mb-8 tracking-wide">
             Sesión
           </h2>
 
@@ -68,7 +68,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             </div>
           )}
 
-          <form onSubmit={handleLoginSubmit} className="w-full max-w-xs space-y-4">
+          <form onSubmit={handleLoginSubmit} className="w-full max-w-xs space-y-5">
             
             {/* Campo Usuario */}
             <div className="space-y-1">
@@ -109,7 +109,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#85a738] hover:bg-[#74952e] text-white font-extrabold rounded-full text-xs shadow-md transition-all mt-4 flex items-center justify-center cursor-pointer active:scale-[0.98]"
+              className="w-full py-3 bg-[#85a738] hover:bg-[#74952e] text-white font-extrabold rounded-full text-xs shadow-md transition-all mt-6 flex items-center justify-center cursor-pointer active:scale-[0.98]"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -121,39 +121,18 @@ export default function LoginScreen({ onLoginSuccess }) {
               )}
             </button>
 
-            {/* Enlace Olvidaste tu contraseña */}
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
-                className="text-xs font-extrabold text-[#384148] hover:underline"
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
-            </div>
-
           </form>
         </div>
 
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA MÓVIL (LG:HIDDEN) - DISEÑO LIMPIO Y MEZCLA PERFECTA SIN RECTÁNGULOS */}
+      {/* VISTA MÓVIL (LG:HIDDEN) - IMPOLUTA, SIN MARCA DE AGUA BAMBÚ */}
       {/* ========================================================================= */}
-      <div className="lg:hidden w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-7 relative overflow-hidden border border-white/80 flex flex-col items-center">
+      <div className="lg:hidden w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-8 relative overflow-hidden border border-white/80 flex flex-col items-center">
         
-        {/* Marca de agua suave de bambú integrada con mezcla perfecta */}
-        <div 
-          className="absolute -top-10 -right-10 w-44 h-44 opacity-25 bg-cover bg-no-repeat pointer-events-none mix-blend-multiply"
-          style={{ backgroundImage: `url(${bambooBg})` }}
-        ></div>
-        <div 
-          className="absolute -bottom-10 -left-10 w-44 h-44 opacity-25 bg-cover bg-no-repeat pointer-events-none mix-blend-multiply"
-          style={{ backgroundImage: `url(${bambooBg})` }}
-        ></div>
-
-        {/* Logo Oficial Centrado con Mezcla Transparente (Sin recuadro blanco) */}
-        <div className="mb-6 z-10 pt-2 flex items-center justify-center">
+        {/* Logo Oficial Centrado Limpio */}
+        <div className="mb-6 pt-2 flex items-center justify-center">
           <img
             src={logoImg}
             alt="VidaSana Logo"
@@ -162,12 +141,12 @@ export default function LoginScreen({ onLoginSuccess }) {
         </div>
 
         {errorMsg && (
-          <div className="w-full p-3 mb-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold text-center z-10">
+          <div className="w-full p-3 mb-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold text-center">
             ⚠️ {errorMsg}
           </div>
         )}
 
-        <form onSubmit={handleLoginSubmit} className="w-full space-y-4 z-10">
+        <form onSubmit={handleLoginSubmit} className="w-full space-y-4">
           
           {/* Campo Usuario */}
           <div className="space-y-1">
@@ -217,17 +196,6 @@ export default function LoginScreen({ onLoginSuccess }) {
               <span>Iniciar Sesión</span>
             )}
           </button>
-
-          {/* Único enlace: ¿Olvidaste tu contraseña? (Sin botón de Crear Cuenta) */}
-          <div className="text-center pt-3">
-            <button
-              type="button"
-              onClick={() => alert('Por favor contacte al Administrador de Sistemas para restablecer su clave.')}
-              className="text-xs font-extrabold text-[#384148] hover:underline"
-            >
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div>
 
         </form>
 
