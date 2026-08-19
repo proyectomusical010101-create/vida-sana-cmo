@@ -540,7 +540,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             Módulo de Pacientes & Expedientes Clínicos
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 font-medium">
-            Expedientes integrados con soporte para menores de edad, Odontograma 2D y Presupuesto Digital Unificado.
+            Expedientes integrados con soporte para menores de edad, Odontodiagrama 2D y Presupuesto Digital Unificado.
           </p>
         </div>
 

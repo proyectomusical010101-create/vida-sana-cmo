@@ -143,7 +143,7 @@ export default function PublicPdfViewer({
 
           <div className="text-right flex flex-col items-end">
             <div className="px-4 py-1.5 bg-slate-900 text-white font-black text-xs rounded-lg uppercase tracking-wider mb-1">
-              PRESUPUESTO CLÍNICO / ODONTOGRAMA
+              PRESUPUESTO CLÍNICO / ODONTODIAGRAMA
             </div>
             <p className="text-[11px] font-mono font-bold text-slate-700">
               N° Documento: <span className="text-slate-900 font-black">002026-{(activePatient?.id || '100-01').padStart(4, '0')}</span>
@@ -173,11 +173,11 @@ export default function PublicPdfViewer({
           </div>
         </div>
 
-        {/* 3. ODONTOGRAMA CLINICO ANATÓMICO */}
+        {/* 3. ODONTODIAGRAMA CLINICO ANATÓMICO */}
         <div className="p-2.5 border border-slate-300 rounded-xl space-y-1">
           <div className="text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-0.5">
-              ODONTOGRAMA
+              ODONTODIAGRAMA
             </span>
           </div>
 

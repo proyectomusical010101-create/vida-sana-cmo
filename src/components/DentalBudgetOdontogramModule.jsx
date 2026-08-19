@@ -9,7 +9,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const [selectedPatientId, setSelectedPatientId] = useState(safePatients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
-  // SECCION 3 State: Odontograma Anatómico 5 Caras por Pieza
+  // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza
   const [activeMarkMode, setActiveMarkMode] = useState('red'); // 'red' | 'blue' | 'green' | 'purple' | 'erase'
   const [toothSurfaces, setToothSurfaces] = useState({
     17: { top: 'red' },
@@ -416,7 +416,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
               Emisión, Presupuesto Clínico & Firma Digital Unificada
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-              Flujo clínico completo: selecciona el paciente, marca hallazgos en el odontograma, genera la propuesta económica y certifica con firma digital.
+              Flujo clínico completo: selecciona el paciente, marca hallazgos en el odontodiagrama, genera la propuesta económica y certifica con firma digital.
             </p>
           </div>
 
@@ -594,7 +594,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
             </span>
             <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1 flex items-center gap-2">
               <Stethoscope className="w-5 h-5 text-teal-600" />
-              Odontograma 2D Clínico (Estructura FDI Regulada)
+              Odontodiagrama 2D Clínico (Estructura FDI Regulada)
             </h3>
           </div>
           <span className="text-xs font-bold text-slate-500">Haz clic sobre cualquier pieza dental para cambiar su diagnóstico.</span>
@@ -673,15 +673,15 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
 
-        {/* CONTENEDOR DEL ODONTOGRAMA */}
+        {/* CONTENEDOR DEL ODONTODIAGRAMA */}
         
         {/* VISTA ESCRITORIO (4 Cuadrantes Clínicos Regulados en Cruz con Líneas Divisorias) */}
         <div className="hidden lg:block p-6 bg-slate-50/50 dark:bg-[#0d162f]/40 border border-slate-200 dark:border-[#1e2d5a] rounded-2xl relative shadow-xs">
           
-          {/* Título de Odontograma Impreso/Clínico */}
+          {/* Título de Odontodiagrama Impreso/Clínico */}
           <div className="text-center pb-4 mb-2">
             <span className="text-sm font-black tracking-widest text-slate-800 dark:text-slate-200 uppercase border-b-2 border-slate-800 dark:border-slate-300 pb-0.5">
-              ODONTOGRAMA
+              ODONTODIAGRAMA
             </span>
           </div>
 
@@ -863,7 +863,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
               {budgetItems.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="p-6 text-center text-slate-500 font-medium">
-                    No hay ítems en el presupuesto. Marca piezas en el odontograma o agrega tratamientos manuales.
+                    No hay ítems en el presupuesto. Marca piezas en el odontodiagrama o agrega tratamientos manuales.
                   </td>
                 </tr>
               ) : (
@@ -1103,7 +1103,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
                   type="submit"
                   className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl transition-all shadow-md"
                 >
-                  Guardar en Odontograma
+                  Guardar en Odontodiagrama
                 </button>
               </div>
             </form>
@@ -1253,7 +1253,7 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
 
           <div className="text-right flex flex-col items-end">
             <div className="px-4 py-1.5 bg-slate-900 text-white font-black text-xs rounded-lg uppercase tracking-wider shadow-xs mb-1">
-              PRESUPUESTO CLÍNICO / ODONTOGRAMA
+              PRESUPUESTO CLÍNICO / ODONTODIAGRAMA
             </div>
             <p className="text-[11px] font-mono font-bold text-slate-700">
               N° Documento: <span className="text-slate-900 font-black">002026-{(activePatient?.id || '0891').padStart(4, '0')}</span>
@@ -1283,11 +1283,11 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </div>
         </div>
 
-        {/* 3. ODONTOGRAMA CLINICO ANATÓMICO COMPACTO */}
+        {/* 3. ODONTODIAGRAMA CLINICO ANATÓMICO COMPACTO */}
         <div className="p-2.5 border border-slate-300 rounded-xl space-y-1">
           <div className="text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-0.5">
-              ODONTOGRAMA
+              ODONTODIAGRAMA
             </span>
           </div>
 
