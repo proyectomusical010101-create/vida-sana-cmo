@@ -17,6 +17,7 @@ export default function PaperworkCustomizationModule({ paperworkSettings, setPap
   const [invoiceFooter, setInvoiceFooter] = useState(paperworkSettings?.invoiceFooter || 'Gracias por confiar en Centro Médico Odontológico Vida Sana. Documento de control administrativo interno.');
   const [quoteFooter, setQuoteFooter] = useState(paperworkSettings?.quoteFooter || 'Presupuesto válido por 15 días continuos a la tasa oficial del Banco Central de Venezuela (BCV).');
   const [receiptFooter, setReceiptFooter] = useState(paperworkSettings?.receiptFooter || 'Pago Móvil Banesco (0134) - C.I./RIF: J-50781755-5 - Teléf: 0412-1234567. Conserve este comprobante.');
+  const [consentTemplate, setConsentTemplate] = useState(paperworkSettings?.consentTemplate || 'Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.');
 
   const handleSaveSettings = () => {
     const updated = {
@@ -28,7 +29,8 @@ export default function PaperworkCustomizationModule({ paperworkSettings, setPap
       logoUrl,
       invoiceFooter,
       quoteFooter,
-      receiptFooter
+      receiptFooter,
+      consentTemplate
     };
     if (typeof setPaperworkSettings === 'function') {
       setPaperworkSettings(updated);
@@ -243,12 +245,36 @@ export default function PaperworkCustomizationModule({ paperworkSettings, setPap
               )}
 
               {activeDocType === 'cotizacion' && (
-                <textarea
-                  rows="3"
-                  value={quoteFooter}
-                  onChange={(e) => setQuoteFooter(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white text-xs font-normal"
-                />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Pie de Página (Vigilancia / Validez)
+                    </label>
+                    <textarea
+                      rows="2"
+                      value={quoteFooter}
+                      onChange={(e) => setQuoteFooter(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white text-xs font-normal"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-teal-700 dark:text-teal-400 mb-1 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Texto Predeterminado del Consentimiento Informado (Presupuesto)
+                    </label>
+                    <textarea
+                      rows="3"
+                      value={consentTemplate}
+                      onChange={(e) => setConsentTemplate(e.target.value)}
+                      placeholder="Declaro haber sido informado sobre los procedimientos..."
+                      className="w-full p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-teal-300 dark:border-teal-800 rounded-xl text-slate-900 dark:text-white text-xs font-medium"
+                    />
+                    <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                      Este es el texto base que aparecerá predeterminado en cada nuevo presupuesto. Podrás editarlo de forma en vivo al emitir la cotización.
+                    </span>
+                  </div>
+                </div>
               )}
 
               {activeDocType === 'recibo' && (

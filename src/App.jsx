@@ -178,7 +178,8 @@ export default function App() {
     logoUrl: 'https://cdn-icons-png.flaticon.com/512/3063/3063176.png',
     invoiceFooter: 'Gracias por confiar en Centro Médico Odontológico Vida Sana. Documento de control administrativo interno.',
     quoteFooter: 'Presupuesto válido por 15 días continuos a la tasa oficial del Banco Central de Venezuela (BCV).',
-    receiptFooter: 'Pago Móvil Banesco (0134) - RIF: J-50781755-5 - Teléf: 0412-1234567. Conserve este comprobante.'
+    receiptFooter: 'Pago Móvil Banesco (0134) - RIF: J-50781755-5 - Teléf: 0412-1234567. Conserve este comprobante.',
+    consentTemplate: 'Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.'
   });
   
   // Campos adicionales para el Rol de Odontólogo / Médico
@@ -568,6 +569,8 @@ export default function App() {
               selectedCurrency={selectedCurrency}
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
               paperworkSettings={paperworkSettings}
+              onRegisterPayment={handleRegisterPayment}
+              setTransactions={setTransactions}
             />
           );
         case 'paperwork':

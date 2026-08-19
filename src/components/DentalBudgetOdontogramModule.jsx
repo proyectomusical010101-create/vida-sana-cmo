@@ -2,8 +2,31 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus, Trash2, Edit3, ShieldCheck, PenTool, RefreshCw, AlertCircle, DollarSign, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-export default function DentalBudgetOdontogramModule({ patients = [], procedures = [], specialists = [], bcvRate = 755.90, paperworkSettings }) {
+export default function DentalBudgetOdontogramModule({
+  patients = [],
+  procedures = [],
+  specialists = [],
+  bcvRate = 755.90,
+  paperworkSettings,
+  onRegisterPayment,
+  setTransactions
+}) {
   const safePatients = Array.isArray(patients) ? patients : [];
+
+  // Estados de Consentimiento Informado, Observaciones Clínicas, Método de Pago y Descuento
+  const [clinicalObservations, setClinicalObservations] = useState('');
+  const [consentText, setConsentText] = useState(
+    paperworkSettings?.consentTemplate ||
+    'Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.'
+  );
+  const [paymentMethod, setPaymentMethod] = useState('Pago Móvil'); // 'Pago Móvil' | 'Efectivo' | 'Zelle' | 'Binance'
+  const [discountPercent, setDiscountPercent] = useState('0');
+
+  useEffect(() => {
+    if (paperworkSettings?.consentTemplate) {
+      setConsentText(paperworkSettings.consentTemplate);
+    }
+  }, [paperworkSettings]);
 
   // SECCION 2 State: Paciente Seleccionado
   const [selectedPatientId, setSelectedPatientId] = useState(safePatients[0]?.id || '');
@@ -133,13 +156,17 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     return nameStr.includes(term) || docStr.includes(term);
   });
 
-  // Totales de Presupuesto
+  // Totales de Presupuesto con Descuento Manual
   const subtotalUsd = budgetItems.reduce((acc, item) => acc + (parseFloat(item.priceUsd) || 0), 0);
-  const totalBs = subtotalUsd * bcvRate;
+  const discPercentNum = Math.min(100, Math.max(0, parseFloat(discountPercent) || 0));
+  const discountUsd = subtotalUsd * (discPercentNum / 100);
+  const finalTotalUsd = subtotalUsd - discountUsd;
+  const finalTotalBs = finalTotalUsd * bcvRate;
+  const discountBs = discountUsd * bcvRate;
 
   // Plantilla de Mensaje de WhatsApp Personalizable con Link
   const [waMessageTemplate, setWaMessageTemplate] = useState(
-    'Hola {PACIENTE}, le enviamos su Presupuesto Clínico Odontológico de {CLINICA}.\n\n📌 *Resumen de Propuesta Económica:*\n- Total Ref.: ${TOTAL_USD} USD\n- Total en Bolívares: {TOTAL_BS} Bs (Tasa BCV {TASA_BCV} Bs/$)\n\nPuedes consultar y descargar tu presupuesto en línea ingresando aquí:\n{LINK_PRESUPUESTO}\n\nQuedamos a su entera disposición.'
+    'Hola {PACIENTE}, le enviamos su Presupuesto Clínico Odontológico de {CLINICA}.\n\n📌 *Resumen de Propuesta Económica:*\n- Subtotal Ref.: ${SUBTOTAL_USD} USD\n- Descuento ({DESCUENTO_PCT}%): -${DESCUENTO_USD} USD\n- Total Ref. Final: ${TOTAL_USD} USD ({TOTAL_BS} Bs a Tasa BCV {TASA_BCV} Bs/$)\n- Método de Pago: {METODO_PAGO}\n\nPuedes consultar y descargar tu presupuesto en línea ingresando aquí:\n{LINK_PRESUPUESTO}\n\nQuedamos a su entera disposición.'
   );
   const [showWaCustomizer, setShowWaCustomizer] = useState(false);
 
@@ -147,8 +174,10 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
   const getFormattedWaMessage = () => {
     const pNameVal = activePatient?.name || activePatient?.full_name || 'Estimado Paciente';
     const clinicNameVal = paperworkSettings?.clinicName || 'Centro Médico Odontológico Vida Sana, C.A.';
-    const totalUsdStr = subtotalUsd.toFixed(2);
-    const totalBsStr = totalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const subtotalUsdStr = subtotalUsd.toFixed(2);
+    const discUsdStr = discountUsd.toFixed(2);
+    const totalUsdStr = finalTotalUsd.toFixed(2);
+    const totalBsStr = finalTotalBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const bcvRateStr = (parseFloat(bcvRate) || 755.90).toFixed(2);
     const pIdVal = activePatient?.id || '100-01';
     const linkVal = `${window.location.origin}/?pdf=1&patientId=${encodeURIComponent(pIdVal)}`;
@@ -156,8 +185,12 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
     return waMessageTemplate
       .replace(/{PACIENTE}/g, pNameVal)
       .replace(/{CLINICA}/g, clinicNameVal)
+      .replace(/{SUBTOTAL_USD}/g, subtotalUsdStr)
+      .replace(/{DESCUENTO_PCT}/g, discPercentNum.toString())
+      .replace(/{DESCUENTO_USD}/g, discUsdStr)
       .replace(/{TOTAL_USD}/g, totalUsdStr)
       .replace(/{TOTAL_BS}/g, totalBsStr)
+      .replace(/{METODO_PAGO}/g, paymentMethod)
       .replace(/{TASA_BCV}/g, bcvRateStr)
       .replace(/{LINK_PRESUPUESTO}/g, linkVal);
   };
@@ -306,9 +339,33 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
       return;
     }
 
+    const newTx = {
+      id: `TX-BDG-${Date.now().toString().slice(-6)}`,
+      date: new Date().toISOString().slice(0, 10),
+      patientId: activePatient?.id || '100-01',
+      patientName: activePatient?.name || activePatient?.full_name || 'Paciente',
+      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      procedure: `Presupuesto Odontológico (${budgetItems.length} ítems)`,
+      subtotal: subtotalUsd,
+      discountPercent: discPercentNum,
+      discountAmount: discountUsd,
+      total: finalTotalUsd,
+      amount: finalTotalUsd,
+      paymentMethod: paymentMethod,
+      status: 'Completado',
+      notes: discPercentNum > 0
+        ? `Presupuesto Certificado con ${discPercentNum}% de descuento manual (-$${discountUsd.toFixed(2)} USD). Método: ${paymentMethod}`
+        : `Presupuesto Certificado. Método: ${paymentMethod}`,
+      area: 'ODONTOLOGIA'
+    };
+
+    if (typeof onRegisterPayment === 'function') {
+      onRegisterPayment(newTx);
+    }
+
     Swal.fire({
-      title: '¡Presupuesto Certificado!',
-      text: `El presupuesto de $${subtotalUsd.toFixed(2)} USD (${totalBs.toFixed(2)} Bs) para ${activePatient?.name || 'el paciente'} ha sido firmado y registrado exitosamente en Supabase.`,
+      title: '¡Presupuesto Certificado & Auditado!',
+      text: `El presupuesto de $${finalTotalUsd.toFixed(2)} USD (${finalTotalBs.toFixed(2)} Bs) para ${activePatient?.name || 'el paciente'} ha sido firmado y registrado en el control financiero (${paymentMethod}${discPercentNum > 0 ? ` con ${discPercentNum}% de descuento` : ''}).`,
       icon: 'success',
       confirmButtonColor: '#0d9488'
     });
@@ -909,23 +966,89 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </table>
         </div>
 
-        {/* Resumen Total */}
-        <div className="flex flex-col sm:flex-row justify-end items-end gap-4 p-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-300 dark:border-teal-800 rounded-xl text-right">
+        {/* Descuento Manual & Método de Pago Asignado */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-xs font-bold">
+          
+          {/* Porcentaje de Descuento Manual */}
+          <div className="md:col-span-4 space-y-1.5">
+            <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
+              🏷️ Descuento Manual (%):
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                className="w-24 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono font-black text-slate-900 dark:text-white"
+                placeholder="0"
+              />
+              <span className="font-mono font-black text-teal-700 dark:text-teal-300 text-sm">%</span>
+            </div>
+            {discPercentNum > 0 && (
+              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-extrabold block">
+                Monto Descuento: -${discountUsd.toFixed(2)} USD (-{discountBs.toFixed(2)} Bs)
+              </span>
+            )}
+          </div>
+
+          {/* Selector de Método de Pago (Estándar 4 Opciones: Pago Móvil, Efectivo, Zelle, Binance) */}
+          <div className="md:col-span-8 space-y-1.5">
+            <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
+              💳 Método de Pago Asignado:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'Pago Móvil', icon: '📱' },
+                { id: 'Efectivo', icon: '💵' },
+                { id: 'Zelle', icon: '🏦' },
+                { id: 'Binance', icon: '🪙' }
+              ].map(method => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setPaymentMethod(method.id)}
+                  className={`p-2 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    paymentMethod === method.id
+                      ? 'bg-teal-600 text-white border-teal-600 shadow-md scale-[1.02]'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-teal-500'
+                  }`}
+                >
+                  <span>{method.icon}</span>
+                  <span className="truncate">{method.id}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Resumen Total con Descuento */}
+        <div className="flex flex-col sm:flex-row justify-end items-end gap-6 p-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-300 dark:border-teal-800 rounded-xl text-right">
+          {discPercentNum > 0 && (
+            <div className="pr-4 border-r border-teal-300 dark:border-teal-700">
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 block">Subtotal Bruto:</span>
+              <span className="text-lg font-black font-mono text-slate-700 dark:text-slate-300 line-through">${subtotalUsd.toFixed(2)} USD</span>
+            </div>
+          )}
+
           <div>
-            <span className="text-xs font-bold text-teal-900 dark:text-teal-300 block">Total en Dólares ($):</span>
-            <span className="text-2xl font-black font-mono text-teal-950 dark:text-white">${subtotalUsd.toFixed(2)} USD</span>
+            <span className="text-xs font-bold text-teal-900 dark:text-teal-300 block">Total Final en Dólares ($):</span>
+            <span className="text-2xl font-black font-mono text-teal-950 dark:text-white">${finalTotalUsd.toFixed(2)} USD</span>
           </div>
 
           <div className="border-l border-teal-300 dark:border-teal-700 pl-4">
-            <span className="text-xs font-bold text-blue-900 dark:text-blue-300 block">Total en Bolívares (Tasa BCV {bcvRate.toFixed(2)}):</span>
-            <span className="text-2xl font-black font-mono text-blue-950 dark:text-blue-200">{totalBs.toFixed(2)} Bs</span>
+            <span className="text-xs font-bold text-blue-900 dark:text-blue-300 block">Total Final en Bolívares (Tasa BCV {bcvRate.toFixed(2)}):</span>
+            <span className="text-2xl font-black font-mono text-blue-950 dark:text-blue-200">{finalTotalBs.toFixed(2)} Bs</span>
           </div>
         </div>
       </section>
 
 
       {/* ========================================================================= */}
-      {/* SECCION 5: CONSENTIMIENTO & FIRMAS DIGITALES */}
+      {/* SECCION 5: CONSENTIMIENTO INFORMADO, OBSERVACIONES CLINICAS & FIRMAS DIGITALES */}
       {/* ========================================================================= */}
       <section className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-6">
         <div>
@@ -934,12 +1057,48 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
           </span>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1 flex items-center gap-2">
             <PenTool className="w-5 h-5 text-teal-600" />
-            Consentimiento Informado & Firmas Digitales
+            Observaciones Clínicas, Consentimiento Informado & Firmas Digitales
           </h3>
         </div>
 
-        <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-xs text-slate-700 dark:text-slate-300 space-y-2">
-          <p className="font-bold">Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.</p>
+        {/* 1. OBSERVACIONES CLINICAS (NOTAS DEL MEDICO) - JUSTO ARRIBA DEL CONSENTIMIENTO */}
+        <div className="space-y-1.5 p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl">
+          <label className="block text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
+            <FileText className="w-4 h-4 text-teal-600" />
+            Observaciones Clínicas (Notas del Médico para este Presupuesto)
+          </label>
+          <textarea
+            rows="2"
+            value={clinicalObservations}
+            onChange={(e) => setClinicalObservations(e.target.value)}
+            placeholder="Escriba aquí las observaciones clínicas específicas, recomendaciones o detalles médicos del presupuesto..."
+            className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+          />
+          <span className="text-[10px] text-slate-500 font-medium block">
+            Estas notas clínicas aparecerán en la propuesta impresa y comprobante enviado al paciente.
+          </span>
+        </div>
+
+        {/* 2. CONSENTIMIENTO INFORMADO (EDITABLE EN VIVO / PREDETERMINADO DESDE PAPELERIA) - JUSTO ABAJO DE OBSERVACIONES */}
+        <div className="space-y-1.5 p-4 bg-teal-50/50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800/60 rounded-xl">
+          <div className="flex justify-between items-center">
+            <label className="block text-xs font-black text-teal-900 dark:text-teal-300 flex items-center gap-1.5 uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4 text-teal-600" />
+              Consentimiento Informado (Editable en Vivo)
+            </label>
+            <span className="text-[10px] text-teal-700 dark:text-teal-400 font-extrabold">
+              ✓ Cargado desde la plantilla predeterminada de Papelería
+            </span>
+          </div>
+          <textarea
+            rows="3"
+            value={consentText}
+            onChange={(e) => setConsentText(e.target.value)}
+            className="w-full p-3 bg-white dark:bg-slate-900 border border-teal-300 dark:border-teal-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+          <span className="text-[10px] text-slate-500 font-medium block">
+            Puedes modificar o ajustar el texto del consentimiento informado exclusivamente para este presupuesto.
+          </span>
         </div>
 
         {/* Canvases de Firmas */}
@@ -1349,14 +1508,42 @@ export default function DentalBudgetOdontogramModule({ patients = [], procedures
             </tbody>
           </table>
 
-          <div className="flex justify-end gap-6 pt-1 font-mono text-[11px] font-black border-t border-slate-800">
-            <span>TOTAL REF: ${subtotalUsd.toFixed(2)} USD</span>
-            <span className="text-teal-900">TOTAL BOLÍVARES: {totalBs.toFixed(2)} Bs</span>
+          <div className="flex flex-wrap justify-between items-center gap-4 pt-1.5 font-mono text-[10px] font-black border-t border-slate-800">
+            <div>
+              <span className="text-slate-600">Método de Pago Asignado: </span>
+              <span className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 font-bold">{paymentMethod}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-right">
+              {discPercentNum > 0 && (
+                <>
+                  <span className="text-slate-500">Subtotal: ${subtotalUsd.toFixed(2)}</span>
+                  <span className="text-rose-700 font-bold">Desc. ({discPercentNum}%): -${discountUsd.toFixed(2)}</span>
+                </>
+              )}
+              <span className="text-slate-900 text-xs font-black">TOTAL REF: ${finalTotalUsd.toFixed(2)} USD</span>
+              <span className="text-teal-900 text-xs font-black">TOTAL BOLÍVARES: {finalTotalBs.toFixed(2)} Bs</span>
+            </div>
           </div>
         </div>
 
-        {/* 5. FIRMAS DIGITALES */}
-        <div className="pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold">
+        {/* 5. OBSERVACIONES CLINICAS (ARRIBA) & CONSENTIMIENTO INFORMADO (ABAJO) */}
+        <div className="space-y-2 pt-1 border-t border-slate-300 text-[10px]">
+          {clinicalObservations && (
+            <div className="p-2 bg-slate-50 border border-slate-300 rounded-lg">
+              <strong className="text-slate-900 uppercase block font-black mb-0.5">🩺 OBSERVACIONES CLÍNICAS:</strong>
+              <p className="text-slate-800 font-medium whitespace-pre-wrap">{clinicalObservations}</p>
+            </div>
+          )}
+
+          <div className="p-2 bg-teal-50/40 border border-teal-200 rounded-lg">
+            <strong className="text-teal-950 uppercase block font-black mb-0.5">⚖️ CONSENTIMIENTO INFORMADO:</strong>
+            <p className="text-slate-800 font-bold italic leading-relaxed">{consentText}</p>
+          </div>
+        </div>
+
+        {/* 6. FIRMAS DIGITALES */}
+        <div className="pt-3 grid grid-cols-2 gap-8 text-center text-[10px] font-bold">
           <div className="border-t border-slate-800 pt-1">
             <p className="font-extrabold uppercase">Firma Digital del Paciente / Representante</p>
             <p className="text-slate-500 font-mono">{activePatient?.name || activePatient?.full_name || 'Paciente'} (CI: {activePatient?.documentId || 'V-00000000'})</p>

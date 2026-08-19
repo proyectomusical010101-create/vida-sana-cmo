@@ -245,8 +245,18 @@ export default function PublicPdfViewer({
           </div>
         </div>
 
-        {/* 5. FIRMAS DIGITALES */}
-        <div className="pt-4 grid grid-cols-2 gap-8 text-center text-[10px] font-bold">
+        {/* 5. CONSENTIMIENTO INFORMADO & NOTAS */}
+        <div className="space-y-2 pt-1 border-t border-slate-300 text-[10px]">
+          <div className="p-2 bg-teal-50/40 border border-teal-200 rounded-lg">
+            <strong className="text-teal-950 uppercase block font-black mb-0.5">⚖️ CONSENTIMIENTO INFORMADO:</strong>
+            <p className="text-slate-800 font-bold italic leading-relaxed">
+              {paperworkSettings?.consentTemplate || 'Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.'}
+            </p>
+          </div>
+        </div>
+
+        {/* 6. FIRMAS DIGITALES */}
+        <div className="pt-3 grid grid-cols-2 gap-8 text-center text-[10px] font-bold">
           <div className="border-t border-slate-800 pt-1">
             <p className="font-extrabold uppercase">Firma Digital del Paciente / Representante</p>
             <p className="text-slate-500 font-mono">{activePatient?.name || 'Santiago Andrés Peña'} (CI: V-00000000)</p>
