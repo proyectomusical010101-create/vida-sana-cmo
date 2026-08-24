@@ -34,6 +34,12 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [patientCategory, setPatientCategory] = useState('Privado');
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isEditCustomCategory, setIsEditCustomCategory] = useState(false);
+
+  // GESTOR INDEPENDIENTE DE CATEGORÍAS Y ETIQUETAS
+  const [customCategoriesList, setCustomCategoriesList] = useState([]);
+  const [showCategoryManagerModal, setShowCategoryManagerModal] = useState(false);
+  const [newCatInput, setNewCatInput] = useState('');
+
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -412,9 +418,98 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       'Funcionario',
       'Convenio',
       'Asegurado',
+      ...(Array.isArray(customCategoriesList) ? customCategoriesList : []),
       ...safePatients.map(p => p?.category).filter(Boolean)
     ])
   );
+
+  // Crear categoría nueva independiente (sin crear paciente)
+  const handleAddNewCategoryStandalone = (e) => {
+    e.preventDefault();
+    const trimmed = newCatInput.trim();
+    if (!trimmed) return;
+    if (allCategoriesList.map(c => c.toLowerCase()).includes(trimmed.toLowerCase())) {
+      Swal.fire('Categoría Existente', `La categoría "${trimmed}" ya existe en el sistema.`, 'warning');
+      return;
+    }
+    setCustomCategoriesList([...customCategoriesList, trimmed]);
+    setNewCatInput('');
+    Swal.fire({
+      title: '¡Categoría Guardada!',
+      text: `La etiqueta "${trimmed}" fue creada independientemente y ya está disponible para el filtro y para cualquier expediente.`,
+      icon: 'success',
+      timer: 1800,
+      showConfirmButton: false
+    });
+  };
+
+  // Renombrar categoría existente
+  const handleRenameCategory = (oldName) => {
+    if (['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(oldName)) {
+      Swal.fire('Categoría del Sistema', `La categoría "${oldName}" es una categoría estándar y no se puede renombrar.`, 'info');
+      return;
+    }
+    Swal.fire({
+      title: `Renombrar categoría "${oldName}"`,
+      input: 'text',
+      inputValue: oldName,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar Nombre',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0d9488',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Debes escribir un nombre válido para la categoría';
+        }
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newName = result.value.trim();
+        setCustomCategoriesList((customCategoriesList || []).map(c => c === oldName ? newName : c));
+        const updatedPatients = safePatients.map(p => p?.category === oldName ? { ...p, category: newName } : p);
+        if (typeof setPatients === 'function') {
+          setPatients(updatedPatients);
+        }
+        if (selectedCategory === oldName) setSelectedCategory(newName);
+        Swal.fire('¡Categoría Renombrada!', `Se actualizó a "${newName}" en todos los expedientes.`, 'success');
+      }
+    });
+  };
+
+  // Eliminar Categoría / Etiqueta Personalizada
+  const handleDeleteCategory = (catToDelete) => {
+    if (['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(catToDelete)) {
+      Swal.fire('Categoría del Sistema', `La categoría "${catToDelete}" es una categoría estándar del sistema.`, 'info');
+      return;
+    }
+
+    const count = safePatients.filter(p => p?.category === catToDelete).length;
+
+    Swal.fire({
+      title: `¿Eliminar etiqueta "${catToDelete}"?`,
+      text: count > 0 
+        ? `Hay ${count} paciente(s) asignados a esta etiqueta. Si la eliminas, pasarán automáticamente a la categoría "Privado".` 
+        : `La etiqueta será eliminada de la barra de filtros y del sistema.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar etiqueta',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setCustomCategoriesList((customCategoriesList || []).filter(c => c !== catToDelete));
+        const updatedPatients = safePatients.map(p => p?.category === catToDelete ? { ...p, category: 'Privado' } : p);
+        if (typeof setPatients === 'function') {
+          setPatients(updatedPatients);
+        }
+        if (selectedCategory === catToDelete) {
+          setSelectedCategory('ALL');
+        }
+        Swal.fire('¡Etiqueta Eliminada!', `La categoría "${catToDelete}" ha sido eliminada con éxito.`, 'success');
+      }
+    });
+  };
 
   const filteredPatients = safePatients.filter(p => {
     if (!p) return false;
@@ -599,20 +694,49 @@ export default function PatientsModule({ patients = [], setPatients, specialists
             />
           </div>
 
-          <div className="flex flex-wrap gap-1">
-            {['ALL', ...allCategoriesList].map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-teal-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                {cat === 'ALL' ? 'Todos' : cat}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-1 items-center">
+            {['ALL', ...allCategoriesList].map(cat => {
+              const isStandard = ['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(cat);
+              const isActive = selectedCategory === cat;
+              return (
+                <div key={cat} className="inline-flex items-center">
+                  <button
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-teal-600 text-white shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {cat === 'ALL' ? 'Todos' : cat}
+                  </button>
+
+                  {!isStandard && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCategory(cat);
+                      }}
+                      className="ml-0.5 px-1 py-0.5 text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded transition-all text-[10px] cursor-pointer"
+                      title={`Eliminar etiqueta "${cat}"`}
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => setShowCategoryManagerModal(true)}
+              className="px-2 py-1 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 shadow-xs ml-auto"
+              title="Gestor Independiente de Categorías y Etiquetas"
+            >
+              <span>⚙️</span>
+              <span>Categorías</span>
+            </button>
           </div>
 
           <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1 custom-scrollbar">
@@ -1774,6 +1898,114 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GESTOR INDEPENDIENTE DE CATEGORÍAS */}
+      {showCategoryManagerModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-[#1e2d5a]">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-teal-600" />
+                Gestión Independiente de Categorías & Etiquetas
+              </h3>
+              <button
+                onClick={() => setShowCategoryManagerModal(false)}
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Formular de Crear Categoría Aislada */}
+            <form onSubmit={handleAddNewCategoryStandalone} className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Crear Nueva Categoría (Sin registrar paciente)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: VIP, Jubilado, Convenio PDVSA..."
+                  value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0"
+                >
+                  + Crear
+                </button>
+              </div>
+            </form>
+
+            {/* Lista de Categorías Existentes */}
+            <div className="space-y-2 pt-2">
+              <span className="block text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                Categorías Disponibles en el Sistema:
+              </span>
+              
+              <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
+                {allCategoriesList.map(cat => {
+                  const isStandard = ['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(cat);
+                  const patientCount = safePatients.filter(p => (p?.category || 'Privado') === cat).length;
+                  return (
+                    <div
+                      key={cat}
+                      className="p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center justify-between text-xs font-bold"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-slate-900 dark:text-white">{cat}</span>
+                        {isStandard && (
+                          <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-[9px] font-black uppercase">
+                            Estándar
+                          </span>
+                        )}
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          ({patientCount} pacientes)
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {!isStandard && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleRenameCategory(cat)}
+                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-bold cursor-pointer"
+                              title="Renombrar categoría"
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat)}
+                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-300 rounded-lg text-[10px] font-bold cursor-pointer"
+                              title="Eliminar categoría"
+                            >
+                              🗑️ Borrar
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 dark:border-[#1e2d5a] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCategoryManagerModal(false)}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
