@@ -19,9 +19,26 @@ export default function BillingCashModule({
 
   // Form registrar cobro
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+
   const [selectedProcId, setSelectedProcId] = useState(procedures[0]?.id || '');
   const [selectedDoctor, setSelectedDoctor] = useState(specialists[0]?.name || '');
   const [shift, setShift] = useState('Mañana');
+
+  // Paciente Seleccionado & Filtrado Rápido
+  const selectedPatientObj = (Array.isArray(patients) ? patients : []).find(p => String(p.id) === String(selectedPatientId)) || patients[0];
+
+  const filteredSearchPatients = (Array.isArray(patients) ? patients : []).filter(p => {
+    if (!p) return false;
+    const term = (patientSearchQuery || '').toLowerCase().trim();
+    if (!term) return true;
+    const nameStr = String(p.name || p.full_name || '').toLowerCase();
+    const docStr = String(p.documentId || p.document_id || '').toLowerCase();
+    const idStr = String(p.id || '').toLowerCase();
+    const phoneStr = String(p.phone || p.phone_number || '').toLowerCase();
+    return nameStr.includes(term) || docStr.includes(term) || idStr.includes(term) || phoneStr.includes(term);
+  });
 
   // Multi-moneda
   const [paymentUsdCash, setPaymentUsdCash] = useState('0');
@@ -321,17 +338,94 @@ export default function BillingCashModule({
             <h3 className="text-base font-extrabold text-slate-900 pb-2 border-b border-slate-200">Datos de la Facturación / Recibo</h3>
 
             <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold mb-1">Paciente</label>
-                <select
-                  value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
-                >
-                  {patients.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.category} - {p.documentId})</option>
-                  ))}
-                </select>
+              {/* Buscador Rápido Interactivo de Paciente */}
+              <div className="space-y-1.5 relative">
+                <div className="flex items-center justify-between">
+                  <label className="block font-extrabold text-xs text-slate-800">
+                    🔍 Buscar Paciente:
+                  </label>
+                  {selectedPatientObj && (
+                    <span className="text-[11px] text-teal-700 font-extrabold bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 truncate max-w-[220px]">
+                      ✓ {selectedPatientObj.name || selectedPatientObj.full_name} ({selectedPatientObj.documentId || selectedPatientObj.id})
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Escriba Nombre, Cédula, Teléfono o N° Expediente..."
+                    value={patientSearchQuery}
+                    onFocus={() => setShowPatientDropdown(true)}
+                    onChange={(e) => {
+                      setPatientSearchQuery(e.target.value);
+                      setShowPatientDropdown(true);
+                    }}
+                    className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20"
+                  />
+                  {patientSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPatientSearchQuery('');
+                        setShowPatientDropdown(false);
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-700 font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Resultados Instantáneos Desplegables */}
+                {showPatientDropdown && (
+                  <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar p-1">
+                    {filteredSearchPatients.length > 0 ? (
+                      filteredSearchPatients.map(p => {
+                        const isSelected = String(p.id) === String(selectedPatientId);
+                        const pName = p.name || p.full_name || 'Paciente';
+                        const pDoc = p.documentId || p.document_id || 'N/A';
+                        const pCat = p.category || 'Privado';
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setSelectedPatientId(p.id);
+                              setPatientSearchQuery(`${pName} (${pDoc})`);
+                              setShowPatientDropdown(false);
+                            }}
+                            className={`p-2.5 rounded-lg cursor-pointer text-xs font-bold transition-all flex items-center justify-between gap-2 ${
+                              isSelected
+                                ? 'bg-teal-600 text-white'
+                                : 'hover:bg-slate-100 text-slate-800'
+                            }`}
+                          >
+                            <div>
+                              <div className="font-extrabold flex items-center gap-2">
+                                <span>{pName}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase ${
+                                  isSelected ? 'bg-teal-800 text-white' : 'bg-slate-200 text-slate-700'
+                                }`}>
+                                  {pCat}
+                                </span>
+                              </div>
+                              <div className={`text-[10px] ${isSelected ? 'text-teal-100' : 'text-slate-500'}`}>
+                                CI: {pDoc} • Teléf: {p.phone || 'N/A'}
+                              </div>
+                            </div>
+
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-white shrink-0" />}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-4 text-center text-xs font-medium text-slate-500">
+                        No se encontraron pacientes que coincidan con "{patientSearchQuery}".
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
