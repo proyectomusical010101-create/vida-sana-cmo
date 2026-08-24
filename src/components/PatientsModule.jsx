@@ -32,6 +32,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [consultReason, setConsultReason] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
   const [patientCategory, setPatientCategory] = useState('Privado');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [isEditCustomCategory, setIsEditCustomCategory] = useState(false);
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -1322,20 +1324,40 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría del Paciente</label>
-                      {patientCategory === 'CUSTOM' ? (
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-slate-700 dark:text-slate-300">Categoría del Paciente</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextState = !isCustomCategory;
+                            setIsCustomCategory(nextState);
+                            if (nextState) setPatientCategory('');
+                            else setPatientCategory('Privado');
+                          }}
+                          className="text-[10px] text-teal-600 dark:text-teal-400 font-extrabold hover:underline cursor-pointer"
+                        >
+                          {isCustomCategory ? '📋 Elegir de la lista' : '➕ Crear nueva categoría'}
+                        </button>
+                      </div>
+
+                      {isCustomCategory ? (
                         <div className="flex gap-1.5">
                           <input
                             type="text"
-                            placeholder="Nombre de la nueva categoría (ej. VIP, Jubilado...)"
-                            autoFocus
+                            placeholder="Escriba la nueva categoría (ej. VIP, Jubilado...)"
+                            value={patientCategory}
                             onChange={(e) => setPatientCategory(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                            className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                            autoFocus
                           />
                           <button
                             type="button"
-                            onClick={() => setPatientCategory('Privado')}
+                            onClick={() => {
+                              setIsCustomCategory(false);
+                              setPatientCategory('Privado');
+                            }}
                             className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-xs font-bold"
+                            title="Volver a la lista"
                           >
                             ❌
                           </button>
@@ -1344,7 +1366,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                         <select
                           value={patientCategory}
                           onChange={(e) => {
-                            if (e.target.value === 'CUSTOM') {
+                            if (e.target.value === 'CUSTOM_NEW') {
+                              setIsCustomCategory(true);
                               setPatientCategory('');
                             } else {
                               setPatientCategory(e.target.value);
@@ -1355,7 +1378,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                           {allCategoriesList.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
-                          <option value="CUSTOM">➕ + Crear Nueva Categoría...</option>
+                          <option value="CUSTOM_NEW">➕ + Crear Nueva Categoría...</option>
                         </select>
                       )}
                     </div>
@@ -1655,20 +1678,40 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
-                  {editPatientForm.category === 'CUSTOM' ? (
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300">Categoría</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextState = !isEditCustomCategory;
+                        setIsEditCustomCategory(nextState);
+                        if (nextState) setEditPatientForm({ ...editPatientForm, category: '' });
+                        else setEditPatientForm({ ...editPatientForm, category: 'Privado' });
+                      }}
+                      className="text-[10px] text-teal-600 dark:text-teal-400 font-extrabold hover:underline cursor-pointer"
+                    >
+                      {isEditCustomCategory ? '📋 Elegir de la lista' : '➕ Crear nueva categoría'}
+                    </button>
+                  </div>
+
+                  {isEditCustomCategory ? (
                     <div className="flex gap-1.5">
                       <input
                         type="text"
-                        placeholder="Nueva categoría..."
-                        autoFocus
+                        placeholder="Escriba la nueva categoría..."
+                        value={editPatientForm.category}
                         onChange={(e) => setEditPatientForm({ ...editPatientForm, category: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-white dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                        autoFocus
                       />
                       <button
                         type="button"
-                        onClick={() => setEditPatientForm({ ...editPatientForm, category: 'Privado' })}
+                        onClick={() => {
+                          setIsEditCustomCategory(false);
+                          setEditPatientForm({ ...editPatientForm, category: 'Privado' });
+                        }}
                         className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-xs font-bold"
+                        title="Volver a la lista"
                       >
                         ❌
                       </button>
@@ -1677,7 +1720,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     <select
                       value={editPatientForm.category}
                       onChange={(e) => {
-                        if (e.target.value === 'CUSTOM') {
+                        if (e.target.value === 'CUSTOM_NEW') {
+                          setIsEditCustomCategory(true);
                           setEditPatientForm({ ...editPatientForm, category: '' });
                         } else {
                           setEditPatientForm({ ...editPatientForm, category: e.target.value });
@@ -1688,7 +1732,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                       {allCategoriesList.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
-                      <option value="CUSTOM">➕ + Crear Nueva Categoría...</option>
+                      <option value="CUSTOM_NEW">➕ + Crear Nueva Categoría...</option>
                     </select>
                   )}
                 </div>
