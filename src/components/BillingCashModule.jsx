@@ -260,40 +260,11 @@ export default function BillingCashModule({
           </p>
         </div>
 
-        {/* Selector Tasa Global BCV */}
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-          <div className="bg-blue-50 border border-blue-300 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
-            <Landmark className="w-5 h-5 text-blue-700 shrink-0" />
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold text-blue-900">Tasa Oficial Clínica:</span>
-                <select
-                  value={selectedCurrency}
-                  onChange={(e) => setSelectedCurrency && setSelectedCurrency(e.target.value)}
-                  className="bg-blue-100 text-blue-950 font-extrabold text-[10px] rounded px-1.5 py-0.5 border border-blue-300 outline-none cursor-pointer"
-                >
-                  <option value="USD">Dólar BCV ($)</option>
-                  <option value="EUR">Euro BCV (€)</option>
-                </select>
-              </div>
-
-              <div className="text-base font-extrabold font-mono text-blue-950 flex items-center gap-1.5">
-                <span>{activeRate.toFixed(2)} Bs / {selectedCurrency}</span>
-                <button
-                  type="button"
-                  onClick={fetchBcvRate}
-                  title="Actualizar tasa BCV DolarAPI"
-                  className="p-1 hover:bg-blue-100 rounded-lg text-blue-700 transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${loadingRate ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-emerald-50 border border-emerald-300 px-4 py-2.5 rounded-xl text-right">
-            <span className="text-xs font-bold text-emerald-900 block">Total Recaudado en Caja:</span>
-            <span className="text-xl font-extrabold font-mono text-emerald-950">${totalCollectedFiltered.toFixed(2)} USD</span>
+        {/* Resumen Total Recaudado */}
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 px-5 py-3 rounded-xl text-right shadow-sm">
+            <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 block">Total Recaudado en Caja:</span>
+            <span className="text-2xl font-black font-mono text-emerald-950 dark:text-emerald-100">${totalCollectedFiltered.toFixed(2)} USD</span>
           </div>
         </div>
       </div>
