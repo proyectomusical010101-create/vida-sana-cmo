@@ -50,6 +50,7 @@ import AuditRolesPortalModule from './components/AuditRolesPortalModule';
 import DentalBudgetOdontogramModule from './components/DentalBudgetOdontogramModule';
 import PublicPdfViewer from './components/PublicPdfViewer';
 import DashboardOverviewModule from './components/DashboardOverviewModule';
+import FinancesConsolidatedModule from './components/FinancesConsolidatedModule';
 
 // Helper ultra-seguro para convertir cualquier número sin riesgo de crash
 const safeNum = (val, fallback = 0) => {
@@ -434,21 +435,19 @@ export default function App() {
   const totalTodayIncome = safeTransactions.reduce((s, t) => s + safeNum(t?.total || t?.amount), 0);
 
   const navItems = [
-    { id: 'dashboard', name: '1. Dashboard', icon: LayoutDashboard },
-    { id: 'patients', name: '2. Pacientes', icon: UserCheck },
-    { id: 'baremos', name: '3. Servicios y consultorios', icon: Layers },
-    { id: 'schedules', name: '4. Horarios', icon: Calendar },
-    { id: 'billing', name: '5. Flujo de Caja', icon: DollarSign },
-    { id: 'cashea', name: '6. Cta. por cobrar', icon: Smartphone },
-    { id: 'patient-portal', name: '7. Citas', icon: Globe },
-    { id: 'roles-audit', name: '8. Usuarios', icon: ShieldCheck },
-    { id: 'seniat', name: '9. Cta. por pagar', icon: FileCheck },
-    { id: 'payroll', name: '10. Nómina', icon: Users },
-    { id: 'profitability', name: '11. Proyecciones', icon: TrendingUp },
-    { id: 'inventory', name: '12. Inventario', icon: Package },
-    { id: 'whatsapp', name: '13. Postventa', icon: MessageSquare },
-    { id: 'odontogram-budget', name: '14. Presupuesto', icon: Stethoscope, badge: 'EXCLUSIVO' },
-    { id: 'paperwork', name: '15. Papelería', icon: FileText }
+    { id: 'dashboard', name: '0. Home', icon: LayoutDashboard, section: '🎯 Principal' },
+    { id: 'patients', name: '1. Pacientes', icon: UserCheck, section: '🩺 Atención Clínica' },
+    { id: 'odontogram-budget', name: '2. Presupuesto', icon: Stethoscope, badge: '2D', section: '🩺 Atención Clínica' },
+    { id: 'patient-portal', name: '3. Agenda & Citas', icon: Calendar, section: '🩺 Atención Clínica' },
+    { id: 'billing', name: '4. Facturación', icon: DollarSign, section: '💼 Administración & Finanzas' },
+    { id: 'medical-records', name: '5. Historias Clínicas', icon: FileText, section: '🩺 Atención Clínica' },
+    { id: 'baremos', name: '6. Servicios & Baremos', icon: Layers, section: '📦 Gestión Operativa' },
+    { id: 'inventory', name: '7. Insumos & Inventario', icon: Package, section: '📦 Gestión Operativa' },
+    { id: 'finances', name: '8. Finanzas', icon: TrendingUp, section: '💼 Administración & Finanzas' },
+    { id: 'paperwork', name: '9. Papelería', icon: FileText, section: '💼 Administración & Finanzas' },
+    { id: 'payroll', name: '10. Personal & Nómina', icon: Users, section: '💼 Administración & Finanzas' },
+    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' },
+    { id: 'roles-audit', name: '12. Usuarios & Permisos', icon: ShieldCheck, section: '💼 Administración & Finanzas' }
   ];
 
   // Renderizado seguro por módulo
@@ -471,6 +470,7 @@ export default function App() {
             />
           );
         case 'patients':
+        case 'medical-records':
           return (
             <PatientsModule
               patients={safePatients}
@@ -483,17 +483,23 @@ export default function App() {
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
-        case 'baremos':
+        case 'odontogram-budget':
           return (
-            <ServicesBaremoModule
+            <DentalBudgetOdontogramModule
+              patients={safePatients}
               procedures={safeProcedures}
-              setProcedures={setProcedures}
+              specialists={safeSpecialists}
+              bcvRate={safeNum(bcvRate, 755.90)}
               selectedCurrency={selectedCurrency}
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              paperworkSettings={paperworkSettings}
+              onRegisterPayment={handleRegisterPayment}
+              setTransactions={setTransactions}
             />
           );
+        case 'patient-portal':
         case 'schedules':
-          return <ScheduleCoverageModule specialists={safeSpecialists} />;
+          return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
         case 'billing':
           return (
             <BillingCashModule
@@ -510,24 +516,47 @@ export default function App() {
               bcvRateEur={bcvRateEur}
             />
           );
-        case 'cashea':
-          return <CasheaModule casheaTransactions={safeCashea} setCasheaTransactions={setCasheaTransactions} specialists={safeSpecialists} />;
-        case 'patient-portal':
-          return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
-        case 'roles-audit':
+        case 'baremos':
           return (
-            <AuditRolesPortalModule
-              patients={safePatients}
-              transactions={safeTransactions}
-              currentUser={currentUser}
-              onOpenCreateUser={() => setShowUserModal(true)}
+            <ServicesBaremoModule
+              procedures={safeProcedures}
+              setProcedures={setProcedures}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
+        case 'inventory':
+          return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
+        case 'finances':
         case 'seniat':
+        case 'profitability':
+        case 'cashea':
           return (
-            <SpecialistSettlementModule
-              specialists={safeSpecialists}
+            <FinancesConsolidatedModule
               transactions={safeTransactions}
+              setTransactions={setTransactions}
+              patients={safePatients}
+              specialists={safeSpecialists}
+              procedures={safeProcedures}
+              casheaTransactions={safeCashea}
+              setCasheaTransactions={setCasheaTransactions}
+              consultoryRentals={safeRentals}
+              setConsultoryRentals={setConsultoryRentals}
+              extramuralLabOrders={safeLabOrders}
+              setExtramuralLabOrders={setExtramuralLabOrders}
+              selectedCurrency={selectedCurrency}
+              setSelectedCurrency={setSelectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              bcvRateUsd={bcvRateUsd}
+              bcvRateEur={bcvRateEur}
+            />
+          );
+        case 'paperwork':
+          return (
+            <PaperworkCustomizationModule
+              paperworkSettings={paperworkSettings}
+              setPaperworkSettings={setPaperworkSettings}
+              bcvRate={safeNum(bcvRate, 755.90)}
               selectedCurrency={selectedCurrency}
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
@@ -544,43 +573,15 @@ export default function App() {
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
             />
           );
-        case 'profitability':
-          return (
-            <ProfitabilityDashboard
-              transactions={safeTransactions}
-              casheaTransactions={safeCashea}
-              consultoryRentals={safeRentals}
-              extramuralLabOrders={safeLabOrders}
-              selectedCurrency={selectedCurrency}
-              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
-            />
-          );
-        case 'inventory':
-          return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
         case 'whatsapp':
           return <WhatsAppNotificationsModule patients={safePatients} extramuralLabOrders={safeLabOrders} />;
-        case 'odontogram-budget':
+        case 'roles-audit':
           return (
-            <DentalBudgetOdontogramModule
+            <AuditRolesPortalModule
               patients={safePatients}
-              procedures={safeProcedures}
-              specialists={safeSpecialists}
-              bcvRate={safeNum(bcvRate, 755.90)}
-              selectedCurrency={selectedCurrency}
-              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
-              paperworkSettings={paperworkSettings}
-              onRegisterPayment={handleRegisterPayment}
-              setTransactions={setTransactions}
-            />
-          );
-        case 'paperwork':
-          return (
-            <PaperworkCustomizationModule
-              paperworkSettings={paperworkSettings}
-              setPaperworkSettings={setPaperworkSettings}
-              bcvRate={safeNum(bcvRate, 755.90)}
-              selectedCurrency={selectedCurrency}
-              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              transactions={safeTransactions}
+              currentUser={currentUser}
+              onOpenCreateUser={() => setShowUserModal(true)}
             />
           );
         default:
