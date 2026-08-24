@@ -35,7 +35,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isEditCustomCategory, setIsEditCustomCategory] = useState(false);
 
-  // GESTOR INDEPENDIENTE DE CATEGORÍAS Y ETIQUETAS
+  // GESTOR TOTAL DE CATEGORÍAS Y ETIQUETAS
+  const [managedCategoriesList, setManagedCategoriesList] = useState(['Privado', 'Funcionario', 'Convenio', 'Asegurado']);
   const [customCategoriesList, setCustomCategoriesList] = useState([]);
   const [showCategoryManagerModal, setShowCategoryManagerModal] = useState(false);
   const [newCatInput, setNewCatInput] = useState('');
@@ -414,10 +415,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
   const allCategoriesList = Array.from(
     new Set([
-      'Privado',
-      'Funcionario',
-      'Convenio',
-      'Asegurado',
+      ...(Array.isArray(managedCategoriesList) ? managedCategoriesList : ['Privado', 'Funcionario', 'Convenio', 'Asegurado']),
       ...(Array.isArray(customCategoriesList) ? customCategoriesList : []),
       ...safePatients.map(p => p?.category).filter(Boolean)
     ])
@@ -443,12 +441,10 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     });
   };
 
-  // Renombrar categoría existente
+  // Renombrar categoría existente (cualquiera excepto 'ALL')
   const handleRenameCategory = (oldName) => {
-    if (['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(oldName)) {
-      Swal.fire('Categoría del Sistema', `La categoría "${oldName}" es una categoría estándar y no se puede renombrar.`, 'info');
-      return;
-    }
+    if (oldName === 'ALL') return;
+
     Swal.fire({
       title: `Renombrar categoría "${oldName}"`,
       input: 'text',
@@ -465,23 +461,21 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     }).then((result) => {
       if (result.isConfirmed) {
         const newName = result.value.trim();
-        setCustomCategoriesList((customCategoriesList || []).map(c => c === oldName ? newName : c));
+        setManagedCategoriesList((prev) => (prev || []).map(c => c === oldName ? newName : c));
+        setCustomCategoriesList((prev) => (prev || []).map(c => c === oldName ? newName : c));
         const updatedPatients = safePatients.map(p => p?.category === oldName ? { ...p, category: newName } : p);
         if (typeof setPatients === 'function') {
           setPatients(updatedPatients);
         }
         if (selectedCategory === oldName) setSelectedCategory(newName);
-        Swal.fire('¡Categoría Renombrada!', `Se actualizó a "${newName}" en todos los expedientes.`, 'success');
+        Swal.fire('¡Categoría Renombrada!', `Se actualizó a "${newName}" en todos los expedientes asociadas.`, 'success');
       }
     });
   };
 
-  // Eliminar Categoría / Etiqueta Personalizada
+  // Eliminar Categoría / Etiqueta (cualquiera excepto 'ALL')
   const handleDeleteCategory = (catToDelete) => {
-    if (['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(catToDelete)) {
-      Swal.fire('Categoría del Sistema', `La categoría "${catToDelete}" es una categoría estándar del sistema.`, 'info');
-      return;
-    }
+    if (catToDelete === 'ALL') return;
 
     const count = safePatients.filter(p => p?.category === catToDelete).length;
 
@@ -489,7 +483,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       title: `¿Eliminar etiqueta "${catToDelete}"?`,
       text: count > 0 
         ? `Hay ${count} paciente(s) asignados a esta etiqueta. Si la eliminas, pasarán automáticamente a la categoría "Privado".` 
-        : `La etiqueta será eliminada de la barra de filtros y del sistema.`,
+        : `La etiqueta "${catToDelete}" será eliminada de la lista y del sistema.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
@@ -498,7 +492,8 @@ export default function PatientsModule({ patients = [], setPatients, specialists
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
-        setCustomCategoriesList((customCategoriesList || []).filter(c => c !== catToDelete));
+        setManagedCategoriesList((prev) => (prev || []).filter(c => c !== catToDelete));
+        setCustomCategoriesList((prev) => (prev || []).filter(c => c !== catToDelete));
         const updatedPatients = safePatients.map(p => p?.category === catToDelete ? { ...p, category: 'Privado' } : p);
         if (typeof setPatients === 'function') {
           setPatients(updatedPatients);
@@ -696,7 +691,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           <div className="flex flex-wrap gap-1 items-center">
             {['ALL', ...allCategoriesList].map(cat => {
-              const isStandard = ['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(cat);
+              const isProtected = cat === 'ALL';
               const isActive = selectedCategory === cat;
               return (
                 <div key={cat} className="inline-flex items-center">
@@ -711,7 +706,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     {cat === 'ALL' ? 'Todos' : cat}
                   </button>
 
-                  {!isStandard && (
+                  {!isProtected && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1950,7 +1945,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
               
               <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
                 {allCategoriesList.map(cat => {
-                  const isStandard = ['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].includes(cat);
+                  const isProtected = cat === 'ALL';
                   const patientCount = safePatients.filter(p => (p?.category || 'Privado') === cat).length;
                   return (
                     <div
@@ -1959,18 +1954,13 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-slate-900 dark:text-white">{cat}</span>
-                        {isStandard && (
-                          <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-[9px] font-black uppercase">
-                            Estándar
-                          </span>
-                        )}
                         <span className="text-[10px] text-slate-500 font-medium">
                           ({patientCount} pacientes)
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1">
-                        {!isStandard && (
+                        {!isProtected && (
                           <>
                             <button
                               type="button"
