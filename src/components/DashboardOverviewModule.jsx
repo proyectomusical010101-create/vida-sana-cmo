@@ -103,20 +103,26 @@ export default function DashboardOverviewModule({
       {/* 2. TARJETAS DE MÉTRICAS CLAVE (KPIS) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* KPI 1 */}
-        <div className="p-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl shadow-sm hover:shadow-md transition-all space-y-2">
+        {/* KPI 1 - PACIENTES ATENDIDOS HOY (CLICKABLE CON MODAL Y FILTRO POR FECHA) */}
+        <div
+          onClick={() => setShowAttendedModal(true)}
+          className="p-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl shadow-sm hover:shadow-md hover:border-teal-500 dark:hover:border-teal-500 transition-all space-y-2 cursor-pointer group"
+        >
           <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-            <span className="text-xs font-black uppercase tracking-wider">Pacientes Atendidos</span>
-            <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-teal-600 dark:text-teal-400 font-black">
+            <span className="text-xs font-black uppercase tracking-wider group-hover:text-teal-600 transition-colors">
+              Clientes Atendidos Hoy
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-teal-600 dark:text-teal-400 font-black group-hover:bg-teal-600 group-hover:text-white transition-all">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-            {totalPatients}
+          <div className="text-2xl font-black text-slate-900 dark:text-white font-mono flex items-baseline gap-2">
+            <span>{attendedTodayList.length}</span>
+            <span className="text-xs text-slate-500 font-sans font-bold">paciente(s) hoy</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>{totalPatients > 0 ? `${totalPatients} expediente(s) activo(s)` : 'Sin pacientes registrados'}</span>
+          <div className="flex items-center justify-between text-xs text-teal-600 dark:text-teal-400 font-extrabold pt-1 border-t border-slate-100 dark:border-slate-800">
+            <span>👁️ Ver lista & filtrar fechas</span>
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
 
@@ -401,6 +407,143 @@ export default function DashboardOverviewModule({
         </div>
 
       </div>
+
+      {/* MODAL DE PACIENTES ATENDIDOS CON FILTRO DE FECHAS */}
+      {showAttendedModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white w-full max-w-2xl rounded-3xl border border-slate-200 dark:border-[#1e2d5a] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            
+            {/* Header Modal */}
+            <div className="p-5 bg-gradient-to-r from-slate-900 to-teal-950 text-white flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-lg font-black flex items-center gap-2">
+                  <Users className="w-5 h-5 text-teal-400" />
+                  Lista de Clientes Atendidos
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Consulte los pacientes atendidos hoy o seleccione cualquier fecha pasada.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAttendedModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white bg-slate-800/60 rounded-xl transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Barra de Filtro de Fecha */}
+            <div className="p-4 bg-slate-50 dark:bg-[#0d162f] border-b border-slate-200 dark:border-[#1e2d5a] flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">Seleccionar Fecha:</label>
+                <input
+                  type="date"
+                  value={attendedDateFilter === 'ALL' ? '' : attendedDateFilter}
+                  onChange={(e) => setAttendedDateFilter(e.target.value || 'ALL')}
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAttendedDateFilter(todayStr)}
+                  className={`px-3 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer ${
+                    attendedDateFilter === todayStr
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-teal-500'
+                  }`}
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    setAttendedDateFilter(yesterday.toISOString().slice(0, 10));
+                  }}
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl font-extrabold text-slate-700 dark:text-slate-300 hover:border-teal-500 cursor-pointer"
+                >
+                  Ayer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendedDateFilter('ALL')}
+                  className={`px-3 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer ${
+                    attendedDateFilter === 'ALL'
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-teal-500'
+                  }`}
+                >
+                  Ver Todos los Registros
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido / Lista de Atendidos */}
+            <div className="p-4 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+              <div className="flex justify-between items-center text-xs font-bold text-slate-500 px-1">
+                <span>Mostrando {attendedFilteredList.length} paciente(s) atendido(s)</span>
+                <span>{attendedDateFilter === 'ALL' ? 'Histórico Completo' : `Fecha: ${attendedDateFilter}`}</span>
+              </div>
+
+              {attendedFilteredList.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 dark:bg-[#0d162f] rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 space-y-2">
+                  <span className="text-3xl block">📋</span>
+                  <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300">No hay registros de atención para esta fecha</h4>
+                  <p className="text-xs text-slate-500">Pruebe seleccionando otra fecha o presione "Ver Todos los Registros".</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {attendedFilteredList.map((item, index) => {
+                    const p = item.patient || {};
+                    const pName = p.name || p.full_name || 'Paciente sin nombre';
+                    const pDoc = p.documentId || p.document_id || 'Sin Documento';
+                    const pPhone = p.phone || p.phone_number || p.telefonos || 'Sin Teléfono';
+
+                    return (
+                      <div key={index} className="p-3.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-sm text-slate-900 dark:text-white">{pName}</span>
+                            <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 text-[10px] font-mono font-black rounded">{pDoc}</span>
+                          </div>
+                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                            <span>🩺 {item.procedure}</span>
+                            <span>•</span>
+                            <span>👨‍⚕️ {item.doctor}</span>
+                          </p>
+                          <span className="text-[10px] text-slate-400 font-bold">📞 {pPhone} • Fecha: {item.date}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3 self-end sm:self-center">
+                          {item.total > 0 && (
+                            <span className="font-mono text-teal-700 dark:text-teal-400 font-black text-sm">${item.total.toFixed(2)} USD</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttendedModal(false);
+                              if (onNavigateToModule) onNavigateToModule(1);
+                            }}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <span>Expediente</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -205,6 +205,20 @@ export default function App() {
   const [payroll, setPayroll] = useState([]);
   const [appointments, setAppointments] = useState([]);
   
+  // ESTADO PERSISTENTE PARA BORRADOR DE PRESUPUESTO & HISTORIAL PERMANENTE
+  const [activeBudgetDraft, setActiveBudgetDraft] = useState({
+    toothSurfaces: { 17: { top: 'red' }, 16: { center: 'blue' } },
+    budgetItems: [
+      { id: 'ITEM-1', tooth: 16, procedure: 'Resina Fotocurada Molar', doctor: 'Dr. Carlos Mendoza', priceUsd: 45.00 },
+      { id: 'ITEM-2', tooth: 24, procedure: 'Tratamiento de Conducto (Endodoncia)', doctor: 'Dra. Vanessa Rivas', priceUsd: 120.00 }
+    ],
+    clinicalObservations: '',
+    consentText: '',
+    discountPercent: '0',
+    paymentSplits: []
+  });
+  const [savedBudgetsHistory, setSavedBudgetsHistory] = useState([]);
+
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   // Cargar datos reales de Supabase (o mockData si falla la conexión)
@@ -487,6 +501,7 @@ export default function App() {
           return (
             <DentalBudgetOdontogramModule
               patients={safePatients}
+              setPatients={setPatients}
               procedures={safeProcedures}
               specialists={safeSpecialists}
               bcvRate={safeNum(bcvRate, 755.90)}
@@ -495,6 +510,10 @@ export default function App() {
               paperworkSettings={paperworkSettings}
               onRegisterPayment={handleRegisterPayment}
               setTransactions={setTransactions}
+              activeBudgetDraft={activeBudgetDraft}
+              setActiveBudgetDraft={setActiveBudgetDraft}
+              savedBudgetsHistory={savedBudgetsHistory}
+              setSavedBudgetsHistory={setSavedBudgetsHistory}
             />
           );
         case 'patient-portal':

@@ -4,26 +4,42 @@ import Swal from 'sweetalert2';
 
 export default function DentalBudgetOdontogramModule({
   patients = [],
+  setPatients,
   procedures = [],
   specialists = [],
   bcvRate = 755.90,
   paperworkSettings,
   onRegisterPayment,
-  setTransactions
+  setTransactions,
+  activeBudgetDraft,
+  setActiveBudgetDraft,
+  savedBudgetsHistory = [],
+  setSavedBudgetsHistory
 }) {
   const safePatients = Array.isArray(patients) ? patients : [];
 
+  // Pestaña Activa del Módulo: 'editor' | 'history'
+  const [activeMainTab, setActiveMainTab] = useState('editor');
+
   // Estados de Consentimiento Informado, Observaciones Clínicas, Método de Pago y Descuento
-  const [clinicalObservations, setClinicalObservations] = useState('');
+  const [clinicalObservations, setClinicalObservations] = useState(activeBudgetDraft?.clinicalObservations || '');
   const [consentText, setConsentText] = useState(
+    activeBudgetDraft?.consentText ||
     paperworkSettings?.consentTemplate ||
     'Declaro haber sido informado sobre los procedimientos clínicos descritos en este presupuesto y autorizo la ejecución de los tratamientos bajo la tasa oficial BCV de la clínica.'
   );
-  const [paymentMethod, setPaymentMethod] = useState('Pago Móvil'); // 'Pago Móvil' | 'Efectivo' | 'Zelle' | 'Binance'
-  const [discountPercent, setDiscountPercent] = useState('0');
+
+  // Formas de pago múltiples / mixtas
+  const [paymentSplits, setPaymentSplits] = useState(
+    Array.isArray(activeBudgetDraft?.paymentSplits) && activeBudgetDraft.paymentSplits.length > 0
+      ? activeBudgetDraft.paymentSplits
+      : [{ id: 1, method: 'Pago Móvil', amountUsd: 0 }]
+  );
+
+  const [discountPercent, setDiscountPercent] = useState(activeBudgetDraft?.discountPercent || '0');
 
   useEffect(() => {
-    if (paperworkSettings?.consentTemplate) {
+    if (!consentText && paperworkSettings?.consentTemplate) {
       setConsentText(paperworkSettings.consentTemplate);
     }
   }, [paperworkSettings]);
@@ -32,16 +48,17 @@ export default function DentalBudgetOdontogramModule({
   const [selectedPatientId, setSelectedPatientId] = useState(safePatients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
-  // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza
-  const [activeMarkMode, setActiveMarkMode] = useState('red'); // 'red' | 'blue' | 'green' | 'purple' | 'erase'
-  const [toothSurfaces, setToothSurfaces] = useState({
-    17: { top: 'red' },
-    16: { center: 'blue' },
-    24: { left: 'green' }
-  });
+  // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza (Modos: 'red' | 'blue')
+  const [activeMarkMode, setActiveMarkMode] = useState('red');
+  const [toothSurfaces, setToothSurfaces] = useState(
+    activeBudgetDraft?.toothSurfaces || {
+      17: { top: 'red' },
+      16: { center: 'blue' }
+    }
+  );
 
   // Modal de Selección de Tratamiento del Baremo por Cara Seleccionada
-  const [selectedFaceModal, setSelectedFaceModal] = useState(null); // { toothNum: 17, faceKey: 'bottom', faceLabel: 'Lingual / Palatina' }
+  const [selectedFaceModal, setSelectedFaceModal] = useState(null);
   const [baremoSearchTerm, setBaremoSearchTerm] = useState('');
 
   // Cálculo Dinámico de Edad
@@ -129,13 +146,31 @@ export default function DentalBudgetOdontogramModule({
   const [modalNotes, setModalNotes] = useState('');
 
   // SECCION 4 State: Presupuesto Generado (Lista de partidas)
-  const [budgetItems, setBudgetItems] = useState([
-    { id: 'ITEM-1', tooth: 16, procedure: 'Resina Fotocurada Molar', doctor: 'Dr. Carlos Mendoza', priceUsd: 45.00 },
-    { id: 'ITEM-2', tooth: 24, procedure: 'Tratamiento de Conducto (Endodoncia)', doctor: 'Dra. Vanessa Rivas', priceUsd: 120.00 }
-  ]);
+  const [budgetItems, setBudgetItems] = useState(
+    Array.isArray(activeBudgetDraft?.budgetItems)
+      ? activeBudgetDraft.budgetItems
+      : [
+          { id: 'ITEM-1', tooth: 16, procedure: 'Resina Fotocurada Molar', doctor: 'Dr. Carlos Mendoza', priceUsd: 45.00 },
+          { id: 'ITEM-2', tooth: 24, procedure: 'Tratamiento de Conducto (Endodoncia)', doctor: 'Dra. Vanessa Rivas', priceUsd: 120.00 }
+        ]
+  );
   const [customProcName, setCustomProcName] = useState('');
   const [customToothNum, setCustomToothNum] = useState('General');
   const [customProcPrice, setCustomProcPrice] = useState('40');
+
+  // Sincronizar automáticamente el borrador activo al padre App.jsx para persistencia al cambiar de pestaña
+  useEffect(() => {
+    if (typeof setActiveBudgetDraft === 'function') {
+      setActiveBudgetDraft({
+        toothSurfaces,
+        budgetItems,
+        clinicalObservations,
+        consentText,
+        discountPercent,
+        paymentSplits
+      });
+    }
+  }, [toothSurfaces, budgetItems, clinicalObservations, consentText, discountPercent, paymentSplits]);
 
   // SECCION 5 State: Firmas Digitales
   const patientCanvasRef = useRef(null);
@@ -301,43 +336,95 @@ export default function DentalBudgetOdontogramModule({
     });
   };
 
-  // Agregar partida manual al presupuesto
+  // Borrado de cara de diente con Clic Derecho (onContextMenu)
+  const handleRightClickFace = (toothNum, faceKey) => {
+    setToothSurfaces(prev => {
+      const current = prev[toothNum] || {};
+      const updated = { ...current };
+      delete updated[faceKey];
+
+      const nextSurfaces = { ...prev };
+      if (Object.keys(updated).length === 0) {
+        delete nextSurfaces[toothNum];
+      } else {
+        nextSurfaces[toothNum] = updated;
+      }
+      return nextSurfaces;
+    });
+
+    // Eliminar también las partidas asociadas a esa pieza en el presupuesto
+    setBudgetItems(prev => prev.filter(item => String(item.tooth) !== String(toothNum)));
+  };
+
+  // Agregar partida manual al presupuesto (Sincronizada con el Odontodiagrama arriba)
   const handleAddCustomBudgetItem = (e) => {
     e.preventDefault();
     if (!customProcName) return;
 
     const price = parseFloat(customProcPrice) || 0;
+    const toothVal = customToothNum || 'General';
     const newItem = {
       id: `ITEM-${Date.now().toString().slice(-4)}`,
-      tooth: customToothNum || 'General',
+      tooth: toothVal,
       procedure: customProcName,
       doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
       priceUsd: price
     };
 
-    setBudgetItems([...budgetItems, newItem]);
+    setBudgetItems(prev => [...prev, newItem]);
+
+    // Reflejar arriba en el odontodiagrama si se especificó número de pieza
+    const parsedTooth = parseInt(toothVal);
+    if (!isNaN(parsedTooth)) {
+      setToothSurfaces(prev => ({
+        ...prev,
+        [parsedTooth]: {
+          ...(prev[parsedTooth] || {}),
+          center: 'red'
+        }
+      }));
+    }
+
     setCustomProcName('');
     setCustomProcPrice('40');
 
     Swal.fire({
       title: 'Tratamiento Añadido',
-      text: `Se agregó "${customProcName}" al presupuesto.`,
+      text: `Se agregó "${customProcName}" al presupuesto y se reflejó en el Odontodiagrama.`,
       icon: 'success',
       confirmButtonColor: '#0d9488'
     });
   };
 
-  // Eliminar partida de presupuesto
+  // Eliminar partida de presupuesto (Sincronizada hacia arriba en Odontodiagrama)
   const handleDeleteBudgetItem = (id) => {
-    setBudgetItems(budgetItems.filter(item => item.id !== id));
+    const itemToDelete = budgetItems.find(item => item.id === id);
+    const updatedItems = budgetItems.filter(item => item.id !== id);
+    setBudgetItems(updatedItems);
+
+    if (itemToDelete && itemToDelete.tooth && itemToDelete.tooth !== 'General') {
+      const toothNum = itemToDelete.tooth;
+      const remainingForTooth = updatedItems.some(i => String(i.tooth) === String(toothNum));
+      if (!remainingForTooth) {
+        setToothSurfaces(prev => {
+          const nextSurfaces = { ...prev };
+          delete nextSurfaces[toothNum];
+          return nextSurfaces;
+        });
+      }
+    }
   };
 
-  // Generar / Guardar Presupuesto Final Certificado
+  // Generar / Guardar Presupuesto Final Certificado e Histórico Permanente
   const handleCertifyBudget = () => {
     if (!patientSigned || !doctorSigned) {
       Swal.fire('Firmas Pendientes', 'Por favor capture la Firma del Paciente y la Firma del Odontólogo antes de certificar.', 'warning');
       return;
     }
+
+    const paymentMethodsSummary = paymentSplits
+      .map(s => `${s.method}: $${(parseFloat(s.amountUsd) || 0).toFixed(2)} USD`)
+      .join(' + ');
 
     const newTx = {
       id: `TX-BDG-${Date.now().toString().slice(-6)}`,
@@ -351,21 +438,73 @@ export default function DentalBudgetOdontogramModule({
       discountAmount: discountUsd,
       total: finalTotalUsd,
       amount: finalTotalUsd,
-      paymentMethod: paymentMethod,
+      paymentMethod: paymentMethodsSummary || 'Pago Móvil',
       status: 'Completado',
       notes: discPercentNum > 0
-        ? `Presupuesto Certificado con ${discPercentNum}% de descuento manual (-$${discountUsd.toFixed(2)} USD). Método: ${paymentMethod}`
-        : `Presupuesto Certificado. Método: ${paymentMethod}`,
+        ? `Presupuesto Certificado con ${discPercentNum}% descuento. Formas de pago: ${paymentMethodsSummary}`
+        : `Presupuesto Certificado. Formas de pago: ${paymentMethodsSummary}`,
       area: 'ODONTOLOGIA'
     };
 
+    // 1. Guardar en Transacciones de Flujo de Caja
     if (typeof onRegisterPayment === 'function') {
       onRegisterPayment(newTx);
     }
 
+    // 2. Guardar permanentemente en el Histórico Global de Presupuestos
+    const budgetRecord = {
+      id: `BDG-${Date.now().toString().slice(-6)}`,
+      date: new Date().toISOString().slice(0, 10),
+      patientId: activePatient?.id || '100-01',
+      patientName: activePatient?.name || activePatient?.full_name || 'Paciente',
+      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      items: [...budgetItems],
+      subtotalUsd,
+      discountPercent: discPercentNum,
+      discountUsd,
+      finalTotalUsd,
+      finalTotalBs,
+      bcvRate,
+      paymentSplits: [...paymentSplits],
+      observations: clinicalObservations,
+      consentText: consentText
+    };
+
+    if (typeof setSavedBudgetsHistory === 'function') {
+      setSavedBudgetsHistory(prev => [budgetRecord, ...(prev || [])]);
+    }
+
+    // 3. Registrar entrada permanente en la Historia Clínica del Paciente
+    if (activePatient && typeof setPatients === 'function') {
+      const updatedHistoryEntry = {
+        date: new Date().toISOString().slice(0, 10),
+        procedure: `Presupuesto Certificado #${budgetRecord.id} (${budgetItems.length} ítems)`,
+        doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+        cost: finalTotalUsd,
+        status: 'Completado'
+      };
+      const updatedPatients = safePatients.map(p => p.id === activePatient.id ? {
+        ...p,
+        history: [updatedHistoryEntry, ...(Array.isArray(p.history) ? p.history : [])]
+      } : p);
+      setPatients(updatedPatients);
+    }
+
+    // 4. Reiniciar borrador activo una vez guardado
+    if (typeof setActiveBudgetDraft === 'function') {
+      setActiveBudgetDraft({
+        toothSurfaces: {},
+        budgetItems: [],
+        clinicalObservations: '',
+        consentText: '',
+        discountPercent: '0',
+        paymentSplits: []
+      });
+    }
+
     Swal.fire({
-      title: '¡Presupuesto Certificado & Auditado!',
-      text: `El presupuesto de $${finalTotalUsd.toFixed(2)} USD (${finalTotalBs.toFixed(2)} Bs) para ${activePatient?.name || 'el paciente'} ha sido firmado y registrado en el control financiero (${paymentMethod}${discPercentNum > 0 ? ` con ${discPercentNum}% de descuento` : ''}).`,
+      title: '¡Presupuesto Certificado & Guardado!',
+      text: `El presupuesto de $${finalTotalUsd.toFixed(2)} USD (${finalTotalBs.toFixed(2)} Bs) para ${activePatient?.name || 'el paciente'} ha sido registrado permanentemente en su Historia Clínica y en el Histórico de Presupuestos.`,
       icon: 'success',
       confirmButtonColor: '#0d9488'
     });
@@ -400,6 +539,10 @@ export default function DentalBudgetOdontogramModule({
                   stroke="#94a3b8"
                   strokeWidth="1"
                   onClick={() => !isCompact && handleFaceClick(toothNum, 'top')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isCompact) handleRightClickFace(toothNum, 'top');
+                  }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -410,6 +553,10 @@ export default function DentalBudgetOdontogramModule({
                   stroke="#94a3b8"
                   strokeWidth="1"
                   onClick={() => !isCompact && handleFaceClick(toothNum, 'right')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isCompact) handleRightClickFace(toothNum, 'right');
+                  }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -420,6 +567,10 @@ export default function DentalBudgetOdontogramModule({
                   stroke="#94a3b8"
                   strokeWidth="1"
                   onClick={() => !isCompact && handleFaceClick(toothNum, 'bottom')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isCompact) handleRightClickFace(toothNum, 'bottom');
+                  }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -430,6 +581,10 @@ export default function DentalBudgetOdontogramModule({
                   stroke="#94a3b8"
                   strokeWidth="1"
                   onClick={() => !isCompact && handleFaceClick(toothNum, 'left')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isCompact) handleRightClickFace(toothNum, 'left');
+                  }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
 
@@ -443,6 +598,10 @@ export default function DentalBudgetOdontogramModule({
                   stroke="#94a3b8"
                   strokeWidth="1"
                   onClick={() => !isCompact && handleFaceClick(toothNum, 'center')}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isCompact) handleRightClickFace(toothNum, 'center');
+                  }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
               </svg>
@@ -457,7 +616,99 @@ export default function DentalBudgetOdontogramModule({
     <div className="w-full max-w-5xl mx-auto pb-12">
       
       {/* CONTENEDOR WEB DE FORMULARIOS E INTERFAZ (100% OCULTO EN IMPRESIÓN / PDF) */}
-      <div className="web-only-form space-y-8">
+      <div className="web-only-form space-y-6">
+
+        {/* Pestañas Principales: Editor de Presupuesto vs Histórico Permanente */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] p-3 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveMainTab('editor')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeMainTab === 'editor'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <Stethoscope className="w-4 h-4" />
+              📝 1. Elaborar Presupuesto & Odontodiagrama
+            </button>
+
+            <button
+              onClick={() => setActiveMainTab('history')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeMainTab === 'history'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              📋 2. Histórico de Presupuestos ({savedBudgetsHistory.length})
+            </button>
+          </div>
+
+          <span className="text-[11px] font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40 px-3 py-1 rounded-xl border border-teal-200 dark:border-teal-800">
+            ✓ Guardado Automático & Histórico Integrado
+          </span>
+        </div>
+
+        {activeMainTab === 'history' ? (
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#1e2d5a]">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-teal-600" />
+                  Histórico Permanente de Presupuestos Emitidos
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Registro permanente e inalterable de todos los presupuestos cotizados y certificados en la clínica.
+                </p>
+              </div>
+            </div>
+
+            {savedBudgetsHistory.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 dark:bg-[#0d162f] rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 space-y-2">
+                <span className="text-3xl block">📋</span>
+                <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300">No hay presupuestos certificados guardados aún</h4>
+                <p className="text-xs text-slate-500">Al elaborar y certificar un presupuesto en el editor, aparecerá aquí permanentemente.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedBudgetsHistory.map((b) => (
+                  <div key={b.id} className="p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-2 text-xs font-bold">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-teal-600 text-white rounded font-mono text-[10px] font-black">{b.id}</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{b.patientName}</span>
+                        <span className="text-slate-400">({b.date})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-teal-700 dark:text-teal-400 font-black text-sm">${(b.finalTotalUsd || 0).toFixed(2)} USD</span>
+                        <span className="font-mono text-blue-700 dark:text-blue-400 font-bold text-xs">({(b.finalTotalBs || 0).toFixed(2)} Bs)</span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs space-y-1">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">Procedimientos ({b.items?.length || 0}):</span>
+                      <ul className="list-disc list-inside text-slate-600 dark:text-slate-400 font-medium">
+                        {(b.items || []).map((item, idx) => (
+                          <li key={idx}>Pieza #{item.tooth}: {item.procedure} (${item.priceUsd})</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {Array.isArray(b.paymentSplits) && b.paymentSplits.length > 0 && (
+                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                        <span>Formas de Pago: </span>
+                        {b.paymentSplits.map(s => `${s.method}: $${(parseFloat(s.amountUsd) || 0).toFixed(2)} USD`).join(' • ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
 
       {/* ========================================================================= */}
       {/* SECCION 1: CABECERA (Emisión y Envío de Presupuestos) */}
@@ -673,8 +924,8 @@ export default function DentalBudgetOdontogramModule({
                   : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-rose-400'
               }`}
             >
-              <span className="w-3 h-3 rounded-full bg-rose-500 border border-white"></span>
-              <span>❗ Patología (Rojo)</span>
+              <span className="w-3.5 h-3.5 rounded-full bg-rose-500 border border-white"></span>
+              <span>Rojo: Lesión</span>
             </button>
 
             <button
@@ -686,47 +937,13 @@ export default function DentalBudgetOdontogramModule({
                   : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-blue-400'
               }`}
             >
-              <span className="w-3 h-3 rounded-full bg-blue-500 border border-white"></span>
-              <span>✓ Tratado (Azul)</span>
+              <span className="w-3.5 h-3.5 rounded-full bg-blue-500 border border-white"></span>
+              <span>Azul: Sano</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveMarkMode('green')}
-              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
-                activeMarkMode === 'green'
-                  ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400 scale-105'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-emerald-400'
-              }`}
-            >
-              <span className="w-3 h-3 rounded-full bg-emerald-500 border border-white"></span>
-              <span>➕ Plan Propuesto (Verde)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMarkMode('purple')}
-              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
-                activeMarkMode === 'purple'
-                  ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400 scale-105'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-purple-400'
-              }`}
-            >
-              <span className="w-3 h-3 rounded-full bg-purple-500 border border-white"></span>
-              <span>🟣 Endodoncia / Corona</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveMarkMode('erase')}
-              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
-                activeMarkMode === 'erase'
-                  ? 'bg-slate-900 text-white shadow-md ring-2 ring-slate-500 scale-105'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-slate-500'
-              }`}
-            >
-              <span>🧽 Borrar Cara</span>
-            </button>
+            <div className="text-[11px] text-amber-900 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-3 py-1.5 rounded-xl flex items-center gap-1.5 ml-auto">
+              <span>💡 Clic derecho sobre cualquier cara borra su diagnóstico.</span>
+            </div>
           </div>
         </div>
 
@@ -994,31 +1211,73 @@ export default function DentalBudgetOdontogramModule({
             )}
           </div>
 
-          {/* Selector de Método de Pago (Estándar 4 Opciones: Pago Móvil, Efectivo, Zelle, Binance) */}
-          <div className="md:col-span-8 space-y-1.5">
-            <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
-              💳 Método de Pago Asignado:
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'Pago Móvil', icon: '📱' },
-                { id: 'Efectivo', icon: '💵' },
-                { id: 'Zelle', icon: '🏦' },
-                { id: 'Binance', icon: '🪙' }
-              ].map(method => (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => setPaymentMethod(method.id)}
-                  className={`p-2 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    paymentMethod === method.id
-                      ? 'bg-teal-600 text-white border-teal-600 shadow-md scale-[1.02]'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-teal-500'
-                  }`}
-                >
-                  <span>{method.icon}</span>
-                  <span className="truncate">{method.id}</span>
-                </button>
+          {/* Selector de Forma(s) de Pago Múltiples y Mixtas */}
+          <div className="md:col-span-8 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
+                💳 Forma(s) de Pago Asignada(s) (Soporta Pago Mixto / Múltiple):
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentSum = paymentSplits.reduce((acc, p) => acc + (parseFloat(p.amountUsd) || 0), 0);
+                  const remaining = Math.max(0, finalTotalUsd - currentSum);
+                  setPaymentSplits([...paymentSplits, { id: Date.now(), method: 'Pago Móvil', amountUsd: remaining }]);
+                }}
+                className="text-[11px] bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> + Agregar Otro Método
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {paymentSplits.map((split, index) => (
+                <div key={split.id || index} className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-[#0d162f] p-2.5 rounded-xl border border-slate-200 dark:border-[#1e2d5a]">
+                  <select
+                    value={split.method}
+                    onChange={(e) => {
+                      const nextSplits = paymentSplits.map((s, i) => i === index ? { ...s, method: e.target.value } : s);
+                      setPaymentSplits(nextSplits);
+                    }}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-black text-slate-900 dark:text-white"
+                  >
+                    <option value="Pago Móvil">📱 Pago Móvil</option>
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Zelle">🏦 Zelle</option>
+                    <option value="Binance">🪙 Binance</option>
+                    <option value="Cashea">📱 Cashea (Cta. por Cobrar)</option>
+                  </select>
+
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[180px]">
+                    <span className="text-xs font-bold text-slate-500">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={split.amountUsd}
+                      onChange={(e) => {
+                        const nextSplits = paymentSplits.map((s, i) => i === index ? { ...s, amountUsd: parseFloat(e.target.value) || 0 } : s);
+                        setPaymentSplits(nextSplits);
+                      }}
+                      placeholder="Monto en USD"
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
+                      ({((parseFloat(split.amountUsd) || 0) * bcvRate).toFixed(2)} Bs)
+                    </span>
+                  </div>
+
+                  {paymentSplits.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
+                      className="p-1.5 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-lg text-xs cursor-pointer"
+                      title="Quitar este método de pago"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -1187,7 +1446,6 @@ export default function DentalBudgetOdontogramModule({
           </button>
         </div>
       </section>
-      </div>
 
       {/* MODAL CAMBIAR DIAGNOSTICO PIEZA DENTAL */}
       {selectedToothModal && (
@@ -1380,6 +1638,9 @@ export default function DentalBudgetOdontogramModule({
           </div>
         </div>
       )}
+      </>
+      )}
+      </div>
 
       {/* ========================================================================= */}
       {/* PLANTILLA DE IMPRESIÓN OFICIAL PDF (VISUALIZACIÓN LIMPIA COMPACTADA) */}
