@@ -404,6 +404,16 @@ export default function PatientsModule({ patients = [], setPatients, specialists
     }
   };
 
+  const allCategoriesList = Array.from(
+    new Set([
+      'Privado',
+      'Funcionario',
+      'Convenio',
+      'Asegurado',
+      ...safePatients.map(p => p?.category).filter(Boolean)
+    ])
+  );
+
   const filteredPatients = safePatients.filter(p => {
     if (!p) return false;
     const matchesCategory = selectedCategory === 'ALL' || (p.category || 'Privado') === selectedCategory;
@@ -588,7 +598,7 @@ export default function PatientsModule({ patients = [], setPatients, specialists
           </div>
 
           <div className="flex flex-wrap gap-1">
-            {['ALL', 'Privado', 'Funcionario', 'Convenio', 'Asegurado'].map(cat => (
+            {['ALL', ...allCategoriesList].map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -1313,16 +1323,41 @@ export default function PatientsModule({ patients = [], setPatients, specialists
                     </div>
                     <div>
                       <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría del Paciente</label>
-                      <select
-                        value={patientCategory}
-                        onChange={(e) => setPatientCategory(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl"
-                      >
-                        <option value="Privado">Privado</option>
-                        <option value="Funcionario">Funcionario</option>
-                        <option value="Convenio">Convenio</option>
-                        <option value="Asegurado">Asegurado</option>
-                      </select>
+                      {patientCategory === 'CUSTOM' ? (
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="Nombre de la nueva categoría (ej. VIP, Jubilado...)"
+                            autoFocus
+                            onChange={(e) => setPatientCategory(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPatientCategory('Privado')}
+                            className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-xs font-bold"
+                          >
+                            ❌
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          value={patientCategory}
+                          onChange={(e) => {
+                            if (e.target.value === 'CUSTOM') {
+                              setPatientCategory('');
+                            } else {
+                              setPatientCategory(e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl font-bold text-slate-900 dark:text-white"
+                        >
+                          {allCategoriesList.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                          <option value="CUSTOM">➕ + Crear Nueva Categoría...</option>
+                        </select>
+                      )}
                     </div>
                   </div>
 
@@ -1621,16 +1656,41 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
-                  <select
-                    value={editPatientForm.category}
-                    onChange={(e) => setEditPatientForm({ ...editPatientForm, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
-                  >
-                    <option value="Privado">Privado</option>
-                    <option value="Funcionario">Funcionario</option>
-                    <option value="Convenio">Convenio Empresarial</option>
-                    <option value="Asegurado">Asegurado (Póliza)</option>
-                  </select>
+                  {editPatientForm.category === 'CUSTOM' ? (
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Nueva categoría..."
+                        autoFocus
+                        onChange={(e) => setEditPatientForm({ ...editPatientForm, category: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-teal-500 rounded-xl font-bold text-slate-900 dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditPatientForm({ ...editPatientForm, category: 'Privado' })}
+                        className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-xs font-bold"
+                      >
+                        ❌
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={editPatientForm.category}
+                      onChange={(e) => {
+                        if (e.target.value === 'CUSTOM') {
+                          setEditPatientForm({ ...editPatientForm, category: '' });
+                        } else {
+                          setEditPatientForm({ ...editPatientForm, category: e.target.value });
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
+                    >
+                      {allCategoriesList.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                      <option value="CUSTOM">➕ + Crear Nueva Categoría...</option>
+                    </select>
+                  )}
                 </div>
               </div>
 
