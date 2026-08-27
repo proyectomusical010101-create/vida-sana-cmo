@@ -138,6 +138,33 @@ export async function fetchUsersApi() {
   }
   const localUsers = getLocalUsers();
   
+  // Auto-sincronizar usuarios locales a la nube Supabase si faltan en la nube
+  if (supabase && localUsers.length > 0) {
+    for (const u of localUsers) {
+      const uEmail = String(u.email || '').trim().toLowerCase();
+      if (uEmail && !cloudUsers.some(c => String(c.email || '').trim().toLowerCase() === uEmail)) {
+        try {
+          const payload = {
+            name: u.name || 'Usuario Registrado',
+            email: uEmail,
+            password: String(u.password || u.password_hash || '123456').trim(),
+            password_hash: String(u.password || u.password_hash || '123456').trim(),
+            role: u.role || 'Administrador'
+          };
+          const { data: inserted, error: insErr } = await supabase.from('users').insert([payload]).select();
+
+          if (insErr && insErr.message && insErr.message.includes('column')) {
+            delete payload.password_hash;
+            const { data: i2 } = await supabase.from('users').insert([payload]).select();
+            if (i2 && i2.length > 0) cloudUsers.push(i2[0]);
+          } else if (inserted && inserted.length > 0) {
+            cloudUsers.push(inserted[0]);
+          }
+        } catch (e) {}
+      }
+    }
+  }
+
   // Combinar usuarios de Supabase con usuarios locales evitando duplicados por email
   const combinedMap = new Map();
   cloudUsers.forEach(u => combinedMap.set(String(u.email || '').toLowerCase(), u));
@@ -184,21 +211,40 @@ export async function createUserApi(userData) {
   // 2. Guardar en Supabase para sincronización remota con todos los equipos (Nube Vercel)
   if (supabase) {
     try {
-      const payload = {
+      let payload = {
         name: newUserRecord.name,
         email: cleanEmail,
-        password_hash: cleanPassword,
         password: cleanPassword,
+        password_hash: cleanPassword,
         role: newUserRecord.role
       };
 
       const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
       if (existing && existing.length > 0) {
-        const { data: updated } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
+        let { data: updated, error: updateErr } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
+        if (updateErr && updateErr.message && updateErr.message.includes('column')) {
+          delete payload.password_hash;
+          const { data: u2 } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
+          if (u2 && u2.length > 0) return u2[0];
+        }
         if (updated && updated.length > 0) return updated[0];
       } else {
-        const { data: inserted, error } = await supabase.from('users').insert([payload]).select();
-        if (!error && inserted && inserted.length > 0) return inserted[0];
+        let { data: inserted, error: insertErr } = await supabase.from('users').insert([payload]).select();
+        
+        if (insertErr && insertErr.message && insertErr.message.includes('column')) {
+          delete payload.password_hash;
+          const { data: i2, error: i2Err } = await supabase.from('users').insert([payload]).select();
+          if (!i2Err && i2 && i2.length > 0) return i2[0];
+        }
+
+        if (insertErr && insertErr.message && insertErr.message.includes('id')) {
+          payload.id = Date.now();
+          const { data: i3 } = await supabase.from('users').insert([payload]).select();
+          if (i3 && i3.length > 0) return i3[0];
+        }
+
+        if (!insertErr && inserted && inserted.length > 0) return inserted[0];
+        if (insertErr) console.error("❌ Error al registrar en Supabase:", insertErr.message);
       }
     } catch (e) {
       console.warn("⚠️ Supabase createUserApi aviso:", e.message || e);
@@ -253,14 +299,28 @@ export async function updateUserApi(id, userData) {
       
       const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
       if (existing && existing.length > 0) {
-        const { data: updated } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
+        let { data: updated, error: errUp } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
+        if (errUp && errUp.message && errUp.message.includes('column')) {
+          delete updatePayload.password_hash;
+          const { data: u2 } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
+          if (u2 && u2.length > 0) return u2[0];
+        }
         if (updated && updated.length > 0) return updated[0];
       } else {
-        const { data: inserted } = await supabase.from('users').insert([{
+        let { data: inserted, error: errIns } = await supabase.from('users').insert([{
           ...updatePayload,
           password: cleanPass || '123456',
           password_hash: cleanPass || '123456'
         }]).select();
+
+        if (errIns && errIns.message && errIns.message.includes('column')) {
+          delete updatePayload.password_hash;
+          const { data: i2 } = await supabase.from('users').insert([{
+            ...updatePayload,
+            password: cleanPass || '123456'
+          }]).select();
+          if (i2 && i2.length > 0) return i2[0];
+        }
         if (inserted && inserted.length > 0) return inserted[0];
       }
     } catch (e) {
