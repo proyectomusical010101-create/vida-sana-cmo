@@ -16,6 +16,90 @@ export default function DashboardOverviewModule({
 }) {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
 
+  // Estado para Modal y Filtro de Clientes Atendidos
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [showAttendedModal, setShowAttendedModal] = useState(false);
+  const [attendedDateFilter, setAttendedDateFilter] = useState(todayStr);
+
+  // Helper para agrupar pacientes atendidos desde transacciones, citas e historias clínicas
+  const getAttendedPatients = (dateFilter) => {
+    const list = [];
+    const seenMap = new Set();
+
+    // 1. Transacciones registradas
+    (transactions || []).forEach((t, idx) => {
+      const txDate = (t.date || '').slice(0, 10);
+      if (dateFilter === 'ALL' || txDate === dateFilter) {
+        const patientMatch = (patients || []).find(p => 
+          (p.name || p.full_name || '').toLowerCase() === (t.patient || t.patient_name || '').toLowerCase()
+        ) || { name: t.patient || t.patient_name || 'Paciente Registrado' };
+
+        const key = `tx-${t.id || idx}-${patientMatch.name}-${t.procedure || t.procedure_name || ''}`;
+        if (!seenMap.has(key)) {
+          seenMap.add(key);
+          list.push({
+            patient: patientMatch,
+            date: txDate || dateFilter,
+            procedure: t.procedure || t.procedure_name || 'Consulta / Tratamiento',
+            doctor: t.doctor || t.doctor_name || 'Especialista',
+            total: parseFloat(t.total || t.amount || 0)
+          });
+        }
+      }
+    });
+
+    // 2. Citas marcadas como Atendida o Completada
+    (appointments || []).forEach(a => {
+      if (a.status === 'Atendida' || a.status === 'Completada') {
+        const apptDate = (a.date || '').slice(0, 10);
+        if (dateFilter === 'ALL' || apptDate === dateFilter) {
+          const patientMatch = (patients || []).find(p => 
+            (p.name || p.full_name || '').toLowerCase() === (a.patientName || '').toLowerCase()
+          ) || { name: a.patientName || 'Paciente Citado' };
+
+          const key = `appt-${a.id}-${patientMatch.name}`;
+          if (!seenMap.has(key)) {
+            seenMap.add(key);
+            list.push({
+              patient: patientMatch,
+              date: apptDate || dateFilter,
+              procedure: a.procedureName || a.specialty || 'Atención Odontológica',
+              doctor: a.specialistName || a.doctor || 'Especialista',
+              total: 0
+            });
+          }
+        }
+      }
+    });
+
+    // 3. Historias Clínicas en pacientes
+    (patients || []).forEach(p => {
+      if (Array.isArray(p.history)) {
+        p.history.forEach(h => {
+          const hDate = (h.date || '').slice(0, 10);
+          if (dateFilter === 'ALL' || hDate === dateFilter) {
+            const key = `hist-${p.id}-${h.procedure}-${hDate}`;
+            if (!seenMap.has(key)) {
+              seenMap.add(key);
+              list.push({
+                patient: p,
+                date: hDate,
+                procedure: h.procedure || 'Consulta Médica',
+                doctor: h.doctor || 'Especialista',
+                total: parseFloat(h.cost || 0)
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return list;
+  };
+
+  const attendedTodayList = getAttendedPatients(todayStr);
+  const attendedFilteredList = getAttendedPatients(attendedDateFilter);
+
   // Pacientes este mes (Real)
   const totalPatients = patients.length;
   
