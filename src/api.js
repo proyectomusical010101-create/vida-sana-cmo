@@ -116,13 +116,22 @@ export async function loginApi(emailOrUsername, password) {
   });
 
   if (matchedLocalUser) {
-    // Re-sincronizar con Supabase si está disponible
+    // Re-sincronizar y forzar inserción en Supabase si está disponible
     if (supabase) {
       try {
-        await supabase
-          .from('users')
-          .update({ password: cleanPassword, password_hash: cleanPassword })
-          .eq('email', matchedLocalUser.email);
+        const payload = {
+          name: matchedLocalUser.name || 'Usuario',
+          email: matchedLocalUser.email,
+          password: cleanPassword,
+          password_hash: cleanPassword,
+          role: matchedLocalUser.role || 'Administrador'
+        };
+        const { data: ex } = await supabase.from('users').select('id').eq('email', matchedLocalUser.email);
+        if (ex && ex.length > 0) {
+          await supabase.from('users').update(payload).eq('email', matchedLocalUser.email);
+        } else {
+          await supabase.from('users').insert([payload]);
+        }
       } catch (e) {}
     }
 
@@ -138,17 +147,46 @@ export async function loginApi(emailOrUsername, password) {
     };
   }
 
-  // 3. Fallback de Administrador predeterminado demo
-  const isAdminInput = (cleanInput === 'admin' || cleanInput === 'admin@vidasana.com' || cleanInput === 'admin@vidasanacmo.com' || cleanInput === 'administrador');
-  if (isAdminInput && cleanPassword === 'admin123') {
+  // 3. Auto-provisionar e insertar en la Nube si el usuario intenta ingresar con la clave estándar (123456)
+  const isKnownUser = cleanInput.includes('jose') || cleanInput.includes('ariangela') || cleanInput.includes('hector') || cleanInput.includes('samuel') || cleanInput.includes('admin');
+  if (isKnownUser && (cleanPassword === '123456' || cleanPassword === 'admin123')) {
+    const defaultEmail = cleanInput.includes('@') ? cleanInput : `${cleanInput}@gmail.com`;
+    const defaultName = cleanInput.split('@')[0];
+    const userRole = cleanInput.includes('admin') ? 'Administrador' : 'Gerente';
+
+    const newRecord = {
+      name: defaultName,
+      email: defaultEmail,
+      password: cleanPassword,
+      password_hash: cleanPassword,
+      role: userRole
+    };
+
+    // Registrar en Supabase automáticamente para que quede fijado en la Nube
+    if (supabase) {
+      try {
+        const { data: ex } = await supabase.from('users').select('id').eq('email', defaultEmail);
+        if (!ex || ex.length === 0) {
+          await supabase.from('users').insert([newRecord]);
+        }
+      } catch (e) {}
+    }
+
+    // Guardar en copia local
+    const currentLocals = getLocalUsers();
+    if (!currentLocals.some(l => String(l.email).toLowerCase() === defaultEmail)) {
+      currentLocals.push(newRecord);
+      saveLocalUsers(currentLocals);
+    }
+
     return {
       success: true,
       user: {
-        id: 1,
-        name: 'Administrador Principal',
-        email: 'admin@vidasanacmo.com',
-        role: 'Administrador',
-        token: 'token-admin-demo'
+        id: `USR-${Date.now().toString().slice(-4)}`,
+        name: defaultName,
+        email: defaultEmail,
+        role: userRole,
+        token: `token-auto-${Date.now()}`
       }
     };
   }
@@ -169,6 +207,50 @@ export async function registerApi(name, email, password) {
 }
 
 // 0.1 USER MANAGEMENT CRUD (SUPABASE + LOCAL STORAGE SYNC)
+// Helper para enviar o actualizar un usuario en la nube de Supabase de forma limpia
+async function pushUserToSupabase(u) {
+  if (!supabase) return null;
+  const cleanEmail = String(u.email || '').trim().toLowerCase();
+  const cleanPass = String(u.password || u.password_hash || '123456').trim();
+  const cleanName = String(u.name || '').trim();
+  const cleanRole = u.role || 'Administrador';
+
+  if (!cleanEmail) return null;
+
+  // Intento 1: Esquema Oficial Supabase (name, email, password_hash, role)
+  const payload1 = {
+    name: cleanName,
+    email: cleanEmail,
+    password_hash: cleanPass,
+    role: cleanRole
+  };
+
+  try {
+    const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
+    if (existing && existing.length > 0) {
+      const { data: updated, error: errUp } = await supabase.from('users').update(payload1).eq('email', cleanEmail).select();
+      if (!errUp && updated && updated.length > 0) return updated[0];
+
+      // Intento 2 si la tabla usa la columna 'password' en lugar de 'password_hash'
+      const payload2 = { name: cleanName, email: cleanEmail, password: cleanPass, role: cleanRole };
+      const { data: u2 } = await supabase.from('users').update(payload2).eq('email', cleanEmail).select();
+      if (u2 && u2.length > 0) return u2[0];
+    } else {
+      const { data: inserted, error: errIns } = await supabase.from('users').insert([payload1]).select();
+      if (!errIns && inserted && inserted.length > 0) return inserted[0];
+
+      // Intento 2 si la tabla usa la columna 'password'
+      const payload2 = { name: cleanName, email: cleanEmail, password: cleanPass, role: cleanRole };
+      const { data: i2 } = await supabase.from('users').insert([payload2]).select();
+      if (i2 && i2.length > 0) return i2[0];
+    }
+  } catch (e) {
+    console.warn("⚠️ pushUserToSupabase error:", e);
+  }
+  return null;
+}
+
+// 0.1 USER MANAGEMENT CRUD (SUPABASE + LOCAL STORAGE SYNC)
 export async function fetchUsersApi() {
   let cloudUsers = [];
   if (supabase) {
@@ -184,24 +266,8 @@ export async function fetchUsersApi() {
     for (const u of localUsers) {
       const uEmail = String(u.email || '').trim().toLowerCase();
       if (uEmail && !cloudUsers.some(c => String(c.email || '').trim().toLowerCase() === uEmail)) {
-        try {
-          const payload = {
-            name: u.name || 'Usuario Registrado',
-            email: uEmail,
-            password: String(u.password || u.password_hash || '123456').trim(),
-            password_hash: String(u.password || u.password_hash || '123456').trim(),
-            role: u.role || 'Administrador'
-          };
-          const { data: inserted, error: insErr } = await supabase.from('users').insert([payload]).select();
-
-          if (insErr && insErr.message && insErr.message.includes('column')) {
-            delete payload.password_hash;
-            const { data: i2 } = await supabase.from('users').insert([payload]).select();
-            if (i2 && i2.length > 0) cloudUsers.push(i2[0]);
-          } else if (inserted && inserted.length > 0) {
-            cloudUsers.push(inserted[0]);
-          }
-        } catch (e) {}
+        const pushed = await pushUserToSupabase(u);
+        if (pushed) cloudUsers.push(pushed);
       }
     }
   }
@@ -249,50 +315,9 @@ export async function createUserApi(userData) {
   }
   saveLocalUsers(currentLocals);
 
-  // 2. Guardar en Supabase para sincronización remota con todos los equipos (Nube Vercel)
-  if (supabase) {
-    try {
-      let payload = {
-        name: newUserRecord.name,
-        email: cleanEmail,
-        password: cleanPassword,
-        password_hash: cleanPassword,
-        role: newUserRecord.role
-      };
-
-      const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
-      if (existing && existing.length > 0) {
-        let { data: updated, error: updateErr } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
-        if (updateErr && updateErr.message && updateErr.message.includes('column')) {
-          delete payload.password_hash;
-          const { data: u2 } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
-          if (u2 && u2.length > 0) return u2[0];
-        }
-        if (updated && updated.length > 0) return updated[0];
-      } else {
-        let { data: inserted, error: insertErr } = await supabase.from('users').insert([payload]).select();
-        
-        if (insertErr && insertErr.message && insertErr.message.includes('column')) {
-          delete payload.password_hash;
-          const { data: i2, error: i2Err } = await supabase.from('users').insert([payload]).select();
-          if (!i2Err && i2 && i2.length > 0) return i2[0];
-        }
-
-        if (insertErr && insertErr.message && insertErr.message.includes('id')) {
-          payload.id = Date.now();
-          const { data: i3 } = await supabase.from('users').insert([payload]).select();
-          if (i3 && i3.length > 0) return i3[0];
-        }
-
-        if (!insertErr && inserted && inserted.length > 0) return inserted[0];
-        if (insertErr) console.error("❌ Error al registrar en Supabase:", insertErr.message);
-      }
-    } catch (e) {
-      console.warn("⚠️ Supabase createUserApi aviso:", e.message || e);
-    }
-  }
-
-  return newUserRecord;
+  // 2. Guardar en Supabase Nube para sincronización instantánea multi-dispositivo
+  const pushedCloudUser = await pushUserToSupabase(newUserRecord);
+  return pushedCloudUser || newUserRecord;
 }
 
 export async function updateUserApi(id, userData) {
@@ -326,49 +351,14 @@ export async function updateUserApi(id, userData) {
   }
   saveLocalUsers(updatedLocals);
 
-  if (supabase) {
-    try {
-      const updatePayload = {
-        name: userData.name,
-        email: cleanEmail,
-        role: userData.role
-      };
-      if (cleanPass) {
-        updatePayload.password_hash = cleanPass;
-        updatePayload.password = cleanPass;
-      }
-      
-      const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
-      if (existing && existing.length > 0) {
-        let { data: updated, error: errUp } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
-        if (errUp && errUp.message && errUp.message.includes('column')) {
-          delete updatePayload.password_hash;
-          const { data: u2 } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
-          if (u2 && u2.length > 0) return u2[0];
-        }
-        if (updated && updated.length > 0) return updated[0];
-      } else {
-        let { data: inserted, error: errIns } = await supabase.from('users').insert([{
-          ...updatePayload,
-          password: cleanPass || '123456',
-          password_hash: cleanPass || '123456'
-        }]).select();
+  const pushedCloudUser = await pushUserToSupabase({
+    name: userData.name,
+    email: cleanEmail,
+    password: cleanPass,
+    role: userData.role
+  });
 
-        if (errIns && errIns.message && errIns.message.includes('column')) {
-          delete updatePayload.password_hash;
-          const { data: i2 } = await supabase.from('users').insert([{
-            ...updatePayload,
-            password: cleanPass || '123456'
-          }]).select();
-          if (i2 && i2.length > 0) return i2[0];
-        }
-        if (inserted && inserted.length > 0) return inserted[0];
-      }
-    } catch (e) {
-      console.warn("⚠️ Fallo en actualización Supabase:", e);
-    }
-  }
-  return { ...userData, id };
+  return pushedCloudUser || { ...userData, id };
 }
 
 export async function deleteUserApi(id) {
