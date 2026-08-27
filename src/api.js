@@ -23,15 +23,39 @@ export async function loginApi(emailOrUsername, password) {
   const cleanInput = String(emailOrUsername || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
-  // 1. Intentar autenticar contra Supabase por correo O por nombre de usuario (ilike)
+  // 1. Intentar autenticar contra Supabase
   if (supabase) {
     try {
-      const { data: users, error } = await supabase
+      let users = [];
+
+      // Consulta 1: Coincidencia exacta por correo
+      const { data: byEmail, error: errEmail } = await supabase
         .from('users')
         .select('*')
-        .or(`email.ilike.${cleanInput},name.ilike.${cleanInput}`);
+        .eq('email', cleanInput);
 
-      if (!error && Array.isArray(users) && users.length > 0) {
+      if (!errEmail && Array.isArray(byEmail) && byEmail.length > 0) {
+        users = byEmail;
+      } else {
+        // Consulta 2: Coincidencia por nombre (ilike)
+        const { data: byName } = await supabase
+          .from('users')
+          .select('*')
+          .ilike('name', cleanInput);
+
+        if (Array.isArray(byName) && byName.length > 0) {
+          users = byName;
+        } else {
+          // Consulta 3: Coincidencia parcial por nombre
+          const { data: byPartial } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('name', `%${cleanInput}%`);
+          if (Array.isArray(byPartial)) users = byPartial;
+        }
+      }
+
+      if (users && users.length > 0) {
         // Buscar coincidencia por contraseña comparando password, password_hash o clave
         const matchedUser = users.find(u => {
           const pass1 = String(u.password || '').trim();
@@ -43,12 +67,22 @@ export async function loginApi(emailOrUsername, password) {
         });
 
         if (matchedUser) {
-          // Sincronizar copia local
+          // Sincronizar copia local en este dispositivo
           const localUsers = getLocalUsers();
           const idx = localUsers.findIndex(l => String(l.email).toLowerCase() === String(matchedUser.email).toLowerCase());
           if (idx >= 0) {
             localUsers[idx].password = cleanPassword;
             localUsers[idx].password_hash = cleanPassword;
+            saveLocalUsers(localUsers);
+          } else {
+            localUsers.push({
+              id: matchedUser.id,
+              name: matchedUser.name,
+              email: matchedUser.email,
+              role: matchedUser.role || 'Administrador',
+              password: cleanPassword,
+              password_hash: cleanPassword
+            });
             saveLocalUsers(localUsers);
           }
           return {
@@ -77,7 +111,7 @@ export async function loginApi(emailOrUsername, password) {
     
     const isUserMatch = (uEmail === cleanInput) || 
                         (uName === cleanInput) || 
-                        (cleanInput.includes('@') ? uEmail === cleanInput : uName.startsWith(cleanInput));
+                        (cleanInput.includes('@') ? uEmail === cleanInput : uName.includes(cleanInput));
     return isUserMatch && (uPass === cleanPassword);
   });
 
