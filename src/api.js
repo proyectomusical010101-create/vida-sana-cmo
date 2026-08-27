@@ -23,8 +23,6 @@ export async function loginApi(email, password) {
   const cleanEmail = String(email || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
-  let userFoundInSupabase = false;
-
   // 1. Intentar autenticar contra Supabase si está disponible
   if (supabase) {
     try {
@@ -34,8 +32,7 @@ export async function loginApi(email, password) {
         .eq('email', cleanEmail);
 
       if (!error && Array.isArray(users) && users.length > 0) {
-        userFoundInSupabase = true;
-        // Buscar coincidencia flexible por contraseña comparando password_hash o password
+        // Buscar coincidencia por contraseña comparando password_hash o password
         const matchedUser = users.find(u => {
           const pass1 = String(u.password || '').trim();
           const pass2 = String(u.password_hash || '').trim();
@@ -43,6 +40,14 @@ export async function loginApi(email, password) {
         });
 
         if (matchedUser) {
+          // Sincronizar copia local
+          const localUsers = getLocalUsers();
+          const idx = localUsers.findIndex(l => String(l.email).toLowerCase() === cleanEmail);
+          if (idx >= 0) {
+            localUsers[idx].password = cleanPassword;
+            localUsers[idx].password_hash = cleanPassword;
+            saveLocalUsers(localUsers);
+          }
           return {
             success: true,
             user: {
@@ -69,6 +74,17 @@ export async function loginApi(email, password) {
   });
 
   if (matchedLocalUser) {
+    // Si la contraseña coincidió localmente (por actualización previa en interfaz),
+    // forzamos la actualización en la nube por email para resincronizar Supabase
+    if (supabase) {
+      try {
+        await supabase
+          .from('users')
+          .update({ password: cleanPassword, password_hash: cleanPassword })
+          .eq('email', cleanEmail);
+      } catch (e) {}
+    }
+
     return {
       success: true,
       user: {
@@ -96,12 +112,7 @@ export async function loginApi(email, password) {
     };
   }
 
-  // 4. Si el usuario existe en Supabase pero la contraseña no coincidió
-  if (userFoundInSupabase) {
-    throw new Error('Contraseña incorrecta. Verifique sus datos.');
-  }
-
-  throw new Error('Credenciales inválidas. Verifique su correo y contraseña.');
+  throw new Error('Contraseña o correo incorrectos. Verifique sus datos.');
 }
 
 export async function registerApi(name, email, password) {
@@ -202,7 +213,7 @@ export async function updateUserApi(id, userData) {
 
   // Actualizar respaldo local
   const currentLocals = getLocalUsers();
-  const updatedLocals = currentLocals.map(u => {
+  let updatedLocals = currentLocals.map(u => {
     if (String(u.id) === String(id) || String(u.email).toLowerCase() === cleanEmail) {
       return {
         ...u,
@@ -214,6 +225,17 @@ export async function updateUserApi(id, userData) {
     }
     return u;
   });
+
+  if (!updatedLocals.some(u => String(u.email).toLowerCase() === cleanEmail)) {
+    updatedLocals.push({
+      id: id || Date.now(),
+      name: userData.name,
+      email: cleanEmail,
+      role: userData.role,
+      password: cleanPass || '123456',
+      password_hash: cleanPass || '123456'
+    });
+  }
   saveLocalUsers(updatedLocals);
 
   if (supabase) {
@@ -227,8 +249,13 @@ export async function updateUserApi(id, userData) {
         updatePayload.password_hash = cleanPass;
         updatePayload.password = cleanPass;
       }
-      const { data, error } = await supabase.from('users').update(updatePayload).eq('id', id).select();
+      
+      // Actualizar por email y por ID para garantizar sincronización en Supabase
+      const { data, error } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
       if (!error && data && data.length > 0) return data[0];
+
+      const { data: data2 } = await supabase.from('users').update(updatePayload).eq('id', id).select();
+      if (data2 && data2.length > 0) return data2[0];
     } catch (e) {
       console.warn("⚠️ Fallo en actualización Supabase:", e);
     }
