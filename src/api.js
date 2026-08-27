@@ -171,7 +171,7 @@ export async function createUserApi(userData) {
     created_at: new Date().toISOString()
   };
 
-  // 1. Guardar en localStorage siempre como respaldo de seguridad local
+  // 1. Guardar en localStorage como respaldo local de este equipo
   const currentLocals = getLocalUsers();
   const existingIndex = currentLocals.findIndex(u => String(u.email || '').trim().toLowerCase() === cleanEmail);
   if (existingIndex >= 0) {
@@ -181,26 +181,27 @@ export async function createUserApi(userData) {
   }
   saveLocalUsers(currentLocals);
 
-  // 2. Intentar guardar en Supabase si está disponible
+  // 2. Guardar en Supabase para sincronización remota con todos los equipos (Nube Vercel)
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('users').insert([{
+      const payload = {
         name: newUserRecord.name,
-        email: newUserRecord.email,
+        email: cleanEmail,
         password_hash: cleanPassword,
         password: cleanPassword,
         role: newUserRecord.role
-      }]).select();
-      
-      if (!error && data && data.length > 0) return data[0];
-      if (error && (error.message.includes('unique') || error.message.includes('duplicate'))) {
-        throw new Error('El correo ya se encuentra registrado en el sistema.');
+      };
+
+      const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
+      if (existing && existing.length > 0) {
+        const { data: updated } = await supabase.from('users').update(payload).eq('email', cleanEmail).select();
+        if (updated && updated.length > 0) return updated[0];
+      } else {
+        const { data: inserted, error } = await supabase.from('users').insert([payload]).select();
+        if (!error && inserted && inserted.length > 0) return inserted[0];
       }
     } catch (e) {
-      if (e.message && e.message.includes('registrado')) {
-        throw e;
-      }
-      console.warn("⚠️ Supabase createUserApi aviso (usando copia local):", e.message || e);
+      console.warn("⚠️ Supabase createUserApi aviso:", e.message || e);
     }
   }
 
@@ -250,12 +251,18 @@ export async function updateUserApi(id, userData) {
         updatePayload.password = cleanPass;
       }
       
-      // Actualizar por email y por ID para garantizar sincronización en Supabase
-      const { data, error } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
-      if (!error && data && data.length > 0) return data[0];
-
-      const { data: data2 } = await supabase.from('users').update(updatePayload).eq('id', id).select();
-      if (data2 && data2.length > 0) return data2[0];
+      const { data: existing } = await supabase.from('users').select('id').eq('email', cleanEmail);
+      if (existing && existing.length > 0) {
+        const { data: updated } = await supabase.from('users').update(updatePayload).eq('email', cleanEmail).select();
+        if (updated && updated.length > 0) return updated[0];
+      } else {
+        const { data: inserted } = await supabase.from('users').insert([{
+          ...updatePayload,
+          password: cleanPass || '123456',
+          password_hash: cleanPass || '123456'
+        }]).select();
+        if (inserted && inserted.length > 0) return inserted[0];
+      }
     } catch (e) {
       console.warn("⚠️ Fallo en actualización Supabase:", e);
     }
