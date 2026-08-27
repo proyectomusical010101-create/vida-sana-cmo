@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Database, WifiOff } from 'lucide-react';
 import { loginApi } from '../api';
+import { supabase } from '../supabaseClient';
 import logoImg from '../assets/logo.jpeg';
 import bambooBg from '../assets/bamboo-bg.jpeg';
 
@@ -13,6 +14,8 @@ export default function LoginScreen({ onLoginSuccess }) {
   // Feedback State
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const isCloudConnected = Boolean(supabase);
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
@@ -33,12 +36,12 @@ export default function LoginScreen({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#eaf5d6] via-[#dcebbd] to-[#cbe0a3] flex items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#eaf5d6] via-[#dcebbd] to-[#cbe0a3] flex flex-col items-center justify-center p-4 sm:p-6 font-sans relative overflow-hidden">
       
       {/* ========================================================================= */}
       {/* VISTA ESCRITORIO (LG+) - CON "Inicio de Sesión" Y LOGO SIN RECUADRO */}
       {/* ========================================================================= */}
-      <div className="hidden lg:flex w-full max-w-4xl h-[500px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
+      <div className="hidden lg:flex w-full max-w-4xl h-[520px] bg-white rounded-[32px] shadow-2xl overflow-hidden border border-white/60 relative">
         
         {/* Lado Izquierdo (50%): Imagen 11.jpeg (Bambú) + Logo Centrado Transparente */}
         <div 
@@ -58,9 +61,28 @@ export default function LoginScreen({ onLoginSuccess }) {
         {/* Lado Derecho (50%): Formulario Fondo Blanco Impoluto */}
         <div className="w-1/2 bg-white p-10 flex flex-col items-center justify-center relative">
           
-          <h2 className="text-2xl font-extrabold text-[#384148] mb-8 tracking-wide">
+          <h2 className="text-2xl font-extrabold text-[#384148] mb-6 tracking-wide">
             Inicio de Sesión
           </h2>
+
+          {/* Indicador de Estado de Conexión Supabase */}
+          <div className={`w-full max-w-xs p-2 mb-4 rounded-xl text-[11px] font-bold text-center flex items-center justify-center gap-1.5 border ${
+            isCloudConnected 
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+              : 'bg-amber-50 border-amber-200 text-amber-800'
+          }`}>
+            {isCloudConnected ? (
+              <>
+                <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>🟢 Base de Datos Cloud Conectada (Supabase)</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>⚠️ Modo Desconectado (Faltan llaves Supabase en Vercel)</span>
+              </>
+            )}
+          </div>
 
           {errorMsg && (
             <div className="w-full max-w-xs p-3 mb-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold text-center">
@@ -72,13 +94,13 @@ export default function LoginScreen({ onLoginSuccess }) {
             
             {/* Campo Usuario */}
             <div className="space-y-1">
-              <label className="block text-xs font-extrabold text-[#384148] ml-1">Usuario</label>
+              <label className="block text-xs font-extrabold text-[#384148] ml-1">Usuario / Correo</label>
               <input
                 type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Usuario"
+                placeholder="Usuario o Correo"
                 className="w-full px-5 py-3 rounded-full bg-[#384148] text-white placeholder-slate-400 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#85a738] transition-all"
               />
             </div>
@@ -127,17 +149,36 @@ export default function LoginScreen({ onLoginSuccess }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* VISTA MÓVIL (LG:HIDDEN) - IMPOLUTA, SIN MARCA DE AGUA BAMBÚ */}
+      {/* VISTA MÓVIL (LG:HIDDEN) - IMPOLUTA */}
       {/* ========================================================================= */}
       <div className="lg:hidden w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-8 relative overflow-hidden border border-white/80 flex flex-col items-center">
         
         {/* Logo Oficial Centrado Limpio */}
-        <div className="mb-6 pt-2 flex items-center justify-center">
+        <div className="mb-4 pt-2 flex items-center justify-center">
           <img
             src={logoImg}
             alt="VidaSana Logo"
             className="h-16 w-auto object-contain mix-blend-multiply"
           />
+        </div>
+
+        {/* Indicador de Estado de Conexión Supabase (Móvil) */}
+        <div className={`w-full p-2.5 mb-4 rounded-xl text-[10px] font-bold text-center flex items-center justify-center gap-1.5 border ${
+          isCloudConnected 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+            : 'bg-amber-50 border-amber-200 text-amber-800'
+        }`}>
+          {isCloudConnected ? (
+            <>
+              <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>🟢 Base de Datos Cloud Conectada (Supabase)</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>⚠️ Modo Local (Sin llaves Vercel)</span>
+            </>
+          )}
         </div>
 
         {errorMsg && (
@@ -155,7 +196,7 @@ export default function LoginScreen({ onLoginSuccess }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Usuario"
+              placeholder="Usuario o Correo"
               className="w-full px-5 py-3.5 rounded-full bg-[#384148] text-white placeholder-slate-400 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#85a738] transition-all"
             />
           </div>
