@@ -19,30 +19,33 @@ function saveLocalUsers(usersList) {
 }
 
 // 0. AUTHENTICATION & LOGIN
-export async function loginApi(email, password) {
-  const cleanEmail = String(email || '').trim().toLowerCase();
+export async function loginApi(emailOrUsername, password) {
+  const cleanInput = String(emailOrUsername || '').trim().toLowerCase();
   const cleanPassword = String(password || '').trim();
 
-  // 1. Intentar autenticar contra Supabase si está disponible
+  // 1. Intentar autenticar contra Supabase por correo O por nombre de usuario (ilike)
   if (supabase) {
     try {
       const { data: users, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', cleanEmail);
+        .or(`email.ilike.${cleanInput},name.ilike.${cleanInput}`);
 
       if (!error && Array.isArray(users) && users.length > 0) {
-        // Buscar coincidencia por contraseña comparando password_hash o password
+        // Buscar coincidencia por contraseña comparando password, password_hash o clave
         const matchedUser = users.find(u => {
           const pass1 = String(u.password || '').trim();
           const pass2 = String(u.password_hash || '').trim();
-          return (pass1 && pass1 === cleanPassword) || (pass2 && pass2 === cleanPassword);
+          const pass3 = String(u.clave || '').trim();
+          return (pass1 && pass1 === cleanPassword) || 
+                 (pass2 && pass2 === cleanPassword) ||
+                 (pass3 && pass3 === cleanPassword);
         });
 
         if (matchedUser) {
           // Sincronizar copia local
           const localUsers = getLocalUsers();
-          const idx = localUsers.findIndex(l => String(l.email).toLowerCase() === cleanEmail);
+          const idx = localUsers.findIndex(l => String(l.email).toLowerCase() === String(matchedUser.email).toLowerCase());
           if (idx >= 0) {
             localUsers[idx].password = cleanPassword;
             localUsers[idx].password_hash = cleanPassword;
@@ -65,23 +68,27 @@ export async function loginApi(email, password) {
     }
   }
 
-  // 2. Intentar autenticar contra usuarios guardados localmente (cmo_local_users)
+  // 2. Intentar autenticar contra usuarios guardados localmente (cmo_local_users) por Correo o por Nombre
   const localUsers = getLocalUsers();
   const matchedLocalUser = localUsers.find(u => {
     const uEmail = String(u.email || '').trim().toLowerCase();
+    const uName = String(u.name || '').trim().toLowerCase();
     const uPass = String(u.password || u.password_hash || '').trim();
-    return uEmail === cleanEmail && uPass === cleanPassword;
+    
+    const isUserMatch = (uEmail === cleanInput) || 
+                        (uName === cleanInput) || 
+                        (cleanInput.includes('@') ? uEmail === cleanInput : uName.startsWith(cleanInput));
+    return isUserMatch && (uPass === cleanPassword);
   });
 
   if (matchedLocalUser) {
-    // Si la contraseña coincidió localmente (por actualización previa en interfaz),
-    // forzamos la actualización en la nube por email para resincronizar Supabase
+    // Re-sincronizar con Supabase si está disponible
     if (supabase) {
       try {
         await supabase
           .from('users')
           .update({ password: cleanPassword, password_hash: cleanPassword })
-          .eq('email', cleanEmail);
+          .eq('email', matchedLocalUser.email);
       } catch (e) {}
     }
 
@@ -98,21 +105,21 @@ export async function loginApi(email, password) {
   }
 
   // 3. Fallback de Administrador predeterminado demo
-  const isAdminEmail = (cleanEmail === 'admin@vidasana.com' || cleanEmail === 'admin@vidasanacmo.com' || cleanEmail === 'admin');
-  if (isAdminEmail && cleanPassword === 'admin123') {
+  const isAdminInput = (cleanInput === 'admin' || cleanInput === 'admin@vidasana.com' || cleanInput === 'admin@vidasanacmo.com' || cleanInput === 'administrador');
+  if (isAdminInput && cleanPassword === 'admin123') {
     return {
       success: true,
       user: {
         id: 1,
         name: 'Administrador Principal',
-        email: cleanEmail.includes('@') ? cleanEmail : 'admin@vidasanacmo.com',
+        email: 'admin@vidasanacmo.com',
         role: 'Administrador',
         token: 'token-admin-demo'
       }
     };
   }
 
-  throw new Error('Contraseña o correo incorrectos. Verifique sus datos.');
+  throw new Error('Credenciales inválidas. Verifique su usuario/correo y contraseña.');
 }
 
 export async function registerApi(name, email, password) {
