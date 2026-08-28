@@ -464,7 +464,8 @@ export default function App() {
     { id: 'finances', name: '8. Finanzas', icon: TrendingUp, section: '💼 Administración & Finanzas' },
     { id: 'paperwork', name: '9. Papelería', icon: FileText, section: '💼 Administración & Finanzas' },
     { id: 'payroll', name: '10. Personal & Nómina', icon: Users, section: '💼 Administración & Finanzas' },
-    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' }
+    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' },
+    { id: 'settings', name: '12. Configuraciones', icon: Settings, section: '⚙️ Sistema' }
   ];
 
   // Renderizado seguro por módulo
@@ -809,7 +810,7 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden relative">
         
         {/* Sidebar Navigation (Desktop) */}
-        <aside className={`w-64 border-r p-4 space-y-4 flex flex-col justify-between hidden lg:flex transition-colors ${
+        <aside className={`w-64 border-r p-4 space-y-4 flex flex-col justify-start hidden lg:flex transition-colors overflow-y-auto custom-scrollbar ${
           isLight ? 'bg-white border-slate-200' : 'bg-[#111c3a] border-[#1e2d5a]'
         }`}>
           <div className="space-y-1">
@@ -824,7 +825,7 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveModule(item.id)}
-                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
+                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
                     isActive
                       ? 'bg-teal-600 text-white shadow-md'
                       : isLight
@@ -849,23 +850,6 @@ export default function App() {
                 </button>
               );
             })}
-          </div>
-
-          <div className="pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
-            {/* BOTÓN MINIMALISTA DE CONFIGURACIONES EN LA PARTE INFERIOR IZQUIERDA */}
-            <button
-              onClick={() => setActiveModule('settings')}
-              className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2.5 cursor-pointer ${
-                activeModule === 'settings'
-                  ? 'bg-teal-600 text-white shadow-md'
-                  : isLight
-                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
-                    : 'bg-[#0d162f] hover:bg-[#17254d] text-slate-200 border border-[#1e2d5a]'
-              }`}
-            >
-              <Settings className={`w-4 h-4 ${activeModule === 'settings' ? 'text-white' : 'text-teal-600'}`} />
-              <span>⚙️ Configuraciones</span>
-            </button>
           </div>
         </aside>
 
