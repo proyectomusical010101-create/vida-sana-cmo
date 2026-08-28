@@ -917,10 +917,10 @@ export default function App() {
   const isLight = theme === 'light';
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${isLight ? 'light-theme bg-slate-100 text-slate-900' : 'dark-theme bg-[#0b1329] text-slate-100'}`}>
+    <div className={`h-screen max-h-screen overflow-hidden flex flex-col font-sans transition-colors duration-200 ${isLight ? 'light-theme bg-slate-100 text-slate-900' : 'dark-theme bg-[#0b1329] text-slate-100'}`}>
       
       {/* Top Navbar */}
-      <header className={`px-4 sm:px-6 py-3 border-b flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors z-30 relative ${isLight ? 'bg-white border-slate-200' : 'bg-[#111c3a] border-[#1e2d5a]'}`}>
+      <header className={`px-4 sm:px-6 py-2.5 shrink-0 border-b flex flex-col sm:flex-row items-center justify-between gap-4 transition-colors z-30 relative ${isLight ? 'bg-white border-slate-200' : 'bg-[#111c3a] border-[#1e2d5a]'}`}>
         <div className="flex items-center justify-between w-full sm:w-auto">
           <div className="flex items-center gap-3">
             <button 
@@ -949,33 +949,57 @@ export default function App() {
             </div>
           )}
           
-          {/* 1. LA TASA BCV (USD / EUR) */}
-          <div className={`flex px-3 py-1.5 rounded-xl border items-center gap-1.5 font-bold ${
-            isLight ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-[#0d1b3e] border-[#1e346b] text-blue-200'
-          }`}>
-            <Landmark className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
-            <span className="text-[11px] font-sans">BCV:</span>
+          {/* Selector de Moneda y Tasa de Cambio */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-[#162347] border border-slate-200 dark:border-[#203264] px-2.5 py-1 rounded-xl shrink-0">
+            <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-[#1f305c] p-0.5 rounded-lg text-[10px] font-bold">
+              <button
+                onClick={() => setSelectedCurrency('USD')}
+                className={`px-1.5 py-0.5 rounded ${selectedCurrency === 'USD' ? 'bg-teal-600 text-white font-extrabold shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+              >
+                USD
+              </button>
+              <button
+                onClick={() => setSelectedCurrency('EUR')}
+                className={`px-1.5 py-0.5 rounded ${selectedCurrency === 'EUR' ? 'bg-teal-600 text-white font-extrabold shadow-xs' : 'text-slate-600 dark:text-slate-300'}`}
+              >
+                EUR
+              </button>
+            </div>
 
-            <select
-              value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="bg-blue-100/80 dark:bg-blue-900/60 font-black text-xs text-blue-900 dark:text-blue-200 rounded-lg px-1.5 py-0.5 border border-blue-300 dark:border-blue-700 outline-none cursor-pointer hover:bg-blue-200/80 transition-all"
-              title="Cambiar Moneda Oficial (USD Dólar / EUR Euro)"
+            <div className="flex items-center gap-1 text-[11px] font-mono font-extrabold text-teal-800 dark:text-teal-300">
+              <DollarSign className="w-3.5 h-3.5 text-teal-600" />
+              <span>BCV: {selectedCurrency === 'USD' ? '$' : '€'} {bcvRate.toFixed(2)}</span>
+            </div>
+
+            <button
+              onClick={fetchGlobalBcvRate}
+              title="Actualizar tasa BCV en tiempo real"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-500 hover:text-teal-600 transition-colors"
             >
-              <option value="USD" className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white">USD ($)</option>
-              <option value="EUR" className="bg-white dark:bg-[#111c3a] text-slate-900 dark:text-white">EUR (€)</option>
-            </select>
-
-            <span className="font-mono font-black text-blue-900 dark:text-blue-300 text-xs">
-              {(selectedCurrency === 'USD' ? safeNum(bcvRateUsd, 755.90) : safeNum(bcvRateEur, 879.35)).toFixed(2)} Bs
-            </span>
+              <RefreshCw className="w-3 h-3" />
+            </button>
           </div>
+
+          {/* 1. Acceso a Configuraciones en el Header */}
+          <button
+            onClick={() => setActiveModule('settings')}
+            className={`p-2 rounded-xl border font-extrabold text-xs shadow-sm transition-all shrink-0 cursor-pointer ${
+              activeModule === 'settings'
+                ? 'bg-teal-600 text-white border-teal-700'
+                : isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                  : 'bg-[#1a274d] hover:bg-[#233566] text-slate-200 border-[#2a3f78]'
+            }`}
+            title="Configuraciones del Sistema & Papelera"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
 
           {/* 2. +Cita */}
           <button
             onClick={() => setActiveModule('schedules')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-            title="Ir a Agendamiento de Citas"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer"
+            title="Agendar Nueva Cita"
           >
             <Calendar className="w-4 h-4" />
             <span>+Cita</span>
@@ -994,16 +1018,6 @@ export default function App() {
             <span>+Paciente</span>
           </button>
 
-          {/* 4. +Presupuesto */}
-          <button
-            onClick={() => setActiveModule('odontogram-budget')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-            title="Ir a Odontograma & Presupuesto"
-          >
-            <Stethoscope className="w-4 h-4" />
-            <span>+Presupuesto</span>
-          </button>
-
           {/* Logout Button */}
           <button
             onClick={handleLogout}
@@ -1015,16 +1029,16 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main App Layout */}
+      {/* Main App Layout (Fijo sin scroll conjunto, solo el contenido scrollea) */}
       <div className="flex-1 flex overflow-hidden relative">
         
-        {/* Sidebar Navigation (Desktop) */}
-        <aside className={`w-64 border-r p-4 space-y-4 flex flex-col justify-start hidden lg:flex transition-colors overflow-y-auto custom-scrollbar ${
+        {/* Sidebar Navigation (Desktop) - Fijo de extremo superior a inferior con espaciado compacto */}
+        <aside className={`w-56 shrink-0 border-r p-2.5 flex flex-col justify-between hidden lg:flex transition-colors overflow-y-auto custom-scrollbar ${
           isLight ? 'bg-white border-slate-200' : 'bg-[#111c3a] border-[#1e2d5a]'
         }`}>
           <div className="space-y-1">
-            <div className={`text-[11px] font-extrabold uppercase tracking-wider px-3 mb-2 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Módulos del Sistema v2.0
+            <div className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Módulos del Sistema
             </div>
 
             {navItems.map((item) => {
@@ -1034,15 +1048,15 @@ export default function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveModule(item.id)}
-                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                  className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-teal-600 text-white shadow-md'
+                      ? 'bg-teal-600 text-white shadow-sm'
                       : isLight
                         ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-semibold'
                         : 'text-slate-300 hover:text-white hover:bg-[#17254d] font-semibold'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
+                  <div className="flex items-center gap-2 truncate">
                     <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : isLight ? 'text-slate-500' : 'text-slate-400'}`} />
                     <span className="truncate">{item.name}</span>
                   </div>
