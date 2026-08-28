@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus, Trash2, Edit3, ShieldCheck, PenTool, RefreshCw, AlertCircle, DollarSign, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { createBudgetApi, savePatientHistoryEntryApi } from '../api';
 
 export default function DentalBudgetOdontogramModule({
   patients = [],
@@ -14,7 +15,8 @@ export default function DentalBudgetOdontogramModule({
   activeBudgetDraft,
   setActiveBudgetDraft,
   savedBudgetsHistory = [],
-  setSavedBudgetsHistory
+  setSavedBudgetsHistory,
+  logAction
 }) {
   const safePatients = Array.isArray(patients) ? patients : [];
 
@@ -504,24 +506,42 @@ export default function DentalBudgetOdontogramModule({
       consentText: consentText
     };
 
+    // 1. Guardar Presupuesto en Supabase Cloud DB
+    createBudgetApi(budgetRecord).catch(() => null);
+
+    // 2. Actualizar estado local del histórico
     if (typeof setSavedBudgetsHistory === 'function') {
       setSavedBudgetsHistory(prev => [budgetRecord, ...(prev || [])]);
     }
 
-    // 3. Registrar entrada permanente en la Historia Clínica del Paciente
+    // 3. Registrar entrada permanente en la Historia Clínica del Paciente (Supabase + State)
+    const updatedHistoryEntry = {
+      date: new Date().toISOString().slice(0, 10),
+      procedure: `Presupuesto Certificado #${budgetRecord.id} (${budgetItems.length} partidas)`,
+      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      cost: finalTotalUsd,
+      status: 'Completado'
+    };
+
+    if (activePatient?.id) {
+      savePatientHistoryEntryApi(activePatient.id, updatedHistoryEntry).catch(() => null);
+    }
+
     if (activePatient && typeof setPatients === 'function') {
-      const updatedHistoryEntry = {
-        date: new Date().toISOString().slice(0, 10),
-        procedure: `Presupuesto Certificado #${budgetRecord.id} (${budgetItems.length} ítems)`,
-        doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
-        cost: finalTotalUsd,
-        status: 'Completado'
-      };
       const updatedPatients = safePatients.map(p => p.id === activePatient.id ? {
         ...p,
         history: [updatedHistoryEntry, ...(Array.isArray(p.history) ? p.history : [])]
       } : p);
       setPatients(updatedPatients);
+    }
+
+    // 4. Registrar en Historial Inmutable de Auditoría
+    if (typeof logAction === 'function') {
+      logAction(
+        `Emisión de Presupuesto (${budgetRecord.id})`,
+        'Presupuestos & Odontograma',
+        `Paciente: ${activePatient?.name || 'N/A'} • Total: $${finalTotalUsd.toFixed(2)} USD (${finalTotalBs.toFixed(2)} Bs) • Partidas: ${budgetItems.length}`
+      );
     }
 
     // 4. Reiniciar borrador activo a cero una vez guardado

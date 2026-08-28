@@ -34,7 +34,8 @@ import {
   fetchDeletedItemsApi,
   createDeletedItemApi,
   deleteDeletedItemApi,
-  emptyDeletedItemsApi
+  emptyDeletedItemsApi,
+  fetchBudgetsApi
 } from './api';
 
 import LoginScreen from './components/LoginScreen';
@@ -158,7 +159,7 @@ export default function App() {
     }
   });
 
-  // Cargar Papelera e Historial desde Supabase al Iniciar (Sincronización PC ↔ Teléfono ↔ Laptop)
+  // Cargar Papelera, Historial y Presupuestos desde Supabase al Iniciar (Sincronización PC ↔ Teléfono ↔ Laptop)
   useEffect(() => {
     fetchDeletedItemsApi().then(cloudItems => {
       if (Array.isArray(cloudItems) && cloudItems.length > 0) {
@@ -171,6 +172,13 @@ export default function App() {
       if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
         setAuditLogsHistory(cloudLogs);
         try { localStorage.setItem('cmo_audit_logs', JSON.stringify(cloudLogs)); } catch (e) {}
+      }
+    }).catch(() => null);
+
+    fetchBudgetsApi().then(cloudBudgets => {
+      if (Array.isArray(cloudBudgets) && cloudBudgets.length > 0) {
+        setSavedBudgetsHistory(cloudBudgets);
+        try { localStorage.setItem('cmo_saved_budgets_history', JSON.stringify(cloudBudgets)); } catch (e) {}
       }
     }).catch(() => null);
   }, []);
@@ -759,6 +767,7 @@ export default function App() {
               setActiveBudgetDraft={handleUpdateActiveBudgetDraft}
               savedBudgetsHistory={savedBudgetsHistory}
               setSavedBudgetsHistory={handleUpdateSavedBudgetsHistory}
+              logAction={logSystemAction}
             />
           );
         case 'schedules':

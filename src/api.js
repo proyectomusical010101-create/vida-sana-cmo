@@ -1433,3 +1433,91 @@ export async function emptyDeletedItemsApi() {
   }
   return true;
 }
+
+// 10. PRESUPUESTOS CLÍNICOS & HISTORIAL PERMANENTE
+export async function fetchBudgetsApi() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(b => ({
+          id: b.id,
+          patientId: b.patient_id,
+          patientName: b.patient_name,
+          patientDoc: b.patient_doc,
+          date: b.date,
+          doctor: b.doctor,
+          subtotalUsd: parseFloat(b.subtotal_usd) || 0,
+          discountPercent: parseFloat(b.discount_percent) || 0,
+          discountUsd: parseFloat(b.discount_usd) || 0,
+          finalTotalUsd: parseFloat(b.final_total_usd) || 0,
+          finalTotalBs: parseFloat(b.final_total_bs) || 0,
+          bcvRate: parseFloat(b.bcv_rate) || 755.90,
+          items: typeof b.items_json === 'string' ? JSON.parse(b.items_json) : (b.items_json || []),
+          toothSurfaces: typeof b.tooth_surfaces_json === 'string' ? JSON.parse(b.tooth_surfaces_json) : (b.tooth_surfaces_json || {}),
+          paymentSplits: typeof b.payment_splits_json === 'string' ? JSON.parse(b.payment_splits_json) : (b.payment_splits_json || []),
+          observations: b.observations || '',
+          consentText: b.consent_text || ''
+        }));
+      }
+    } catch (e) {
+      console.warn("Fallo al leer budgets de Supabase:", e);
+    }
+  }
+  try {
+    const saved = localStorage.getItem('cmo_saved_budgets_history');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function createBudgetApi(b) {
+  if (supabase) {
+    try {
+      await supabase.from('budgets').upsert([{
+        id: b.id,
+        patient_id: b.patientId || b.patient_id,
+        patient_name: b.patientName || b.patient_name,
+        patient_doc: b.patientDoc || b.patient_doc || '',
+        date: b.date,
+        doctor: b.doctor || '',
+        subtotal_usd: parseFloat(b.subtotalUsd || b.subtotal_usd) || 0,
+        discount_percent: parseFloat(b.discountPercent || b.discount_percent) || 0,
+        discount_usd: parseFloat(b.discountUsd || b.discount_usd) || 0,
+        final_total_usd: parseFloat(b.finalTotalUsd || b.final_total_usd) || 0,
+        final_total_bs: parseFloat(b.finalTotalBs || b.final_total_bs) || 0,
+        bcv_rate: parseFloat(b.bcvRate || b.bcv_rate) || 755.90,
+        items_json: b.items || [],
+        tooth_surfaces_json: b.toothSurfaces || {},
+        payment_splits_json: b.paymentSplits || [],
+        observations: b.observations || '',
+        consent_text: b.consentText || ''
+      }]);
+    } catch (e) {
+      console.warn("Fallo al insertar budget en Supabase:", e);
+    }
+  }
+  return b;
+}
+
+export async function savePatientHistoryEntryApi(patientId, historyEntry) {
+  if (supabase && patientId) {
+    try {
+      await supabase.from('patient_history').insert([{
+        patient_id: String(patientId),
+        date: historyEntry.date || new Date().toISOString().slice(0, 10),
+        procedure_name: historyEntry.procedure || historyEntry.procedureName || 'Procedimiento Clínico',
+        doctor_name: historyEntry.doctor || historyEntry.doctorName || 'Dr. Principal',
+        cost: parseFloat(historyEntry.cost) || 0,
+        status: historyEntry.status || 'Completado'
+      }]);
+    } catch (e) {
+      console.warn("Fallo al insertar en patient_history de Supabase:", e);
+    }
+  }
+  return true;
+}
