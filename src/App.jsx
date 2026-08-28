@@ -132,14 +132,11 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Papelera de Reciclaje Global (Soft Delete & Recovery)
+  // Papelera de Reciclaje Global (Soft Delete & Recovery - 100% Datos Reales)
   const [deletedItemsHistory, setDeletedItemsHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('cmo_deleted_items');
-      return saved ? JSON.parse(saved) : [
-        { id: 'DEL-101', originalId: 'P-99', type: 'patient', typeName: 'Paciente', name: 'María Alejandra Gutiérrez', details: 'V-19.840.112 • 0414-5551234', deletedAt: new Date(Date.now() - 3600000).toISOString(), deletedBy: 'Dra. Vanessa Parra' },
-        { id: 'DEL-102', originalId: 'B-204', type: 'budget', typeName: 'Presupuesto', name: 'Presupuesto #204 - Ortodoncia Interceptiva', details: 'Paciente: Pedro Pérez • $450.00', deletedAt: new Date(Date.now() - 7200000).toISOString(), deletedBy: 'Administrador' }
-      ];
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
     }
@@ -229,20 +226,35 @@ export default function App() {
     });
   };
 
-  // Historial Inmutable de Auditoría de Acciones por Usuario
-  const [auditLogsHistory] = useState(() => {
+  // Historial Inmutable de Auditoría de Acciones por Usuario (100% Datos Reales)
+  const [auditLogsHistory, setAuditLogsHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('cmo_audit_logs');
-      return saved ? JSON.parse(saved) : [
-        { id: 'LOG-9115', user: 'Dra. Vanessa Parra', docId: 'V-18.420.100', email: 'vanessa.parra@vidasanacmo.com', role: 'Odontólogo', action: 'Emisión de Presupuesto Dental ($340.00 USD)', module: 'Odontograma & Presupuesto', detail: 'Resina Estética + Limpieza Ultrasónica. Paciente: Carlos Mendoza.', timestamp: '2026-08-28 15:45:12', ip: '190.202.45.12' },
-        { id: 'LOG-9114', user: 'Lic. Mariana Silva', docId: 'V-15.111.222', email: 'mariana.silva@vidasanacmo.com', role: 'Gerente Administrativo', action: 'Procesó Pago de Nómina y Bonificación ($220.00 USD)', module: 'Nómina & Personal', detail: 'Pago quincenal con bono de $20 USD. Registrado en Flujo de Caja.', timestamp: '2026-08-28 14:30:05', ip: '190.202.45.12' },
-        { id: 'LOG-9113', user: 'Laura Vanessa Parra', docId: 'V-20.333.444', email: 'laura.recepcion@vidasanacmo.com', role: 'Recepción & Atención', action: 'Cobro de Consulta Odontológica General ($45.00 USD)', module: 'Facturación & Caja', detail: 'Cobro Factura #8812 - Paciente: Ana María Rivas', timestamp: '2026-08-28 12:15:40', ip: '190.202.45.12' },
-        { id: 'LOG-9112', user: 'Administrador Principal', docId: 'V-00.000.001', email: 'admin@vidasanacmo.com', role: 'Administrador', action: 'Inicio de Sesión en el Sistema v2.0', module: 'Autenticación', detail: 'Acceso exitoso al panel de control desde navegador Chrome', timestamp: '2026-08-28 09:00:00', ip: '190.202.45.12' }
-      ];
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
     }
   });
+
+  const logSystemAction = (action, module, detail) => {
+    const newLog = {
+      id: `LOG-${Date.now().toString().slice(-5)}`,
+      user: currentUser?.name || 'Administrador Principal',
+      docId: currentUser?.docId || 'V-00.000.001',
+      email: currentUser?.email || 'admin@vidasana-cmo.com',
+      role: currentUser?.role || 'Administrador',
+      action,
+      module,
+      detail: detail || '',
+      timestamp: new Date().toLocaleString('es-VE'),
+      ip: '190.202.45.12'
+    };
+    const updated = [newLog, ...auditLogsHistory];
+    setAuditLogsHistory(updated);
+    try {
+      localStorage.setItem('cmo_audit_logs', JSON.stringify(updated));
+    } catch (e) {}
+  };
 
   // Tasa de cambio BCV / DolarAPI (USD & EUR)
   const [bcvRateUsd, setBcvRateUsd] = useState(755.90);

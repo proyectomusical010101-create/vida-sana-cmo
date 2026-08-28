@@ -711,7 +711,7 @@ export default function PatientsModule({
                 className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
-                + Registrar Paciente
+                <span>Registrar Paciente</span>
               </button>
             </div>
           </div>
@@ -2011,24 +2011,24 @@ export default function PatientsModule({
                     Cancelar
                   </button>
                   
-                  {modalTab !== 'exam' ? (
+                  {modalTab !== 'exam' && (
                     <button
                       type="button"
                       onClick={() => setModalTab(modalTab === 'filiation' ? 'anamnesis' : 'exam')}
-                      className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl transition-all shadow-md"
+                      className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-900 dark:text-white font-extrabold rounded-xl transition-all"
                     >
                       Siguiente ➔
                     </button>
-                  ) : (
-                    <button 
-                      type="submit"
-                      disabled={isSaving}
-                      className="px-6 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                    >
-                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      {isSaving ? 'Guardando en la Nube...' : 'Guardar Expediente Oficial'}
-                    </button>
                   )}
+
+                  <button 
+                    type="submit"
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-extrabold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isSaving ? 'Guardando...' : 'Guardar Expediente Oficial'}
+                  </button>
                 </div>
               </div>
             </form>
