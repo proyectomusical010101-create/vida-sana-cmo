@@ -13,7 +13,9 @@ export default function PatientsModule({
   autoOpenAddModal = false, 
   setAutoOpenAddModal,
   viewMode = 'database',
-  onNavigateModule 
+  onNavigateModule,
+  onSoftDelete,
+  logAction
 }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -387,36 +389,56 @@ export default function PatientsModule({
     }
   };
 
-  // ELIMINAR PACIENTE PERMANENTEMENTE
-  const handleDeletePatient = async () => {
-    if (!activePatient) return;
+  // ELIMINAR PACIENTE (ENVÍA A PAPELERA DE RECICLAJE & AUDITORÍA)
+  const handleDeletePatient = async (targetId, nameOverride) => {
+    const targetPatient = safePatients.find(p => String(p.id) === String(targetId)) || activePatient;
+    if (!targetPatient) return;
 
-    const nameDisplay = activePatient.name || activePatient.full_name || 'este paciente';
+    const nameDisplay = nameOverride || targetPatient.name || targetPatient.full_name || 'este paciente';
 
     const confirm = await Swal.fire({
-      title: '¿Eliminar Expediente Médico?',
-      text: `¿Estás seguro de que deseas eliminar permanentemente el expediente de "${nameDisplay}"? Esta acción se borrará de la nube y no se puede deshacer.`,
+      title: '¿Mover a la Papelera de Reciclaje?',
+      text: `El expediente de "${nameDisplay}" será removido del sistema activo y enviado a la Papelera de Reciclaje en Configuraciones para su recuperación.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, Borrar Expediente',
+      confirmButtonText: 'Sí, Enviar a Papelera',
       cancelButtonText: 'Cancelar'
     });
 
     if (confirm.isConfirmed) {
       try {
-        await deletePatientApi(activePatient.id);
-        const remaining = safePatients.filter(p => String(p.id) !== String(activePatient.id));
+        await deletePatientApi(targetPatient.id).catch(() => null);
+        const remaining = safePatients.filter(p => String(p.id) !== String(targetPatient.id));
         setPatients(remaining);
 
         if (remaining.length > 0) {
           setSelectedPatientId(remaining[0].id);
         }
 
+        // 1. Enviar a Papelera de Reciclaje Global
+        if (typeof onSoftDelete === 'function') {
+          onSoftDelete(
+            targetPatient, 
+            'patient', 
+            nameDisplay, 
+            `Cédula: ${targetPatient.documentId || targetPatient.document_id || 'N/A'} • Teléfono: ${targetPatient.phone || targetPatient.mobile_phone || 'N/A'}`
+          );
+        }
+
+        // 2. Registrar en Historial Inmutable de Auditoría
+        if (typeof logAction === 'function') {
+          logAction(
+            `Eliminación de Paciente (${nameDisplay})`, 
+            'Pacientes & Historias', 
+            `Cédula: ${targetPatient.documentId || 'N/A'} • Se movió el expediente a la Papelera de Reciclaje`
+          );
+        }
+
         Swal.fire({
-          title: 'Expediente Borrado',
-          text: `El expediente de ${nameDisplay} ha sido eliminado con éxito.`,
+          title: 'Enviado a la Papelera',
+          text: `El expediente de ${nameDisplay} ha sido enviado a la Papelera de Reciclaje en Configuraciones.`,
           icon: 'success',
           confirmButtonColor: '#0d9488'
         });

@@ -786,6 +786,8 @@ export default function App() {
               procedures={safeProcedures}
               onRegisterProcedure={handleRegisterProcedure}
               onNavigateModule={(mod) => setActiveModule(mod)}
+              onSoftDelete={handleSoftDelete}
+              logAction={logSystemAction}
             />
           );
       }
