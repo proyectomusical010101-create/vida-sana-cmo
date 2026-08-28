@@ -487,9 +487,9 @@ export default function App() {
             />
           );
         case 'patients':
-        case 'medical-records':
           return (
             <PatientsModule
+              viewMode="database"
               patients={safePatients}
               setPatients={setPatients}
               specialists={safeSpecialists}
@@ -500,6 +500,22 @@ export default function App() {
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
               autoOpenAddModal={autoOpenAddPatientModal}
               setAutoOpenAddModal={setAutoOpenAddPatientModal}
+              onNavigateModule={(modId) => setActiveModule(modId)}
+            />
+          );
+        case 'medical-records':
+          return (
+            <PatientsModule
+              viewMode="medical-records"
+              patients={safePatients}
+              setPatients={setPatients}
+              specialists={safeSpecialists}
+              setSpecialists={setSpecialists}
+              procedures={safeProcedures}
+              onRegisterProcedure={handleRegisterProcedure}
+              selectedCurrency={selectedCurrency}
+              currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              onNavigateModule={(modId) => setActiveModule(modId)}
             />
           );
         case 'odontogram-budget':
