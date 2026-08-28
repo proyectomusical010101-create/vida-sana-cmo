@@ -778,8 +778,15 @@ export default function App() {
           currentUser={currentUser}
           patients={safePatients}
           transactions={safeTransactions}
-          logoImg={logoImg}
-          setLogoImg={setLogoImg}
+          auditLogs={auditLogsHistory}
+          deletedItems={deletedItemsHistory}
+          onRestoreItem={handleRestoreItem}
+          onPermanentDeleteItem={handlePermanentDeleteItem}
+          onEmptyTrashBin={handleEmptyTrashBin}
+          logoImg={currentLogo}
+          setLogoImg={handleUpdateLogo}
+          theme={theme}
+          setTheme={setTheme}
           onOpenCreateUser={() => setShowUserModal(true)}
           onUpdateCurrentUser={(updated) => setCurrentUser(updated)}
         />
