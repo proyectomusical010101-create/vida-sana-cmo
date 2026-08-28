@@ -18,6 +18,22 @@ function saveLocalUsers(usersList) {
   } catch (e) {}
 }
 
+// Helper para resguardo local de procedimientos / baremo
+function getLocalProcedures() {
+  try {
+    const saved = localStorage.getItem('cmo_local_procedures');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalProcedures(procsList) {
+  try {
+    localStorage.setItem('cmo_local_procedures', JSON.stringify(procsList));
+  } catch (e) {}
+}
+
 // 0. AUTHENTICATION & LOGIN
 export async function loginApi(emailOrUsername, password) {
   const cleanInput = String(emailOrUsername || '').trim().toLowerCase();
@@ -626,18 +642,197 @@ export async function adjustStockApi(id, type, quantity) {
 }
 
 export async function fetchProcedures() {
+  let cloudProcs = [];
   if (supabase) {
     try {
-      const { data } = await supabase.from('procedures').select('*');
-      if (data) return data.map(p => ({ id: p.id, name: p.name, category: p.category, price: p.price, materials: p.materials_json }));
+      const { data, error } = await supabase.from('procedures').select('*').order('id', { ascending: true });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        cloudProcs = data.map(p => ({
+          id: String(p.id),
+          code: p.code || p.id,
+          name: p.name,
+          category: p.category || 'General',
+          division: p.division || 'MEDICINA',
+          specialty: p.category || 'General',
+          price: parseFloat(p.price) || 0,
+          doctorCommissionPercent: parseFloat(p.doctor_commission_percent || p.doctorCommissionPercent) || 50,
+          estimatedMaterialsCost: parseFloat(p.estimated_materials_cost || p.estimatedMaterialsCost) || 0,
+          hygienistBonus: parseFloat(p.hygienist_bonus || p.hygienistBonus) || 0,
+          availableDays: p.available_days || p.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+          startTime: p.start_time || p.startTime || '08:00',
+          endTime: p.end_time || p.endTime || '17:00',
+          materials: p.materials_json || p.materials || []
+        }));
+      }
     } catch (e) {}
   }
-  try {
-    const res = await fetch(`${API_BASE}/procedures`);
-    return await res.json();
-  } catch (err) {
-    return null;
+
+  if (cloudProcs.length > 0) {
+    saveLocalProcedures(cloudProcs);
+    return cloudProcs;
   }
+
+  const localProcs = getLocalProcedures();
+  if (localProcs.length > 0) {
+    return localProcs;
+  }
+
+  return [
+    { id: 'PROC-01', code: 'ODON-101', name: 'Resina Fotocurada Molar', division: 'ODONTOLOGIA', category: 'Odontología General', specialty: 'Odontología General', price: 45.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 5, materials: [] },
+    { id: 'PROC-02', code: 'ODON-102', name: 'Exodoncia Simple', division: 'ODONTOLOGIA', category: 'Cirugía/Endodoncia', specialty: 'Cirugía/Endodoncia', price: 60.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 0, materials: [] }
+  ];
+}
+
+export async function createOrUpdateProcedureApi(proc) {
+  const cleanId = String(proc.id || `PROC-${Date.now()}`);
+  const formattedRecord = {
+    id: cleanId,
+    code: proc.code || cleanId,
+    name: String(proc.name || '').trim(),
+    category: proc.category || proc.specialty || 'General',
+    division: proc.division || 'MEDICINA',
+    specialty: proc.category || proc.specialty || 'General',
+    price: parseFloat(proc.price) || 0,
+    doctorCommissionPercent: parseFloat(proc.doctorCommissionPercent) || 50,
+    estimatedMaterialsCost: parseFloat(proc.estimatedMaterialsCost) || 0,
+    hygienistBonus: parseFloat(proc.hygienistBonus) || 0,
+    availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+    startTime: proc.startTime || '08:00',
+    endTime: proc.endTime || '17:00',
+    materials: proc.materials || []
+  };
+
+  // Resguardo local
+  const currentLocals = getLocalProcedures();
+  const existingIdx = currentLocals.findIndex(p => String(p.id) === cleanId || String(p.code) === String(formattedRecord.code));
+  if (existingIdx >= 0) {
+    currentLocals[existingIdx] = formattedRecord;
+  } else {
+    currentLocals.push(formattedRecord);
+  }
+  saveLocalProcedures(currentLocals);
+
+  // Supabase Cloud
+  if (supabase) {
+    try {
+      const payload = {
+        id: cleanId,
+        code: formattedRecord.code,
+        name: formattedRecord.name,
+        category: formattedRecord.category,
+        division: formattedRecord.division,
+        price: formattedRecord.price,
+        doctor_commission_percent: formattedRecord.doctorCommissionPercent,
+        estimated_materials_cost: formattedRecord.estimatedMaterialsCost,
+        hygienist_bonus: formattedRecord.hygienistBonus,
+        available_days: formattedRecord.availableDays,
+        start_time: formattedRecord.startTime,
+        end_time: formattedRecord.endTime,
+        materials_json: formattedRecord.materials
+      };
+
+      const { error } = await supabase.from('procedures').upsert(payload);
+      if (error && error.message && error.message.includes('column')) {
+        const minPayload = {
+          id: cleanId,
+          name: formattedRecord.name,
+          category: formattedRecord.category,
+          price: formattedRecord.price,
+          materials_json: formattedRecord.materials
+        };
+        await supabase.from('procedures').upsert(minPayload);
+      }
+    } catch (e) {
+      console.warn("⚠️ Error al guardar procedimiento en Supabase:", e);
+    }
+  }
+
+  return formattedRecord;
+}
+
+export async function bulkSaveProceduresApi(procArray) {
+  if (!Array.isArray(procArray) || procArray.length === 0) return [];
+
+  const formattedList = procArray.map((proc, i) => {
+    const cleanId = String(proc.id || `PROC-${Date.now()}-${i}`);
+    return {
+      id: cleanId,
+      code: proc.code || cleanId,
+      name: String(proc.name || '').trim(),
+      category: proc.category || proc.specialty || 'General',
+      division: proc.division || 'MEDICINA',
+      specialty: proc.category || proc.specialty || 'General',
+      price: parseFloat(proc.price) || 0,
+      doctorCommissionPercent: parseFloat(proc.doctorCommissionPercent) || 50,
+      estimatedMaterialsCost: parseFloat(proc.estimatedMaterialsCost) || 0,
+      hygienistBonus: parseFloat(proc.hygienistBonus) || 0,
+      availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+      startTime: proc.startTime || '08:00',
+      endTime: proc.endTime || '17:00',
+      materials: proc.materials || []
+    };
+  });
+
+  // Resguardo local
+  saveLocalProcedures(formattedList);
+
+  // Supabase Cloud
+  if (supabase) {
+    try {
+      const payloads = formattedList.map(p => ({
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        category: p.category,
+        division: p.division,
+        price: p.price,
+        doctor_commission_percent: p.doctorCommissionPercent,
+        estimated_materials_cost: p.estimatedMaterialsCost,
+        hygienist_bonus: p.hygienistBonus,
+        available_days: p.availableDays,
+        start_time: p.startTime,
+        end_time: p.endTime,
+        materials_json: p.materials
+      }));
+
+      const { error } = await supabase.from('procedures').upsert(payloads);
+      if (error && error.message && error.message.includes('column')) {
+        const minPayloads = formattedList.map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          materials_json: p.materials
+        }));
+        await supabase.from('procedures').upsert(minPayloads);
+      }
+    } catch (e) {
+      console.warn("⚠️ Error al guardar masivamente procedimientos en Supabase:", e);
+    }
+  }
+
+  return formattedList;
+}
+
+export async function deleteProcedureApi(id) {
+  const cleanId = String(id);
+
+  // Actualizar resguardo local
+  const currentLocals = getLocalProcedures();
+  const filtered = currentLocals.filter(p => String(p.id) !== cleanId && String(p.code) !== cleanId);
+  saveLocalProcedures(filtered);
+
+  // Eliminar en Supabase Nube
+  if (supabase) {
+    try {
+      await supabase.from('procedures').delete().eq('id', cleanId);
+      await supabase.from('procedures').delete().eq('code', cleanId);
+    } catch (e) {
+      console.warn("⚠️ Error al eliminar procedimiento de Supabase:", e);
+    }
+  }
+
+  return true;
 }
 
 // 4. ESPECIALISTAS & COBRANZA

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Layers, FileSpreadsheet, Upload, Download, Plus, Search, Filter, Stethoscope, Activity, Eye, ShieldAlert, CheckCircle, Edit, Trash2, Clock, Calendar } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { MEDICAL_DIVISIONS } from '../mockData';
+import { createOrUpdateProcedureApi, bulkSaveProceduresApi, deleteProcedureApi } from '../api';
 
 export default function ServicesBaremoModule({ procedures, setProcedures }) {
   const [selectedDivision, setSelectedDivision] = useState('ALL');
@@ -82,7 +83,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         let text = evt.target.result || '';
         // Remover BOM si existe
@@ -161,7 +162,9 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
           }
         }
 
-        setProcedures(newProcs);
+        const savedList = await bulkSaveProceduresApi(newProcs);
+        setProcedures(savedList);
+
         Swal.fire({
           title: '¡Carga Masiva Completada!',
           text: `Se agregaron ${addedCount} servicios nuevos y se actualizaron ${updatedCount} existentes en el baremo.`,
@@ -174,7 +177,7 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
     reader.readAsText(file);
   };
 
-  const handleSaveProcSubmit = (e) => {
+  const handleSaveProcSubmit = async (e) => {
     e.preventDefault();
     if (formDays.length === 0) {
       Swal.fire('Atención', 'Debe seleccionar al menos un día disponible para atención al público.', 'warning');
@@ -198,12 +201,14 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       materials: editingProc ? editingProc.materials : []
     };
 
+    const savedProc = await createOrUpdateProcedureApi(procObj);
+
     if (editingProc) {
-      setProcedures(procedures.map(p => p.id === editingProc.id ? procObj : p));
-      Swal.fire('¡Servicio Actualizado!', `Se modificaron los datos de "${procObj.name}".`, 'success');
+      setProcedures(procedures.map(p => p.id === editingProc.id ? savedProc : p));
+      Swal.fire('¡Servicio Actualizado!', `Se modificaron los datos de "${savedProc.name}".`, 'success');
     } else {
-      setProcedures([procObj, ...procedures]);
-      Swal.fire('¡Servicio Registrado!', `El servicio "${procObj.name}" fue agregado al baremo.`, 'success');
+      setProcedures([savedProc, ...procedures]);
+      Swal.fire('¡Servicio Registrado!', `El servicio "${savedProc.name}" fue agregado al baremo.`, 'success');
     }
 
     setShowModal(false);
@@ -239,9 +244,10 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Sí, Eliminar Servicio',
       cancelButtonText: 'Cancelar'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setProcedures(procedures.filter(p => p.id !== proc.id));
+        await deleteProcedureApi(proc.id || proc.code);
+        setProcedures(procedures.filter(p => p.id !== proc.id && p.code !== proc.code));
         Swal.fire('Eliminado', `El servicio "${proc.name}" ha sido eliminado del baremo.`, 'success');
       }
     });
