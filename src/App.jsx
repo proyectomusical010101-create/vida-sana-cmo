@@ -161,8 +161,13 @@ export default function App() {
       deletedBy: currentUser?.name || 'Administrador',
       originalData: item
     };
-    const updated = [newRecord, ...deletedItemsHistory];
-    saveDeletedItemsToStorage(updated);
+    setDeletedItemsHistory((prev) => {
+      const updated = [newRecord, ...(Array.isArray(prev) ? prev : [])];
+      try {
+        localStorage.setItem('cmo_deleted_items', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
   };
 
   const handleRestoreItem = (item) => {
@@ -249,11 +254,13 @@ export default function App() {
       timestamp: new Date().toLocaleString('es-VE'),
       ip: '190.202.45.12'
     };
-    const updated = [newLog, ...auditLogsHistory];
-    setAuditLogsHistory(updated);
-    try {
-      localStorage.setItem('cmo_audit_logs', JSON.stringify(updated));
-    } catch (e) {}
+    setAuditLogsHistory((prev) => {
+      const updated = [newLog, ...(Array.isArray(prev) ? prev : [])];
+      try {
+        localStorage.setItem('cmo_audit_logs', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
   };
 
   // Tasa de cambio BCV / DolarAPI (USD & EUR)

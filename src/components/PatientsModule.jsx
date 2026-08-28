@@ -408,43 +408,40 @@ export default function PatientsModule({
     });
 
     if (confirm.isConfirmed) {
-      try {
-        await deletePatientApi(targetPatient.id).catch(() => null);
-        const remaining = safePatients.filter(p => String(p.id) !== String(targetPatient.id));
-        setPatients(remaining);
-
-        if (remaining.length > 0) {
-          setSelectedPatientId(remaining[0].id);
-        }
-
-        // 1. Enviar a Papelera de Reciclaje Global
-        if (typeof onSoftDelete === 'function') {
-          onSoftDelete(
-            targetPatient, 
-            'patient', 
-            nameDisplay, 
-            `Cédula: ${targetPatient.documentId || targetPatient.document_id || 'N/A'} • Teléfono: ${targetPatient.phone || targetPatient.mobile_phone || 'N/A'}`
-          );
-        }
-
-        // 2. Registrar en Historial Inmutable de Auditoría
-        if (typeof logAction === 'function') {
-          logAction(
-            `Eliminación de Paciente (${nameDisplay})`, 
-            'Pacientes & Historias', 
-            `Cédula: ${targetPatient.documentId || 'N/A'} • Se movió el expediente a la Papelera de Reciclaje`
-          );
-        }
-
-        Swal.fire({
-          title: 'Enviado a la Papelera',
-          text: `El expediente de ${nameDisplay} ha sido enviado a la Papelera de Reciclaje en Configuraciones.`,
-          icon: 'success',
-          confirmButtonColor: '#0d9488'
-        });
-      } catch (error) {
-        Swal.fire('Error', error.message, 'error');
+      // 1. Enviar de inmediato a la Papelera de Reciclaje Global
+      if (typeof onSoftDelete === 'function') {
+        onSoftDelete(
+          targetPatient, 
+          'patient', 
+          nameDisplay, 
+          `Cédula: ${targetPatient.documentId || targetPatient.document_id || 'N/A'} • Teléfono: ${targetPatient.phone || targetPatient.mobile_phone || 'N/A'}`
+        );
       }
+
+      // 2. Registrar de inmediato en el Historial Inmutable de Auditoría
+      if (typeof logAction === 'function') {
+        logAction(
+          `Eliminación de Paciente (${nameDisplay})`, 
+          'Pacientes & Historias', 
+          `Cédula: ${targetPatient.documentId || 'N/A'} • Expediente movido a Papelera de Reciclaje`
+        );
+      }
+
+      const remaining = safePatients.filter(p => String(p.id) !== String(targetPatient.id));
+      setPatients(remaining);
+
+      if (remaining.length > 0) {
+        setSelectedPatientId(remaining[0].id);
+      }
+
+      deletePatientApi(targetPatient.id).catch(() => null);
+
+      Swal.fire({
+        title: 'Enviado a la Papelera',
+        text: `El expediente de ${nameDisplay} ha sido enviado a la Papelera de Reciclaje en Configuraciones.`,
+        icon: 'success',
+        confirmButtonColor: '#0d9488'
+      });
     }
   };
 

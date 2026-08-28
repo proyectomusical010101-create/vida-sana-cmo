@@ -102,8 +102,26 @@ export default function SettingsModule({
     });
   };
 
+  // Leer historial y papelera desde props o sincronizar dinámicamente con localStorage
+  const getStoredItems = (key) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const effectiveAuditLogs = (Array.isArray(auditLogs) && auditLogs.length > 0) 
+    ? auditLogs 
+    : getStoredItems('cmo_audit_logs');
+
+  const effectiveDeletedItems = (Array.isArray(deletedItems) && deletedItems.length > 0) 
+    ? deletedItems 
+    : getStoredItems('cmo_deleted_items');
+
   // Filtrar Historial de Auditoría
-  const filteredAuditLogs = (Array.isArray(auditLogs) ? auditLogs : []).filter(log => {
+  const filteredAuditLogs = effectiveAuditLogs.filter(log => {
     if (!log) return false;
     const term = auditSearchTerm.toLowerCase();
     const matchesSearch = (log.user || '').toLowerCase().includes(term) ||
@@ -117,17 +135,16 @@ export default function SettingsModule({
   });
 
   // Lista única de usuarios auditados
-  const uniqueAuditUsers = Array.from(new Set((Array.isArray(auditLogs) ? auditLogs : []).map(l => l?.user).filter(Boolean)));
-  const uniqueAuditModules = Array.from(new Set((Array.isArray(auditLogs) ? auditLogs : []).map(l => l?.module).filter(Boolean)));
+  const uniqueAuditUsers = Array.from(new Set(effectiveAuditLogs.map(l => l?.user).filter(Boolean)));
+  const uniqueAuditModules = Array.from(new Set(effectiveAuditLogs.map(l => l?.module).filter(Boolean)));
 
   // Filtrar elementos de la papelera
-  const filteredTrashItems = (Array.isArray(deletedItems) ? deletedItems : []).filter(item => {
+  const filteredTrashItems = effectiveDeletedItems.filter(item => {
     if (!item) return false;
     const term = trashSearchTerm.toLowerCase();
     const matchesSearch = (item.name || '').toLowerCase().includes(term) || 
                           (item.details || '').toLowerCase().includes(term) ||
                           (item.typeName || '').toLowerCase().includes(term);
-    const matchesType = trashTypeFilter === 'ALL' || item.type === trashTypeFilter;
     return matchesSearch && matchesType;
   });
 
