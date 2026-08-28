@@ -664,6 +664,8 @@ export default function App() {
               selectedCurrency={selectedCurrency}
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
               onNavigateModule={(modId) => setActiveModule(modId)}
+              onSoftDelete={handleSoftDelete}
+              logAction={logSystemAction}
             />
           );
         case 'odontogram-budget':

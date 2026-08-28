@@ -296,6 +296,15 @@ export default function PatientsModule({
       setPatients([uiPatient, ...safePatients]);
       setSelectedPatientId(uiPatient.id);
       setShowAddPatientModal(false);
+
+      // 3. Registrar en Historial Inmutable de Auditoría
+      if (typeof logAction === 'function') {
+        logAction(
+          `Registro de Nuevo Paciente (${uiPatient.name || patientName})`, 
+          'Pacientes & Historias', 
+          `Cédula: ${uiPatient.documentId || documentId || 'N/A'} • Categoría: ${uiPatient.category || category || 'Privado'} • Teléfono: ${uiPatient.phone || mobilePhone || 'N/A'}`
+        );
+      }
       
       if (savedPatient.isLocalFallback) {
         Swal.fire({
@@ -390,8 +399,14 @@ export default function PatientsModule({
   };
 
   // ELIMINAR PACIENTE (ENVÍA A PAPELERA DE RECICLAJE & AUDITORÍA)
-  const handleDeletePatient = async (targetId, nameOverride) => {
-    const targetPatient = safePatients.find(p => String(p.id) === String(targetId)) || activePatient;
+  const handleDeletePatient = async (targetIdArg, nameOverride) => {
+    let targetPatient = null;
+    if (targetIdArg && typeof targetIdArg !== 'object') {
+      targetPatient = safePatients.find(p => String(p.id) === String(targetIdArg));
+    }
+    if (!targetPatient) {
+      targetPatient = activePatient;
+    }
     if (!targetPatient) return;
 
     const nameDisplay = nameOverride || targetPatient.name || targetPatient.full_name || 'este paciente';
