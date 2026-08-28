@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download, Upload } from 'lucide-react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download, Upload, Layers, Tag } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { fetchPatients, createPatientApi, updatePatientApi, deletePatientApi } from '../api';
 
@@ -679,32 +679,290 @@ export default function PatientsModule({
     reader.readAsText(file);
   };
 
-  if (viewMode === 'database') {
-    const totalCount = safePatients.length;
-    const privateCount = safePatients.filter(p => (p?.category || 'Privado') === 'Privado').length;
-    const convenioCount = safePatients.filter(p => (p?.category || 'Privado') !== 'Privado').length;
-    const minorCount = safePatients.filter(p => p?.isMinor || p?.is_minor).length;
+  const totalCount = safePatients.length;
+  const privateCount = safePatients.filter(p => (p?.category || 'Privado') === 'Privado').length;
+  const convenioCount = safePatients.filter(p => (p?.category || 'Privado') !== 'Privado').length;
+  const minorCount = safePatients.filter(p => p?.isMinor || p?.is_minor).length;
 
-    return (
-      <div className="space-y-6">
-        {/* Banner Superior & Estadísticas BBDD */}
-        <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#1e2d5a] pb-4">
+  return (
+    <div className="space-y-6">
+      {viewMode === 'database' ? (
+        <div className="space-y-6">
+          {/* Banner Superior & Estadísticas BBDD */}
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#1e2d5a] pb-4">
+              <div>
+                <span className="px-2.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 font-black text-[10px] rounded uppercase tracking-wider">
+                  Módulo 1 • Base de Datos Oficial
+                </span>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
+                  <UserCheck className="text-teal-600 w-7 h-7" />
+                  Directorio General de Pacientes
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+                  Gestión centralizada de expedientes, contacto directo, asignación de especialistas y emisión de presupuestos.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPatientsTemplate}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+                >
+                  <Download className="w-4 h-4 text-emerald-700" />
+                  Plantilla Excel
+                </button>
+
+                <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
+                  <Upload className="w-4 h-4" />
+                  Importar Excel
+                  <input type="file" accept=".csv, .txt, .xlsx" onChange={handlePatientsFileUpload} className="hidden" />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddPatientModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Registrar Paciente</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Tarjetas de Métricas de la BBDD */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Pacientes</div>
+                <div className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalCount}</div>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Categoría Privado</div>
+                <div className="text-xl font-black text-teal-600 dark:text-teal-400 mt-0.5">{privateCount}</div>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Convenios / Seguros</div>
+                <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{convenioCount}</div>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Menores de Edad</div>
+                <div className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{minorCount}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de Búsqueda y Filtros */}
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-4 rounded-2xl space-y-3">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* Buscador */}
+              <div className="relative w-full sm:w-96">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar por Nombre, Cédula, Teléfono o Correo..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
+                />
+              </div>
+
+              {/* Categorías & Gestor */}
+              <div className="flex flex-wrap gap-1.5 items-center w-full sm:w-auto">
+                {['ALL', ...allCategoriesList].map(cat => {
+                  const isActive = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {cat === 'ALL' ? 'Todos' : cat}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryManagerModal(true)}
+                  className="px-2.5 py-1.5 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 shadow-xs ml-auto sm:ml-2"
+                >
+                  <span>⚙️</span>
+                  <span>Categorías</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* TABLA PRINCIPAL DE LA BASE DE DATOS DE PACIENTES */}
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-[#1e2d5a] flex items-center justify-between">
+              <h3 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <User className="w-4 h-4 text-teal-600" />
+                Listado Completo de Pacientes Registrados ({filteredPatients.length})
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-[#0d162f] border-b border-slate-200 dark:border-[#1e2d5a] text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th className="py-3 px-4">Código / Cédula</th>
+                    <th className="py-3 px-4">Nombre Completo del Paciente</th>
+                    <th className="py-3 px-4">Contacto / WhatsApp</th>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4">Médico Asignado</th>
+                    <th className="py-3 px-4">Edad / Nacimiento</th>
+                    <th className="py-3 px-4 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-[#1e2d5a] font-bold text-slate-900 dark:text-slate-200">
+                  {filteredPatients.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-8 text-center text-slate-500 font-medium italic">
+                        No se encontraron pacientes que coincidan con la búsqueda.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPatients.map(p => {
+                      const nameDisplay = p.name || p.fullName || 'Paciente sin Nombre';
+                      const docDisplay = p.documentId || p.document_id || 'Sin Cédula';
+                      const phoneDisplay = p.phone || p.mobile_phone || 'Sin Teléfono';
+                      const categoryDisplay = p.category || 'Privado';
+                      const doctorDisplay = p.assignedSpecialist || p.assigned_specialist || 'Dr. Carlos Mendoza';
+                      const ageDisplay = p.age || calculateAge(p.birthDate || p.birth_date);
+
+                      return (
+                        <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-teal-800 dark:text-teal-300">
+                            {docDisplay}
+                            <div className="text-[10px] text-slate-400 font-normal">ID: {p.id}</div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <div className="font-extrabold text-slate-900 dark:text-white">{nameDisplay}</div>
+                            <div className="text-[11px] text-slate-500">{p.email || 'Sin Correo'}</div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <a
+                              href={`https://wa.me/${phoneDisplay.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                            >
+                              <span>📱</span> {phoneDisplay}
+                            </a>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${
+                              categoryDisplay === 'Privado'
+                                ? 'bg-teal-50 text-teal-800 border-teal-300 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800'
+                                : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+                            }`}>
+                              {categoryDisplay}
+                            </span>
+                          </td>
+
+                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">
+                            {doctorDisplay}
+                          </td>
+
+                          <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-400">
+                            {ageDisplay} años
+                            <div className="text-[10px] text-slate-400">{p.birthDate || p.birth_date}</div>
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* 1. Botón Editar */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatientId(p.id);
+                                  handleOpenEditModal();
+                                }}
+                                className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                title="Editar Datos Personales"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* 2. Botón Emitir Presupuesto */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatientId(p.id);
+                                  if (onNavigateModule) onNavigateModule('odontogram-budget');
+                                }}
+                                className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-200 border border-teal-300 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
+                                title="Emitir Presupuesto / Odontograma"
+                              >
+                                <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Presupuesto</span>
+                              </button>
+
+                              {/* 3. Botón Historia Clínica HR */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPatientId(p.id);
+                                  if (onNavigateModule) onNavigateModule('medical-records');
+                                }}
+                                className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 border border-indigo-300 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
+                                title="Ver / Editar Historia Clínica HR"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>Historia HR</span>
+                              </button>
+
+                              {/* 4. Botón Potecito (Eliminar) */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePatient(p.id, nameDisplay)}
+                                className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                title="Eliminar Expediente"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl">
             <div>
-              <span className="px-2.5 py-0.5 bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 font-black text-[10px] rounded uppercase tracking-wider">
-                Módulo 1 • Base de Datos Oficial
-              </span>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <UserCheck className="text-teal-600 w-7 h-7" />
-                Directorio General de Pacientes
+                Módulo 5 • Historias Clínicas & Expedientes
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-                Gestión centralizada de expedientes, contacto directo, asignación de especialistas y emisión de presupuestos.
+              <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 font-medium">
+                Consulta de Anamnesis, Examen Odontológico Integral, Historial de Consultas y Emisión de Récipes.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {/* Descargar Plantilla */}
               <button
+                type="button"
                 onClick={handleDownloadPatientsTemplate}
                 className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
               >
@@ -712,290 +970,23 @@ export default function PatientsModule({
                 Plantilla Excel
               </button>
 
+              {/* Importar Pacientes */}
               <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
                 <Upload className="w-4 h-4" />
-                Importar Excel
+                Importar Pacientes
                 <input type="file" accept=".csv, .txt, .xlsx" onChange={handlePatientsFileUpload} className="hidden" />
               </label>
 
               <button
+                type="button"
                 onClick={() => setShowAddPatientModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Registrar Paciente</span>
+                <span>+ Paciente</span>
               </button>
             </div>
           </div>
-
-          {/* Tarjetas de Métricas de la BBDD */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Pacientes</div>
-              <div className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{totalCount}</div>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Categoría Privado</div>
-              <div className="text-xl font-black text-teal-600 dark:text-teal-400 mt-0.5">{privateCount}</div>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Convenios / Seguros</div>
-              <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-0.5">{convenioCount}</div>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Menores de Edad</div>
-              <div className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">{minorCount}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Barra de Búsqueda y Filtros */}
-        <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-4 rounded-2xl space-y-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            {/* Buscador */}
-            <div className="relative w-full sm:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="🔍 Buscar por Nombre, Cédula, Teléfono o Correo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
-              />
-            </div>
-
-            {/* Categorías & Gestor */}
-            <div className="flex flex-wrap gap-1.5 items-center w-full sm:w-auto">
-              {['ALL', ...allCategoriesList].map(cat => {
-                const isActive = selectedCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-teal-600 text-white shadow-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {cat === 'ALL' ? 'Todos' : cat}
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => setShowCategoryManagerModal(true)}
-                className="px-2.5 py-1.5 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 shadow-xs ml-auto sm:ml-2"
-              >
-                <span>⚙️</span>
-                <span>Categorías</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* TABLA PRINCIPAL DE LA BASE DE DATOS DE PACIENTES */}
-        <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-[#1e2d5a] flex items-center justify-between">
-            <h3 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <User className="w-4 h-4 text-teal-600" />
-              Listado Completo de Pacientes Registrados ({filteredPatients.length})
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-[#0d162f] border-b border-slate-200 dark:border-[#1e2d5a] text-slate-600 dark:text-slate-400 font-extrabold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Código / Cédula</th>
-                  <th className="py-3 px-4">Nombre Completo del Paciente</th>
-                  <th className="py-3 px-4">Contacto / WhatsApp</th>
-                  <th className="py-3 px-4">Categoría</th>
-                  <th className="py-3 px-4">Médico Asignado</th>
-                  <th className="py-3 px-4">Edad / Nacimiento</th>
-                  <th className="py-3 px-4 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-[#1e2d5a] font-bold text-slate-900 dark:text-slate-200">
-                {filteredPatients.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="py-8 text-center text-slate-500 font-medium italic">
-                      No se encontraron pacientes que coincidan con la búsqueda.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPatients.map(p => {
-                    const nameDisplay = String(p.name || p.full_name || 'Paciente');
-                    const docDisplay = String(p.documentId || p.document_id || 'N/A');
-                    const phoneDisplay = String(p.phone || p.phone_number || 'N/A');
-                    const emailDisplay = String(p.email || '');
-                    const categoryDisplay = String(p.category || 'Privado');
-                    const doctorDisplay = String(p.assignedSpecialist || p.assigned_specialist || 'Dr. Carlos Mendoza');
-                    const ageDisplay = calculateAge(p.birthDate || p.birth_date);
-                    const cleanPhone = phoneDisplay.replace(/[^0-9]/g, '');
-
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-[#17254d] transition-all">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-500">
-                          <div>#{p.id}</div>
-                          <div className="text-[10px] text-teal-600 dark:text-teal-400 font-bold">{docDisplay}</div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                            {nameDisplay}
-                            {p.isMinor && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-extrabold border border-amber-300">
-                                👶 Menor
-                              </span>
-                            )}
-                          </div>
-                          {emailDisplay && (
-                            <div className="text-[10px] text-slate-400 font-normal">{emailDisplay}</div>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          {cleanPhone ? (
-                            <a
-                              href={`https://wa.me/${cleanPhone}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 hover:underline font-bold"
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                              {phoneDisplay}
-                            </a>
-                          ) : (
-                            <span className="text-slate-400 font-normal">N/A</span>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700">
-                            {categoryDisplay}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">
-                          {doctorDisplay}
-                        </td>
-
-                        <td className="py-3 px-4 font-mono text-slate-600 dark:text-slate-400">
-                          {ageDisplay} años
-                          <div className="text-[10px] text-slate-400">{p.birthDate || p.birth_date}</div>
-                        </td>
-
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* 1. Botón Editar */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedPatientId(p.id);
-                                handleOpenEditModal();
-                              }}
-                              className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              title="Editar Datos Personales"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* 2. Botón Emitir Presupuesto */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedPatientId(p.id);
-                                if (onNavigateModule) onNavigateModule('odontogram-budget');
-                              }}
-                              className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-200 border border-teal-300 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
-                              title="Emitir Presupuesto / Odontograma"
-                            >
-                              <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
-                              <span>Presupuesto</span>
-                            </button>
-
-                            {/* 3. Botón Historia Clínica HR */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedPatientId(p.id);
-                                if (onNavigateModule) onNavigateModule('medical-records');
-                              }}
-                              className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 border border-indigo-300 rounded-lg text-[11px] font-black transition-all cursor-pointer flex items-center gap-1"
-                              title="Ver / Editar Historia Clínica HR"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                              <span>Historia HR</span>
-                            </button>
-
-                            {/* 4. Botón Potecito (Eliminar) */}
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePatient(p.id, nameDisplay)}
-                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                              title="Eliminar Expediente"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <UserCheck className="text-teal-600 w-7 h-7" />
-            Módulo 5 • Historias Clínicas & Expedientes
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 font-medium">
-            Consulta de Anamnesis, Examen Odontológico Integral, Historial de Consultas y Emisión de Récipes.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Descargar Plantilla */}
-          <button
-            onClick={handleDownloadPatientsTemplate}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-extrabold border border-emerald-300 rounded-xl text-xs transition-all shadow-sm"
-          >
-            <Download className="w-4 h-4 text-emerald-700" />
-            Plantilla Excel
-          </button>
-
-          {/* Importar Pacientes */}
-          <label className="flex items-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-sm transition-all">
-            <Upload className="w-4 h-4" />
-            Importar Pacientes
-            <input type="file" accept=".csv, .txt, .xlsx" onChange={handlePatientsFileUpload} className="hidden" />
-          </label>
-
-          <button
-            onClick={() => setShowAddPatientModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            + Paciente
-          </button>
-        </div>
-      </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1518,8 +1509,9 @@ export default function PatientsModule({
           )}
 
         </div>
-
       </div>
+    </div>
+  )}
 
       {/* MODAL REGISTRAR NUEVO PACIENTE (HISTORIA CLÍNICA ADULTOS E INFANTIL COMPLETA) */}
       {showAddPatientModal && (
