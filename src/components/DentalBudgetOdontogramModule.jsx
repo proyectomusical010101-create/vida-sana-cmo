@@ -398,10 +398,10 @@ export default function DentalBudgetOdontogramModule({
     if (!customProcName) return;
 
     const price = parseFloat(customProcPrice) || 0;
-    const toothVal = customToothNum || 'General';
+    const cleanToothStr = String(customToothNum || 'General').trim();
     const newItem = {
       id: `ITEM-${Date.now().toString().slice(-4)}`,
-      tooth: toothVal,
+      tooth: cleanToothStr,
       procedure: customProcName,
       doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
       priceUsd: price
@@ -409,14 +409,16 @@ export default function DentalBudgetOdontogramModule({
 
     setBudgetItems(prev => [...prev, newItem]);
 
-    // Reflejar arriba en el odontodiagrama si se especificó número de pieza
-    const parsedTooth = parseInt(toothVal);
-    if (!isNaN(parsedTooth)) {
+    // Reflejar arriba en el odontodiagrama extrayendo el número de pieza (ej: "16", "#16", "Pieza 16")
+    const match = cleanToothStr.match(/\d+/);
+    if (match) {
+      const toothNumExtracted = parseInt(match[0], 10);
       setToothSurfaces(prev => ({
         ...prev,
-        [parsedTooth]: {
-          ...(prev[parsedTooth] || {}),
-          center: 'red'
+        [toothNumExtracted]: {
+          ...(prev[toothNumExtracted] || prev[String(toothNumExtracted)] || {}),
+          center: 'red',
+          top: 'red'
         }
       }));
     }
@@ -611,7 +613,7 @@ export default function DentalBudgetOdontogramModule({
   const renderToothRow = (teethArray, isCompact = false) => (
     <div className={`flex flex-wrap items-center justify-center ${isCompact ? 'gap-1 py-0.5' : 'gap-4 py-2'}`}>
       {teethArray.map(toothNum => {
-        const faces = toothSurfaces[toothNum] || {};
+        const faces = toothSurfaces[toothNum] || toothSurfaces[String(toothNum)] || {};
 
         return (
           <div key={toothNum} className="flex flex-col items-center gap-0.5 group">
@@ -1261,11 +1263,67 @@ export default function DentalBudgetOdontogramModule({
             <label className="block mb-1 text-slate-700 dark:text-slate-300">Pieza Dental</label>
             <input
               type="text"
-              placeholder="Ej: #16 o General"
+              list="fdiTeethList"
+              placeholder="Ej: 16, 24, 36 o General"
               value={customToothNum}
               onChange={(e) => setCustomToothNum(e.target.value)}
               className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
             />
+            <datalist id="fdiTeethList">
+              <option value="General" />
+              <option value="18" />
+              <option value="17" />
+              <option value="16" />
+              <option value="15" />
+              <option value="14" />
+              <option value="13" />
+              <option value="12" />
+              <option value="11" />
+              <option value="21" />
+              <option value="22" />
+              <option value="23" />
+              <option value="24" />
+              <option value="25" />
+              <option value="26" />
+              <option value="27" />
+              <option value="28" />
+              <option value="48" />
+              <option value="47" />
+              <option value="46" />
+              <option value="45" />
+              <option value="44" />
+              <option value="43" />
+              <option value="42" />
+              <option value="41" />
+              <option value="31" />
+              <option value="32" />
+              <option value="33" />
+              <option value="34" />
+              <option value="35" />
+              <option value="36" />
+              <option value="37" />
+              <option value="38" />
+              <option value="55" />
+              <option value="54" />
+              <option value="53" />
+              <option value="52" />
+              <option value="51" />
+              <option value="61" />
+              <option value="62" />
+              <option value="63" />
+              <option value="64" />
+              <option value="65" />
+              <option value="85" />
+              <option value="84" />
+              <option value="83" />
+              <option value="82" />
+              <option value="81" />
+              <option value="71" />
+              <option value="72" />
+              <option value="73" />
+              <option value="74" />
+              <option value="75" />
+            </datalist>
           </div>
 
           <div className="sm:col-span-5">
