@@ -726,6 +726,7 @@ export async function fetchProcedures() {
           availableDays: p.available_days || p.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
           startTime: p.start_time || p.startTime || '08:00',
           endTime: p.end_time || p.endTime || '17:00',
+          isPublicVisible: p.is_public_visible ?? p.isPublicVisible ?? true,
           materials: p.materials_json || p.materials || []
         }));
       }
@@ -743,8 +744,8 @@ export async function fetchProcedures() {
   }
 
   return [
-    { id: 'PROC-01', code: 'ODON-101', name: 'Resina Fotocurada Molar', division: 'ODONTOLOGIA', category: 'Odontología General', specialty: 'Odontología General', price: 45.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 5, materials: [] },
-    { id: 'PROC-02', code: 'ODON-102', name: 'Exodoncia Simple', division: 'ODONTOLOGIA', category: 'Cirugía/Endodoncia', specialty: 'Cirugía/Endodoncia', price: 60.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 0, materials: [] }
+    { id: 'PROC-01', code: 'ODON-101', name: 'Resina Fotocurada Molar', division: 'ODONTOLOGIA', category: 'Odontología General', specialty: 'Odontología General', price: 45.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 5, isPublicVisible: true, materials: [] },
+    { id: 'PROC-02', code: 'ODON-102', name: 'Exodoncia Simple', division: 'ODONTOLOGIA', category: 'Cirugía/Endodoncia', specialty: 'Cirugía/Endodoncia', price: 60.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 0, isPublicVisible: true, materials: [] }
   ];
 }
 
@@ -764,6 +765,7 @@ export async function createOrUpdateProcedureApi(proc) {
     availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
     startTime: proc.startTime || '08:00',
     endTime: proc.endTime || '17:00',
+    isPublicVisible: proc.isPublicVisible !== false,
     materials: proc.materials || []
   };
 
@@ -793,6 +795,7 @@ export async function createOrUpdateProcedureApi(proc) {
         available_days: formattedRecord.availableDays,
         start_time: formattedRecord.startTime,
         end_time: formattedRecord.endTime,
+        is_public_visible: formattedRecord.isPublicVisible,
         materials_json: formattedRecord.materials
       };
 
@@ -834,6 +837,7 @@ export async function bulkSaveProceduresApi(procArray) {
       availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
       startTime: proc.startTime || '08:00',
       endTime: proc.endTime || '17:00',
+      isPublicVisible: proc.isPublicVisible !== false,
       materials: proc.materials || []
     };
   });

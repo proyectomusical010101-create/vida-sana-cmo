@@ -3,19 +3,21 @@ import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethos
 import Swal from 'sweetalert2';
 import { fetchPatients, createPatientApi, updatePatientApi, deletePatientApi } from '../api';
 
-export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure }) {
+export default function PatientsModule({ patients = [], setPatients, specialists = [], setSpecialists, procedures = [], onRegisterProcedure, autoOpenAddModal = false, setAutoOpenAddModal }) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState('100-01');
   const [activeSubTab, setActiveSubTab] = useState('history');
 
-  // Estado controlado para Recipe Imprimible & Solicitud de Exámenes
-  const [medsText, setMedsText] = useState('1. Amoxicilina + Ácido Clavulánico 875mg (1 tab c/12h x 7 días)\n2. Ibuprofeno 600mg (1 tab c/8h si hay dolor)');
-  const [medsNotes, setMedsNotes] = useState('Dieta blanda y fría las primeras 24 horas. Evitar enjuagues bucales enérgicos y mantener buena higiene bucal.');
-  const [selectedExams, setSelectedExams] = useState(['Radiografía Panorámica', 'Periapical Seriada']);
-
   // Modal para agregar paciente
   const [showAddPatientModal, setShowAddPatientModal] = useState(false);
+
+  React.useEffect(() => {
+    if (autoOpenAddModal) {
+      setShowAddPatientModal(true);
+      if (typeof setAutoOpenAddModal === 'function') setAutoOpenAddModal(false);
+    }
+  }, [autoOpenAddModal, setAutoOpenAddModal]);
   const [modalTab, setModalTab] = useState('filiation'); // 'filiation' | 'anamnesis' | 'exam'
   const [isMinor, setIsMinor] = useState(false);
   const [docId, setDocId] = useState('');
@@ -691,35 +693,19 @@ export default function PatientsModule({ patients = [], setPatients, specialists
 
           <div className="flex flex-wrap gap-1 items-center">
             {['ALL', ...allCategoriesList].map(cat => {
-              const isProtected = cat === 'ALL';
               const isActive = selectedCategory === cat;
               return (
-                <div key={cat} className="inline-flex items-center">
-                  <button
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-teal-600 text-white shadow-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {cat === 'ALL' ? 'Todos' : cat}
-                  </button>
-
-                  {!isProtected && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteCategory(cat);
-                      }}
-                      className="ml-0.5 px-1 py-0.5 text-slate-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded transition-all text-[10px] cursor-pointer"
-                      title={`Eliminar etiqueta "${cat}"`}
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-teal-600 text-white shadow-sm'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'Todos' : cat}
+                </button>
               );
             })}
 

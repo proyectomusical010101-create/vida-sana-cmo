@@ -437,6 +437,8 @@ export default function App() {
     setTransactions([newTx, ...(Array.isArray(transactions) ? transactions : [])]);
   };
 
+  const [autoOpenAddPatientModal, setAutoOpenAddPatientModal] = useState(false);
+
   const safeTransactions = Array.isArray(transactions) ? transactions : INITIAL_TRANSACTIONS_LOG;
   const safePatients = Array.isArray(patients) ? patients : INITIAL_PATIENTS;
   const safeSpecialists = Array.isArray(specialists) ? specialists : INITIAL_SPECIALISTS;
@@ -496,6 +498,8 @@ export default function App() {
               onRegisterProcedure={handleRegisterProcedure}
               selectedCurrency={selectedCurrency}
               currencySymbol={selectedCurrency === 'EUR' ? '€' : '$'}
+              autoOpenAddModal={autoOpenAddPatientModal}
+              setAutoOpenAddModal={setAutoOpenAddPatientModal}
             />
           );
         case 'odontogram-budget':
@@ -736,9 +740,12 @@ export default function App() {
 
           {/* 3. +Paciente */}
           <button
-            onClick={() => setActiveModule('patients')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
-            title="Ir al Registro de Pacientes"
+            onClick={() => {
+              setActiveModule('patients');
+              setAutoOpenAddPatientModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0 cursor-pointer"
+            title="Registrar Nuevo Paciente"
           >
             <UserPlus className="w-4 h-4" />
             <span>+Paciente</span>
