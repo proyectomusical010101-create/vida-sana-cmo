@@ -811,19 +811,6 @@ export default function App() {
             <span>+Presupuesto</span>
           </button>
 
-          {/* Theme Switcher Button */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-xl border font-bold transition-all ${
-              isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-sm'
-                : 'bg-[#17254d] hover:bg-[#1e2d5a] text-amber-300 border-[#23376e]'
-            }`}
-            title="Cambiar Modo Claro / Oscuro"
-          >
-            {isLight ? <Moon className="w-4 h-4 text-slate-800" /> : <Sun className="w-4 h-4 text-amber-400" />}
-          </button>
-
           {/* Logout Button */}
           <button
             onClick={handleLogout}
