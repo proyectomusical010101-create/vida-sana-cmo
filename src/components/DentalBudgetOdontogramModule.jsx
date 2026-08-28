@@ -45,16 +45,13 @@ export default function DentalBudgetOdontogramModule({
   }, [paperworkSettings]);
 
   // SECCION 2 State: Paciente Seleccionado
-  const [selectedPatientId, setSelectedPatientId] = useState(safePatients[0]?.id || '');
+  const [selectedPatientId, setSelectedPatientId] = useState(activeBudgetDraft?.selectedPatientId || safePatients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
-  // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza (Modos: 'red' | 'blue')
-  const [activeMarkMode, setActiveMarkMode] = useState('red');
+  // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza (Modos: 'red' | 'blue' | 'absence_blue' | 'extraction_red')
+  const [activeMarkMode, setActiveMarkMode] = useState(activeBudgetDraft?.activeMarkMode || 'red');
   const [toothSurfaces, setToothSurfaces] = useState(
-    activeBudgetDraft?.toothSurfaces || {
-      17: { top: 'red' },
-      16: { center: 'blue' }
-    }
+    activeBudgetDraft?.toothSurfaces || {}
   );
 
   // Modal de Selección de Tratamiento del Baremo por Cara Seleccionada
@@ -108,7 +105,39 @@ export default function DentalBudgetOdontogramModule({
   };
 
   const handleFaceClick = (toothNum, faceKey) => {
-    // 1. Pintar la cara en el odontograma según el modo activo
+    // 1. MODO AUSENCIA (AZUL) -> Poner/Quitar X Azul en todo el diente
+    if (activeMarkMode === 'absence_blue') {
+      setToothSurfaces(prev => {
+        const current = prev[toothNum] || {};
+        const newCross = current.cross === 'blue' ? null : 'blue';
+        return {
+          ...prev,
+          [toothNum]: {
+            ...current,
+            cross: newCross
+          }
+        };
+      });
+      return;
+    }
+
+    // 2. MODO EXTRACCIÓN (ROJO) -> Poner/Quitar X Roja en todo el diente
+    if (activeMarkMode === 'extraction_red') {
+      setToothSurfaces(prev => {
+        const current = prev[toothNum] || {};
+        const newCross = current.cross === 'red' ? null : 'red';
+        return {
+          ...prev,
+          [toothNum]: {
+            ...current,
+            cross: newCross
+          }
+        };
+      });
+      return;
+    }
+
+    // 3. MODO ROJO (LESIÓN) / AZUL (SANO) -> Pintar cara individual
     setToothSurfaces(prev => {
       const current = prev[toothNum] || {};
       const newColor = activeMarkMode === 'erase' ? null : activeMarkMode;
@@ -121,12 +150,34 @@ export default function DentalBudgetOdontogramModule({
       };
     });
 
-    // 2. Abrir el modal de selección de tratamiento del baremo para esta cara y diente
-    setSelectedFaceModal({
-      toothNum,
-      faceKey,
-      faceLabel: faceLabelMap[faceKey] || 'Cara Dental'
+    // Si es Rojo (Lesión), abrir modal para asociar procedimiento del baremo
+    if (activeMarkMode === 'red') {
+      setSelectedFaceModal({
+        toothNum,
+        faceKey,
+        faceLabel: faceLabelMap[faceKey] || 'Cara Dental'
+      });
+    }
+  };
+
+  const handleRightClickFace = (toothNum, faceKey) => {
+    setToothSurfaces(prev => {
+      const current = prev[toothNum] || {};
+      const updated = { ...current };
+      delete updated[faceKey];
+      delete updated.cross;
+
+      const nextSurfaces = { ...prev };
+      if (Object.keys(updated).length === 0) {
+        delete nextSurfaces[toothNum];
+      } else {
+        nextSurfaces[toothNum] = updated;
+      }
+      return nextSurfaces;
     });
+
+    // Eliminar también las partidas asociadas a esa pieza en el presupuesto
+    setBudgetItems(prev => prev.filter(item => String(item.tooth) !== String(toothNum)));
   };
 
   const getFaceColorHex = (colorMode) => {
@@ -149,28 +200,27 @@ export default function DentalBudgetOdontogramModule({
   const [budgetItems, setBudgetItems] = useState(
     Array.isArray(activeBudgetDraft?.budgetItems)
       ? activeBudgetDraft.budgetItems
-      : [
-          { id: 'ITEM-1', tooth: 16, procedure: 'Resina Fotocurada Molar', doctor: 'Dr. Carlos Mendoza', priceUsd: 45.00 },
-          { id: 'ITEM-2', tooth: 24, procedure: 'Tratamiento de Conducto (Endodoncia)', doctor: 'Dra. Vanessa Rivas', priceUsd: 120.00 }
-        ]
+      : []
   );
   const [customProcName, setCustomProcName] = useState('');
   const [customToothNum, setCustomToothNum] = useState('General');
   const [customProcPrice, setCustomProcPrice] = useState('40');
 
-  // Sincronizar automáticamente el borrador activo al padre App.jsx para persistencia al cambiar de pestaña
+  // Sincronizar automáticamente TODO el borrador activo al padre App.jsx para persistencia al cambiar de pestaña
   useEffect(() => {
     if (typeof setActiveBudgetDraft === 'function') {
       setActiveBudgetDraft({
+        selectedPatientId,
         toothSurfaces,
         budgetItems,
         clinicalObservations,
         consentText,
         discountPercent,
-        paymentSplits
+        paymentSplits,
+        activeMarkMode
       });
     }
-  }, [toothSurfaces, budgetItems, clinicalObservations, consentText, discountPercent, paymentSplits]);
+  }, [selectedPatientId, toothSurfaces, budgetItems, clinicalObservations, consentText, discountPercent, paymentSplits, activeMarkMode]);
 
   // SECCION 5 State: Firmas Digitales
   const patientCanvasRef = useRef(null);
@@ -340,26 +390,6 @@ export default function DentalBudgetOdontogramModule({
     });
   };
 
-  // Borrado de cara de diente con Clic Derecho (onContextMenu)
-  const handleRightClickFace = (toothNum, faceKey) => {
-    setToothSurfaces(prev => {
-      const current = prev[toothNum] || {};
-      const updated = { ...current };
-      delete updated[faceKey];
-
-      const nextSurfaces = { ...prev };
-      if (Object.keys(updated).length === 0) {
-        delete nextSurfaces[toothNum];
-      } else {
-        nextSurfaces[toothNum] = updated;
-      }
-      return nextSurfaces;
-    });
-
-    // Eliminar también las partidas asociadas a esa pieza en el presupuesto
-    setBudgetItems(prev => prev.filter(item => String(item.tooth) !== String(toothNum)));
-  };
-
   // Agregar partida manual al presupuesto (Sincronizada con el Odontodiagrama arriba)
   const handleAddCustomBudgetItem = (e) => {
     e.preventDefault();
@@ -494,15 +524,22 @@ export default function DentalBudgetOdontogramModule({
       setPatients(updatedPatients);
     }
 
-    // 4. Reiniciar borrador activo una vez guardado
+    // 4. Reiniciar borrador activo a cero una vez guardado
+    setToothSurfaces({});
+    setBudgetItems([]);
+    setClinicalObservations('');
+    setDiscountPercent('0');
+    setPaymentSplits([{ id: 1, method: 'Pago Móvil', amountUsd: 0 }]);
     if (typeof setActiveBudgetDraft === 'function') {
       setActiveBudgetDraft({
+        selectedPatientId: '',
         toothSurfaces: {},
         budgetItems: [],
         clinicalObservations: '',
-        consentText: '',
+        consentText: paperworkSettings?.consentTemplate || '',
         discountPercent: '0',
-        paymentSplits: []
+        paymentSplits: [{ id: 1, method: 'Pago Móvil', amountUsd: 0 }],
+        activeMarkMode: 'red'
       });
     }
 
@@ -511,6 +548,42 @@ export default function DentalBudgetOdontogramModule({
       text: `El presupuesto de $${finalTotalUsd.toFixed(2)} USD (${finalTotalBs.toFixed(2)} Bs) para ${activePatient?.name || 'el paciente'} ha sido registrado permanentemente en su Historia Clínica y en el Histórico de Presupuestos.`,
       icon: 'success',
       confirmButtonColor: '#0d9488'
+    });
+  };
+
+  // Función para Limpiar Borrador a cero manualmente
+  const handleResetDraft = () => {
+    Swal.fire({
+      title: '¿Limpiar todo el Odontograma y Borrador?',
+      text: 'Se restablecerán las piezas marcadas, procedimientos y montos a cero para iniciar un nuevo presupuesto desde el principio.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Limpiar a Cero',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        setToothSurfaces({});
+        setBudgetItems([]);
+        setClinicalObservations('');
+        setDiscountPercent('0');
+        setPaymentSplits([{ id: 1, method: 'Pago Móvil', amountUsd: 0 }]);
+        setActiveMarkMode('red');
+        if (typeof setActiveBudgetDraft === 'function') {
+          setActiveBudgetDraft({
+            selectedPatientId: safePatients[0]?.id || '',
+            toothSurfaces: {},
+            budgetItems: [],
+            clinicalObservations: '',
+            consentText: paperworkSettings?.consentTemplate || '',
+            discountPercent: '0',
+            paymentSplits: [{ id: 1, method: 'Pago Móvil', amountUsd: 0 }],
+            activeMarkMode: 'red'
+          });
+        }
+        Swal.fire('Borrador Limpio', 'El odontodiagrama y presupuesto están listos desde cero.', 'success');
+      }
     });
   };
 
@@ -530,8 +603,15 @@ export default function DentalBudgetOdontogramModule({
               {toothNum}
             </span>
 
-            {/* SVG Diente 5 Caras */}
-            <div className={`${isCompact ? 'w-6 h-6' : 'w-10 h-10'} relative bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xs`}>
+            {/* SVG Diente 5 Caras con Soporte de X Cruzada */}
+            <div 
+              className={`${isCompact ? 'w-6 h-6' : 'w-10 h-10'} relative bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xs cursor-pointer select-none`}
+              onClick={() => {
+                if (!isCompact && (activeMarkMode === 'absence_blue' || activeMarkMode === 'extraction_red')) {
+                  handleFaceClick(toothNum, 'center');
+                }
+              }}
+            >
               <svg viewBox="0 0 40 40" className="w-full h-full">
                 {/* Cuadro exterior */}
                 <rect x="0" y="0" width="40" height="40" fill="none" stroke="#cbd5e1" strokeWidth="1" />
@@ -542,7 +622,10 @@ export default function DentalBudgetOdontogramModule({
                   fill={getFaceColorHex(faces.top)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => !isCompact && handleFaceClick(toothNum, 'top')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isCompact) handleFaceClick(toothNum, 'top');
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     if (!isCompact) handleRightClickFace(toothNum, 'top');
@@ -556,7 +639,10 @@ export default function DentalBudgetOdontogramModule({
                   fill={getFaceColorHex(faces.right)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => !isCompact && handleFaceClick(toothNum, 'right')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isCompact) handleFaceClick(toothNum, 'right');
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     if (!isCompact) handleRightClickFace(toothNum, 'right');
@@ -570,7 +656,10 @@ export default function DentalBudgetOdontogramModule({
                   fill={getFaceColorHex(faces.bottom)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => !isCompact && handleFaceClick(toothNum, 'bottom')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isCompact) handleFaceClick(toothNum, 'bottom');
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     if (!isCompact) handleRightClickFace(toothNum, 'bottom');
@@ -584,7 +673,10 @@ export default function DentalBudgetOdontogramModule({
                   fill={getFaceColorHex(faces.left)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => !isCompact && handleFaceClick(toothNum, 'left')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isCompact) handleFaceClick(toothNum, 'left');
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     if (!isCompact) handleRightClickFace(toothNum, 'left');
@@ -601,13 +693,40 @@ export default function DentalBudgetOdontogramModule({
                   fill={getFaceColorHex(faces.center)}
                   stroke="#94a3b8"
                   strokeWidth="1"
-                  onClick={() => !isCompact && handleFaceClick(toothNum, 'center')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isCompact) handleFaceClick(toothNum, 'center');
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     if (!isCompact) handleRightClickFace(toothNum, 'center');
                   }}
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                 />
+
+                {/* Gran 'X' para Ausencia (Azul) o Extracción (Roja) sobre todo el diente */}
+                {faces.cross && (
+                  <g pointerEvents="none">
+                    <line
+                      x1="3"
+                      y1="3"
+                      x2="37"
+                      y2="37"
+                      stroke={faces.cross === 'red' ? '#ef4444' : '#2563eb'}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1="37"
+                      y1="3"
+                      x2="3"
+                      y2="37"
+                      stroke={faces.cross === 'red' ? '#ef4444' : '#2563eb'}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                )}
               </svg>
             </div>
           </div>
@@ -919,6 +1038,7 @@ export default function DentalBudgetOdontogramModule({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* 1. Rojo: Lesión */}
             <button
               type="button"
               onClick={() => setActiveMarkMode('red')}
@@ -932,6 +1052,7 @@ export default function DentalBudgetOdontogramModule({
               <span>Rojo: Lesión</span>
             </button>
 
+            {/* 2. Azul: Sano */}
             <button
               type="button"
               onClick={() => setActiveMarkMode('blue')}
@@ -945,9 +1066,46 @@ export default function DentalBudgetOdontogramModule({
               <span>Azul: Sano</span>
             </button>
 
-            <div className="text-[11px] text-amber-900 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-3 py-1.5 rounded-xl flex items-center gap-1.5 ml-auto">
-              <span>💡 Clic derecho sobre cualquier cara borra su diagnóstico.</span>
-            </div>
+            {/* 3. Ausencia (Azul) */}
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('absence_blue')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'absence_blue'
+                  ? 'bg-blue-700 text-white shadow-md ring-2 ring-blue-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-blue-400'
+              }`}
+              title="Marcar 'X' Azul en todo el diente para ausencia dental"
+            >
+              <span className="font-black text-sm text-blue-500 bg-blue-100 dark:bg-blue-950 px-1 rounded leading-none">✕</span>
+              <span>Ausencia (Azul)</span>
+            </button>
+
+            {/* 4. Extracción (Rojo) */}
+            <button
+              type="button"
+              onClick={() => setActiveMarkMode('extraction_red')}
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all font-extrabold cursor-pointer ${
+                activeMarkMode === 'extraction_red'
+                  ? 'bg-rose-700 text-white shadow-md ring-2 ring-rose-400 scale-105'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:border-rose-400'
+              }`}
+              title="Marcar 'X' Roja en todo el diente para indicación de extracción"
+            >
+              <span className="font-black text-sm text-rose-500 bg-rose-100 dark:bg-rose-950 px-1 rounded leading-none">✕</span>
+              <span>Extracción (Rojo)</span>
+            </button>
+
+            {/* Botón para Limpiar Todo el Borrador */}
+            <button
+              type="button"
+              onClick={handleResetDraft}
+              className="px-3 py-2 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-rose-950 rounded-xl flex items-center gap-1.5 transition-all text-xs font-bold cursor-pointer border border-slate-300 dark:border-slate-700"
+              title="Limpiar todo el odontograma y borrador a cero"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Limpiar Borrador</span>
+            </button>
           </div>
         </div>
 
