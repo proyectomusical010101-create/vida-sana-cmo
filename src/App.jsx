@@ -445,6 +445,7 @@ export default function App() {
   const safeRentals = Array.isArray(consultoryRentals) ? consultoryRentals : INITIAL_CONSULTORY_RENTALS;
   const safeLabOrders = Array.isArray(extramuralLabOrders) ? extramuralLabOrders : INITIAL_EXTRAMURAL_LAB_ORDERS;
   const safePayroll = Array.isArray(payroll) ? payroll : INITIAL_PAYROLL;
+  const safeAppointments = Array.isArray(appointments) ? appointments : [];
 
   const totalTodayIncome = safeTransactions.reduce((s, t) => s + safeNum(t?.total || t?.amount), 0);
 
@@ -452,7 +453,7 @@ export default function App() {
     { id: 'dashboard', name: '0. Home', icon: LayoutDashboard, section: '🎯 Principal' },
     { id: 'patients', name: '1. Pacientes', icon: UserCheck, section: '🩺 Atención Clínica' },
     { id: 'odontogram-budget', name: '2. Presupuesto', icon: Stethoscope, badge: '2D', section: '🩺 Atención Clínica' },
-    { id: 'patient-portal', name: '3. Agenda & Citas', icon: Calendar, section: '🩺 Atención Clínica' },
+    { id: 'schedules', name: '3. Agenda & Citas', icon: Calendar, section: '🩺 Atención Clínica' },
     { id: 'billing', name: '4. Facturación', icon: DollarSign, section: '💼 Administración & Finanzas' },
     { id: 'medical-records', name: '5. Historias Clínicas', icon: FileText, section: '🩺 Atención Clínica' },
     { id: 'baremos', name: '6. Servicios & Baremos', icon: Layers, section: '📦 Gestión Operativa' },
@@ -472,7 +473,7 @@ export default function App() {
           return (
             <DashboardOverviewModule
               patients={safePatients}
-              appointments={appointments}
+              appointments={safeAppointments}
               transactions={safeTransactions}
               bcvRate={bcvRate}
               selectedCurrency={selectedCurrency}
@@ -517,6 +518,7 @@ export default function App() {
             />
           );
         case 'schedules':
+        case 'patient-portal':
           return (
             <AppointmentsModule
               appointments={safeAppointments}
@@ -526,8 +528,6 @@ export default function App() {
               procedures={safeProcedures}
             />
           );
-        case 'patient-portal':
-          return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
         case 'billing':
           return (
             <BillingCashModule
