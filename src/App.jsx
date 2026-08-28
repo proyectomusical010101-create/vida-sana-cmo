@@ -116,6 +116,22 @@ export default function App() {
   const [theme, setTheme] = useState('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Logo de la clínica personalizable
+  const [currentLogo, setCurrentLogo] = useState(() => {
+    try {
+      return localStorage.getItem('vidasana_custom_logo') || logoImg;
+    } catch (e) {
+      return logoImg;
+    }
+  });
+
+  const handleUpdateLogo = (newLogo) => {
+    setCurrentLogo(newLogo);
+    try {
+      localStorage.setItem('vidasana_custom_logo', newLogo);
+    } catch (e) {}
+  };
+
   // Tasa de cambio BCV / DolarAPI (USD & EUR)
   const [bcvRateUsd, setBcvRateUsd] = useState(755.90);
   const [bcvRateEur, setBcvRateEur] = useState(879.35);
@@ -634,8 +650,8 @@ export default function App() {
               currentUser={currentUser}
               patients={safePatients}
               transactions={safeTransactions}
-              logoImg={logoImg}
-              setLogoImg={setLogoImg}
+              logoImg={currentLogo}
+              setLogoImg={handleUpdateLogo}
               onOpenCreateUser={() => setShowUserModal(true)}
               onUpdateCurrentUser={(updated) => setCurrentUser(updated)}
             />
