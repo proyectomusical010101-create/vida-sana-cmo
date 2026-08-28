@@ -693,8 +693,7 @@ export default function App() {
     { id: 'finances', name: '8. Finanzas', icon: TrendingUp, section: '💼 Administración & Finanzas' },
     { id: 'paperwork', name: '9. Papelería', icon: FileText, section: '💼 Administración & Finanzas' },
     { id: 'payroll', name: '10. Personal & Nómina', icon: Users, section: '💼 Administración & Finanzas' },
-    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' },
-    { id: 'settings', name: '12. Configuraciones', icon: Settings, section: '⚙️ Sistema' }
+    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' }
   ];
 
   // Renderizado seguro por módulo
@@ -1084,7 +1083,7 @@ export default function App() {
         }`}>
           <div className="space-y-1">
             <div className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              Módulos del Sistema
+              Menú Principal
             </div>
 
             {navItems.map((item) => {
@@ -1119,6 +1118,34 @@ export default function App() {
                 </button>
               );
             })}
+          </div>
+
+          {/* PARTE INFERIOR: Separador + Configuraciones (sin número) + Cerrar Sesión */}
+          <div className="pt-2 mt-auto space-y-1 border-t border-slate-200 dark:border-[#1e2d5a]">
+            {/* Botón Configuraciones (Sin Número) */}
+            <button
+              onClick={() => setActiveModule('settings')}
+              className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeModule === 'settings'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : isLight
+                    ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-semibold'
+                    : 'text-slate-300 hover:text-white hover:bg-[#17254d] font-semibold'
+              }`}
+            >
+              <Settings className={`w-4 h-4 shrink-0 ${activeModule === 'settings' ? 'text-white' : isLight ? 'text-slate-500' : 'text-slate-400'}`} />
+              <span>Configuraciones</span>
+            </button>
+
+            {/* Botón Cerrar Sesión (Debajo de Configuraciones) */}
+            <button
+              onClick={handleLogout}
+              className="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-all cursor-pointer"
+              title="Cerrar sesión de usuario"
+            >
+              <LogOut className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <span>Cerrar Sesión</span>
+            </button>
           </div>
         </aside>
 

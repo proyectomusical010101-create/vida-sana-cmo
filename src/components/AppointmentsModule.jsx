@@ -103,47 +103,85 @@ export default function AppointmentsModule({ appointments = [], setAppointments,
     const warnings = [];
     const okPoints = [];
 
-    // 1. Verificar disponibilidad del Servicio en el día de la semana
-    if (selectedProcedureObj) {
-      const serviceDays = selectedProcedureObj.availableDays || selectedProcedureObj.available_days || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const isSunday = dayName.toLowerCase() === 'domingo';
+    if (isSunday) {
+      warnings.push('Domingo: La clínica no presta servicios ni consultas los domingos. Por favor seleccione de Lunes a Sábado.');
+    }
+
+    // 1. Verificar disponibilidad del Servicio en el día de la semana (Lunes a Sábados por defecto)
+    if (selectedProcedureObj && !isSunday) {
+      const defaultDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const serviceDays = (Array.isArray(selectedProcedureObj.availableDays) && selectedProcedureObj.availableDays.length > 0)
+        ? selectedProcedureObj.availableDays
+        : (Array.isArray(selectedProcedureObj.available_days) && selectedProcedureObj.available_days.length > 0)
+          ? selectedProcedureObj.available_days
+          : defaultDays;
+
       const isServiceAvailableDay = serviceDays.some(d => String(d).toLowerCase() === dayName.toLowerCase());
 
       if (!isServiceAvailableDay) {
-        warnings.push(`El servicio "${selectedProcedureObj.name}" solo se atiende los días: ${serviceDays.join(', ')}. (Día seleccionado: ${dayName})`);
+        warnings.push(`El servicio "${selectedProcedureObj.name}" se atiende los días: ${serviceDays.join(', ')}. (Día seleccionado: ${dayName})`);
       } else {
         okPoints.push(`Servicio "${selectedProcedureObj.name}" disponible los ${dayName}s.`);
       }
     }
 
-    // 2. Verificar disponibilidad del Especialista en el día de la semana
-    if (selectedSpecialistObj) {
-      const specDays = selectedSpecialistObj.days || selectedSpecialistObj.available_days || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-      const isSpecAvailableDay = Array.isArray(specDays)
-        ? specDays.some(d => String(d).toLowerCase() === dayName.toLowerCase())
-        : true;
+    // 2. Horarios y Turnos del Especialista
+    const defaultDoctorDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const specDays = (selectedSpecialistObj && Array.isArray(selectedSpecialistObj.days) && selectedSpecialistObj.days.length > 0)
+      ? selectedSpecialistObj.days
+      : (selectedSpecialistObj && Array.isArray(selectedSpecialistObj.available_days) && selectedSpecialistObj.available_days.length > 0)
+        ? selectedSpecialistObj.available_days
+        : defaultDoctorDays;
 
-      if (!isSpecAvailableDay) {
-        warnings.push(`El especialista "${selectedSpecialistObj.name}" no labora los días ${dayName}s.`);
-      } else {
-        okPoints.push(`Especialista "${selectedSpecialistObj.name}" labora los días ${dayName}s.`);
+    const isSpecWorkingDay = !isSunday && specDays.some(d => String(d).toLowerCase() === dayName.toLowerCase());
+
+    // Generar franjas horarias con su estado para el especialista en la fecha seleccionada
+    const doctorSlots = timeSlots.map(slot => {
+      const shiftStr = String(selectedSpecialistObj?.shift || 'Completo').toLowerCase();
+      let inShift = true;
+      if (shiftStr.includes('mañana') || shiftStr.includes('manana')) {
+        inShift = slot.includes('AM');
+      } else if (shiftStr.includes('tarde')) {
+        inShift = slot.includes('PM');
       }
 
-      // 3. Verificar si el especialista ya posee una cita agendada en la misma fecha y hora
-      const existingAppt = (appointments || []).find(a => {
+      // Buscar si el doctor ya tiene cita agendada a esa hora en esa fecha
+      const conflictingAppt = (appointments || []).find(a => {
         if (!a) return false;
         const matchDate = a.date === formDate;
-        const matchTime = a.time === formTime;
-        const matchSpec = a.specialistName === selectedSpecialistObj.name || a.specialist_name === selectedSpecialistObj.name;
+        const matchTime = a.time === slot;
+        const matchSpec = selectedSpecialistObj && (a.specialistName === selectedSpecialistObj.name || a.specialist_name === selectedSpecialistObj.name);
         return matchDate && matchTime && matchSpec;
       });
 
-      if (existingAppt) {
-        warnings.push(`El especialista "${selectedSpecialistObj.name}" ya posee la cita #${existingAppt.id} agendada el ${formDate} a las ${formTime} con el paciente "${existingAppt.patientName}".`);
+      return {
+        slot,
+        inShift,
+        isOccupied: Boolean(conflictingAppt),
+        occupantName: conflictingAppt?.patientName || conflictingAppt?.patient_name || '',
+        isAvailable: isSpecWorkingDay && inShift && !conflictingAppt
+      };
+    });
+
+    if (selectedSpecialistObj) {
+      if (!isSpecWorkingDay) {
+        warnings.push(`El especialista "${selectedSpecialistObj.name}" no pasa consulta los días ${dayName}s. Días de atención: ${specDays.join(', ')}.`);
+      } else {
+        okPoints.push(`Especialista "${selectedSpecialistObj.name}" pasa consulta los días ${dayName}s.`);
+      }
+
+      // Verificar si la hora seleccionada actualmente tiene conflicto
+      const currentSelectedSlotObj = doctorSlots.find(s => s.slot === formTime);
+      if (currentSelectedSlotObj?.isOccupied) {
+        warnings.push(`El especialista "${selectedSpecialistObj.name}" ya tiene una cita agendada a las ${formTime} con el paciente "${currentSelectedSlotObj.occupantName}".`);
+      } else if (currentSelectedSlotObj && !currentSelectedSlotObj.inShift) {
+        warnings.push(`La hora ${formTime} está fuera del turno habitual (${selectedSpecialistObj.shift || 'Mañana/Tarde'}) del especialista.`);
       }
     }
 
     const isFullyAvailable = warnings.length === 0;
-    return { dayName, warnings, okPoints, isFullyAvailable };
+    return { dayName, warnings, okPoints, isFullyAvailable, specDays, isSpecWorkingDay, doctorSlots };
   }, [formDate, formTime, selectedProcedureObj, selectedSpecialistObj, appointments]);
 
   // Guardar Cita Submit
@@ -444,7 +482,7 @@ export default function AppointmentsModule({ appointments = [], setAppointments,
               </div>
 
               {/* 3. SELECCIÓN DE ESPECIALISTA */}
-              <div className="space-y-1.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="space-y-2 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
                 <label className="block font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
                   <Stethoscope className="w-4 h-4 text-teal-600" />
                   3. Especialista Médico Asignado
@@ -457,52 +495,103 @@ export default function AppointmentsModule({ appointments = [], setAppointments,
                 >
                   {specialists.map(sp => (
                     <option key={sp.id} value={sp.id}>
-                      {sp.name} — ({sp.specialty || 'Especialista'})
+                      {sp.name} — ({sp.specialty || 'Especialista'}) • Turno: {sp.shift || 'Completo'}
                     </option>
                   ))}
                 </select>
+
+                {selectedSpecialistObj && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 text-[11px] space-y-1 font-medium">
+                    <div className="flex justify-between">
+                      <span>🩺 Especialidad: <strong>{selectedSpecialistObj.specialty || 'General'}</strong></span>
+                      <span className="text-teal-700 font-bold">Turno: {selectedSpecialistObj.shift || 'Completo (Mañana y Tarde)'}</span>
+                    </div>
+                    <div>
+                      📅 Días de Consulta: <strong className="text-slate-800">{(crossCheckAnalysis.specDays || []).join(', ')}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* 4. FECHA, HORA Y CONSULTORIO */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-                <div>
-                  <label className="block font-bold mb-1 text-slate-800">Fecha Cita</label>
-                  <input
-                    type="date"
-                    required
-                    value={formDate}
-                    onChange={(e) => setFormDate(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-mono text-xs font-bold"
-                  />
-                  <span className="text-[10px] text-teal-700 font-extrabold block mt-1">Día: {crossCheckAnalysis.dayName}</span>
+              {/* 4. FECHA, HORA Y CONSULTORIO CON SELECTOR INTERACTIVO DE HORARIOS DISPONIBLES */}
+              <div className="space-y-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold mb-1 text-slate-800">Fecha Cita</label>
+                    <input
+                      type="date"
+                      required
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-xl font-mono text-xs font-bold"
+                    />
+                    <span className="text-[10px] text-teal-700 font-extrabold block mt-1">Día: {crossCheckAnalysis.dayName}</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold mb-1 text-slate-800">Consultorio</label>
+                    <select
+                      value={formConsultory}
+                      onChange={(e) => setFormConsultory(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-xs"
+                    >
+                      <option value="Consultorio 1 (Odontología)">Consultorio 1 (Odontología)</option>
+                      <option value="Consultorio 2 (Ortodoncia)">Consultorio 2 (Ortodoncia)</option>
+                      <option value="Consultorio 3 (Cirugía & Implantes)">Consultorio 3 (Cirugía & Implantes)</option>
+                      <option value="Sala Ecografía / Rayos X">Sala Ecografía / Rayos X</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-bold mb-1 text-slate-800">Hora Cita</label>
-                  <select
-                    value={formTime}
-                    onChange={(e) => setFormTime(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-mono font-bold text-xs"
-                  >
-                    {timeSlots.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Horarios Ofrecidos Específicos del Doctor */}
+                {selectedSpecialistObj && (
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-extrabold text-slate-800 text-[11px]">
+                        ⏱️ Horarios de {selectedSpecialistObj.name} para el {crossCheckAnalysis.dayName} ({formDate}):
+                      </label>
+                      <span className="text-[10px] font-bold text-slate-500">Haz clic en un horario para seleccionarlo</span>
+                    </div>
 
-                <div>
-                  <label className="block font-bold mb-1 text-slate-800">Consultorio</label>
-                  <select
-                    value={formConsultory}
-                    onChange={(e) => setFormConsultory(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-xs"
-                  >
-                    <option value="Consultorio 1 (Odontología)">Consultorio 1 (Odontología)</option>
-                    <option value="Consultorio 2 (Ortodoncia)">Consultorio 2 (Ortodoncia)</option>
-                    <option value="Consultorio 3 (Cirugía & Implantes)">Consultorio 3 (Cirugía & Implantes)</option>
-                    <option value="Sala Ecografía / Rayos X">Sala Ecografía / Rayos X</option>
-                  </select>
-                </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                      {crossCheckAnalysis.doctorSlots.map(s => {
+                        const isSelected = formTime === s.slot;
+
+                        return (
+                          <button
+                            key={s.slot}
+                            type="button"
+                            onClick={() => {
+                              if (!s.isOccupied) {
+                                setFormTime(s.slot);
+                              }
+                            }}
+                            className={`p-2 rounded-xl text-left border transition-all text-xs font-bold ${
+                              s.isOccupied
+                                ? 'bg-rose-50 border-rose-300 text-rose-800 opacity-80 cursor-not-allowed'
+                                : isSelected
+                                  ? 'bg-teal-600 border-teal-700 text-white shadow-md ring-2 ring-teal-400 scale-[1.02]'
+                                  : s.isAvailable
+                                    ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-900 cursor-pointer'
+                                    : 'bg-slate-100 border-slate-200 text-slate-400 cursor-pointer'
+                            }`}
+                            title={s.isOccupied ? `Ocupado con ${s.occupantName}` : s.isAvailable ? 'Disponible' : 'Fuera de turno'}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono font-black">{s.slot}</span>
+                              <span className="text-[10px]">
+                                {s.isOccupied ? '🔴' : isSelected ? '✓' : s.isAvailable ? '🟢' : '⚪'}
+                              </span>
+                            </div>
+                            <span className="text-[9px] block truncate mt-0.5">
+                              {s.isOccupied ? `Ocupado (${s.occupantName})` : s.isAvailable ? 'Disponible' : 'Fuera de turno'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 5. BANNER DE CRUCE DE INFORMACIÓN Y DISPONIBILIDAD EN TIEMPO REAL */}
