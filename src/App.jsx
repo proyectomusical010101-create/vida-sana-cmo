@@ -761,7 +761,16 @@ export default function App() {
             />
           );
         case 'inventory':
-          return <InventoryModule inventory={inventory} setInventory={setInventory} procedures={safeProcedures} setProcedures={setProcedures} />;
+          return (
+            <InventoryModule 
+              inventory={inventory} 
+              setInventory={setInventory} 
+              procedures={safeProcedures} 
+              setProcedures={setProcedures}
+              onSoftDelete={handleSoftDelete}
+              logAction={logSystemAction}
+            />
+          );
         case 'finances':
         case 'seniat':
         case 'profitability':

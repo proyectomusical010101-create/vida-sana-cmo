@@ -653,57 +653,202 @@ export async function deleteAppointmentApi(id) {
   return true;
 }
 
+// Helper para resguardo local de inventario
+function getLocalInventory() {
+  try {
+    const saved = localStorage.getItem('cmo_local_inventory');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalInventory(list) {
+  try {
+    localStorage.setItem('cmo_local_inventory', JSON.stringify(list));
+  } catch (e) {}
+}
+
 // 3. INVENTARIO & PROCEDIMIENTOS
 export async function fetchInventory() {
+  let cloudInv = [];
   if (supabase) {
     try {
-      const { data } = await supabase.from('inventory').select('*').order('id', { ascending: true });
-      if (data) return data.map(i => ({ id: i.id, name: i.name, unit: i.unit, unitCost: i.unit_cost, currentStock: i.current_stock, minStock: i.min_stock, expDate: i.exp_date, category: i.category }));
+      const { data, error } = await supabase.from('inventory').select('*').order('name', { ascending: true });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        cloudInv = data.map(i => ({
+          id: String(i.id),
+          name: i.name,
+          unit: i.unit || 'Unidad',
+          unitCost: parseFloat(i.unit_cost) || 0,
+          currentStock: parseFloat(i.current_stock) || 0,
+          minStock: parseFloat(i.min_stock) || 0,
+          expDate: i.exp_date || '',
+          category: i.category || 'General'
+        }));
+      }
     } catch (e) {}
   }
-  try {
-    const res = await fetch(`${API_BASE}/inventory`);
-    return await res.json();
-  } catch (err) {
-    return null;
+
+  if (cloudInv.length > 0) {
+    saveLocalInventory(cloudInv);
+    return cloudInv;
   }
+
+  const localInv = getLocalInventory();
+  if (localInv.length > 0) return localInv;
+
+  return [];
 }
 
 export async function createInventoryApi(data) {
+  const cleanId = data.id || `INV-${Date.now().toString().slice(-4)}`;
+  const itemRecord = {
+    id: cleanId,
+    name: data.name,
+    unit: data.unit || 'Unidad',
+    unitCost: parseFloat(data.unitCost || data.unit_cost) || 0,
+    currentStock: parseFloat(data.currentStock || data.current_stock) || 0,
+    minStock: parseFloat(data.minStock || data.min_stock) || 0,
+    expDate: data.expDate || data.exp_date || '',
+    category: data.category || 'General'
+  };
+
+  const locals = getLocalInventory();
+  saveLocalInventory([itemRecord, ...locals.filter(i => String(i.id) !== cleanId)]);
+
   if (supabase) {
     try {
-      const { data: result } = await supabase.from('inventory').insert([{
-        id: `INV-${Date.now().toString().slice(-4)}`,
+      await supabase.from('inventory').upsert([{
+        id: cleanId,
+        name: itemRecord.name,
+        unit: itemRecord.unit,
+        unit_cost: itemRecord.unitCost,
+        current_stock: itemRecord.currentStock,
+        min_stock: itemRecord.minStock,
+        exp_date: itemRecord.expDate,
+        category: itemRecord.category
+      }]);
+    } catch (e) {
+      console.warn("Error al guardar insumo en Supabase:", e);
+    }
+  }
+
+  return itemRecord;
+}
+
+export async function updateInventoryApi(id, data) {
+  const cleanId = String(id);
+  const locals = getLocalInventory();
+  const updated = locals.map(item => {
+    if (String(item.id) === cleanId) {
+      return {
+        ...item,
+        name: data.name ?? item.name,
+        unit: data.unit ?? item.unit,
+        unitCost: parseFloat(data.unitCost ?? data.unit_cost ?? item.unitCost) || 0,
+        currentStock: parseFloat(data.currentStock ?? data.current_stock ?? item.currentStock) || 0,
+        minStock: parseFloat(data.minStock ?? data.min_stock ?? item.minStock) || 0,
+        expDate: data.expDate ?? data.exp_date ?? item.expDate,
+        category: data.category ?? item.category
+      };
+    }
+    return item;
+  });
+  saveLocalInventory(updated);
+
+  if (supabase) {
+    try {
+      await supabase.from('inventory').update({
         name: data.name,
         unit: data.unit,
-        unit_cost: parseFloat(data.unitCost)||0,
-        current_stock: parseFloat(data.currentStock)||0,
-        min_stock: parseFloat(data.minStock)||0,
-        exp_date: data.expDate,
+        unit_cost: parseFloat(data.unitCost ?? data.unit_cost) || 0,
+        current_stock: parseFloat(data.currentStock ?? data.current_stock) || 0,
+        min_stock: parseFloat(data.minStock ?? data.min_stock) || 0,
+        exp_date: data.expDate ?? data.exp_date,
         category: data.category
-      }]).select().single();
-      if (result) return result;
+      }).eq('id', cleanId);
     } catch (e) {}
   }
-  const res = await fetch(`${API_BASE}/inventory`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return await res.json();
+
+  return { id: cleanId, ...data };
+}
+
+export async function deleteInventoryApi(id) {
+  const cleanId = String(id);
+  const locals = getLocalInventory();
+  saveLocalInventory(locals.filter(i => String(i.id) !== cleanId));
+
+  if (supabase) {
+    try {
+      await supabase.from('inventory').delete().eq('id', cleanId);
+    } catch (e) {
+      console.warn("Error al borrar insumo en Supabase:", e);
+    }
+  }
+  return true;
+}
+
+export async function saveBulkInventoryApi(itemsList) {
+  if (!Array.isArray(itemsList)) return [];
+
+  const cleanList = itemsList.map((data, idx) => ({
+    id: data.id || `INV-${Date.now().toString().slice(-4)}-${idx}`,
+    name: data.name,
+    unit: data.unit || 'Unidad',
+    unitCost: parseFloat(data.unitCost || data.unit_cost) || 0,
+    currentStock: parseFloat(data.currentStock || data.current_stock) || 0,
+    minStock: parseFloat(data.minStock || data.min_stock) || 0,
+    expDate: data.expDate || data.exp_date || '',
+    category: data.category || 'General'
+  }));
+
+  saveLocalInventory(cleanList);
+
+  if (supabase) {
+    try {
+      const dbPayload = cleanList.map(i => ({
+        id: i.id,
+        name: i.name,
+        unit: i.unit,
+        unit_cost: i.unitCost,
+        current_stock: i.currentStock,
+        min_stock: i.minStock,
+        exp_date: i.expDate,
+        category: i.category
+      }));
+      await supabase.from('inventory').upsert(dbPayload);
+    } catch (e) {
+      console.warn("Error al guardar inventario masivo en Supabase:", e);
+    }
+  }
+
+  return cleanList;
 }
 
 export async function adjustStockApi(id, type, quantity) {
-  try {
-    const res = await fetch(`${API_BASE}/inventory/adjust`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, type, quantity })
-    });
-    return await res.json();
-  } catch (e) {
-    return { success: true };
+  const cleanId = String(id);
+  const qty = parseFloat(quantity) || 0;
+  const locals = getLocalInventory();
+  let updatedStock = 0;
+
+  const updated = locals.map(item => {
+    if (String(item.id) === cleanId) {
+      const current = parseFloat(item.currentStock) || 0;
+      updatedStock = type === 'entrada' ? current + qty : Math.max(0, current - qty);
+      return { ...item, currentStock: updatedStock, current_stock: updatedStock };
+    }
+    return item;
+  });
+  saveLocalInventory(updated);
+
+  if (supabase) {
+    try {
+      await supabase.from('inventory').update({ current_stock: updatedStock }).eq('id', cleanId);
+    } catch (e) {}
   }
+
+  return { success: true, currentStock: updatedStock };
 }
 
 export async function fetchProcedures() {

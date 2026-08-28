@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Package, AlertTriangle, Plus, ArrowUpRight, ArrowDownLeft, FileText, CheckCircle, RefreshCw, ShoppingCart, Printer, Edit, Trash2, Download, Upload } from 'lucide-react';
 import Swal from 'sweetalert2';
-import { createInventoryApi, adjustStockApi } from '../api';
+import { createInventoryApi, updateInventoryApi, deleteInventoryApi, saveBulkInventoryApi, adjustStockApi } from '../api';
 
-export default function InventoryModule({ inventory = [], setInventory, procedures = [], setProcedures }) {
+export default function InventoryModule({ 
+  inventory = [], 
+  setInventory, 
+  procedures = [], 
+  setProcedures,
+  onSoftDelete,
+  logAction
+}) {
   const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'procedures' | 'purchaseOrder'
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -27,13 +34,13 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
     document.body.removeChild(link);
   };
 
-  // Parser de Carga Masiva de Insumos / Inventario
+  // Parser de Carga Masiva de Insumos / Inventario (Guarda en Supabase Cloud DB)
   const handleInventoryFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         let text = evt.target.result || '';
         if (text.charCodeAt(0) === 0xFEFF) {
@@ -93,10 +100,22 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
           }
         }
 
-        setInventory(newInventory);
+        // 1. Guardar masivamente en Supabase Cloud DB y almacenamiento persistente
+        const savedList = await saveBulkInventoryApi(newInventory);
+        setInventory(savedList || newInventory);
+
+        // 2. Registrar en Historial Inmutable de Auditoría
+        if (typeof logAction === 'function') {
+          logAction(
+            `Importación Masiva de Inventario (${addedCount} nuevos, ${updatedCount} actualizados)`,
+            'Inventario & Insumos',
+            `Se procesó archivo CSV/Excel con ${addedCount + updatedCount} insumos.`
+          );
+        }
+
         Swal.fire({
           title: '¡Inventario Actualizado!',
-          text: `Se agregaron ${addedCount} insumos nuevos y se actualizaron ${updatedCount} existentes.`,
+          text: `Se agregaron ${addedCount} insumos nuevos y se actualizaron ${updatedCount} existentes en la nube.`,
           icon: 'success'
         });
       } catch (err) {
@@ -180,10 +199,19 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
     e.preventDefault();
     try {
       const created = await createInventoryApi(newItem);
-      setInventory([...inventory, created]);
+      setInventory([created, ...inventory.filter(i => i.id !== created.id)]);
+      
+      if (typeof logAction === 'function') {
+        logAction(
+          `Creación de Insumo (${newItem.name})`,
+          'Inventario & Insumos',
+          `Categoría: ${newItem.category} • Stock Inicial: ${newItem.currentStock} ${newItem.unit} • Costo: $${newItem.unitCost}`
+        );
+      }
     } catch (err) {
-      const newId = `INV-${(inventory.length + 1).toString().padStart(3, '0')}`;
-      setInventory([...inventory, { id: newId, ...newItem, unitCost: parseFloat(newItem.unitCost), currentStock: parseFloat(newItem.currentStock), minStock: parseFloat(newItem.minStock) }]);
+      const newId = `INV-${Date.now().toString().slice(-4)}`;
+      const fallbackItem = { id: newId, ...newItem, unitCost: parseFloat(newItem.unitCost), currentStock: parseFloat(newItem.currentStock), minStock: parseFloat(newItem.minStock) };
+      setInventory([fallbackItem, ...inventory]);
     }
     setShowNewModal(false);
     Swal.fire('¡Insumo Registrado!', `El producto "${newItem.name}" fue agregado al inventario.`, 'success');
@@ -202,7 +230,7 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
     setShowEditModal(true);
   };
 
-  const handleEditItemSubmit = (e) => {
+  const handleEditItemSubmit = async (e) => {
     e.preventDefault();
     if (!selectedEditItem) return;
 
@@ -223,25 +251,60 @@ export default function InventoryModule({ inventory = [], setInventory, procedur
 
     setInventory(updated);
     setShowEditModal(false);
+
+    await updateInventoryApi(selectedEditItem.id, editItemForm).catch(() => null);
+
+    if (typeof logAction === 'function') {
+      logAction(
+        `Actualización de Insumo (${editItemForm.name})`,
+        'Inventario & Insumos',
+        `Stock: ${editItemForm.currentStock} • Costo: $${editItemForm.unitCost}`
+      );
+    }
+
     Swal.fire('¡Insumo Actualizado!', `Se modificaron los datos de "${editItemForm.name}".`, 'success');
   };
 
-  const handleDeleteInventoryItem = (item) => {
-    Swal.fire({
-      title: '¿Eliminar Insumo de Inventario?',
-      text: `¿Estás seguro de que deseas eliminar "${item.name}"?`,
+  const handleDeleteInventoryItem = async (item) => {
+    const confirm = await Swal.fire({
+      title: '¿Mover Insumo a la Papelera?',
+      text: `El insumo "${item.name}" será eliminado del inventario activo y enviado a la Papelera de Reciclaje.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, Borrar Insumo',
+      confirmButtonText: 'Sí, Enviar a Papelera',
       cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setInventory(inventory.filter(i => i.id !== item.id));
-        Swal.fire('Eliminado', `El insumo "${item.name}" ha sido borrado del inventario.`, 'success');
-      }
     });
+
+    if (confirm.isConfirmed) {
+      // 1. Eliminar de Supabase Cloud DB
+      deleteInventoryApi(item.id).catch(() => null);
+
+      // 2. Actualizar estado local
+      setInventory(inventory.filter(i => i.id !== item.id));
+
+      // 3. Enviar a la Papelera de Reciclaje Global
+      if (typeof onSoftDelete === 'function') {
+        onSoftDelete(
+          item,
+          'inventory',
+          item.name,
+          `Categoría: ${item.category || 'General'} • Stock: ${item.currentStock || item.current_stock || 0} ${item.unit || 'uds'}`
+        );
+      }
+
+      // 4. Registrar en Historial Inmutable de Auditoría
+      if (typeof logAction === 'function') {
+        logAction(
+          `Eliminación de Insumo (${item.name})`,
+          'Inventario & Insumos',
+          `Stock eliminado: ${item.currentStock || item.current_stock || 0} • Movido a Papelera de Reciclaje`
+        );
+      }
+
+      Swal.fire('Enviado a la Papelera', `El insumo "${item.name}" ha sido enviado a la Papelera de Reciclaje.`, 'success');
+    }
   };
 
   // Generate Purchase Order PDF preview
