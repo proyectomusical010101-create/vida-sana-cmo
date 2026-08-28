@@ -217,6 +217,10 @@ export default function DentalBudgetOdontogramModule({
     const pIdVal = activePatient?.id || '100-01';
     const linkVal = `${window.location.origin}/?pdf=1&patientId=${encodeURIComponent(pIdVal)}`;
 
+    const paymentMethodsSummary = (paymentSplits && paymentSplits.length > 0)
+      ? paymentSplits.map(s => `${s.method}: $${(parseFloat(s.amountUsd) || 0).toFixed(2)} USD`).join(' + ')
+      : 'Pago Móvil / Efectivo';
+
     return waMessageTemplate
       .replace(/{PACIENTE}/g, pNameVal)
       .replace(/{CLINICA}/g, clinicNameVal)
@@ -225,7 +229,7 @@ export default function DentalBudgetOdontogramModule({
       .replace(/{DESCUENTO_USD}/g, discUsdStr)
       .replace(/{TOTAL_USD}/g, totalUsdStr)
       .replace(/{TOTAL_BS}/g, totalBsStr)
-      .replace(/{METODO_PAGO}/g, paymentMethod)
+      .replace(/{METODO_PAGO}/g, paymentMethodsSummary)
       .replace(/{TASA_BCV}/g, bcvRateStr)
       .replace(/{LINK_PRESUPUESTO}/g, linkVal);
   };
@@ -1772,7 +1776,11 @@ export default function DentalBudgetOdontogramModule({
           <div className="flex flex-wrap justify-between items-center gap-4 pt-1.5 font-mono text-[10px] font-black border-t border-slate-800">
             <div>
               <span className="text-slate-600">Método de Pago Asignado: </span>
-              <span className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 font-bold">{paymentMethod}</span>
+              <span className="text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 font-bold">
+                {(paymentSplits && paymentSplits.length > 0)
+                  ? paymentSplits.map(s => `${s.method}: $${(parseFloat(s.amountUsd) || 0).toFixed(2)}`).join(' + ')
+                  : 'Pago Móvil / Efectivo'}
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-right">
