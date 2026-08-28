@@ -145,6 +145,7 @@ export default function SettingsModule({
     const matchesSearch = (item.name || '').toLowerCase().includes(term) || 
                           (item.details || '').toLowerCase().includes(term) ||
                           (item.typeName || '').toLowerCase().includes(term);
+    const matchesType = trashTypeFilter === 'ALL' || item.type === trashTypeFilter;
     return matchesSearch && matchesType;
   });
 
