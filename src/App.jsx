@@ -132,6 +132,103 @@ export default function App() {
     } catch (e) {}
   };
 
+  // Papelera de Reciclaje Global (Soft Delete & Recovery)
+  const [deletedItemsHistory, setDeletedItemsHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cmo_deleted_items');
+      return saved ? JSON.parse(saved) : [
+        { id: 'DEL-101', originalId: 'P-99', type: 'patient', typeName: 'Paciente', name: 'María Alejandra Gutiérrez', details: 'V-19.840.112 • 0414-5551234', deletedAt: new Date(Date.now() - 3600000).toISOString(), deletedBy: 'Dra. Vanessa Parra' },
+        { id: 'DEL-102', originalId: 'B-204', type: 'budget', typeName: 'Presupuesto', name: 'Presupuesto #204 - Ortodoncia Interceptiva', details: 'Paciente: Pedro Pérez • $450.00', deletedAt: new Date(Date.now() - 7200000).toISOString(), deletedBy: 'Administrador' }
+      ];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const saveDeletedItemsToStorage = (items) => {
+    setDeletedItemsHistory(items);
+    try {
+      localStorage.setItem('cmo_deleted_items', JSON.stringify(items));
+    } catch (e) {}
+  };
+
+  const handleSoftDelete = (item, type, name, details) => {
+    const newRecord = {
+      id: `DEL-${Date.now()}`,
+      originalId: item?.id || item?.code || item?.documentId || `ID-${Date.now()}`,
+      type, // 'patient' | 'budget' | 'transaction' | 'procedure' | 'inventory'
+      typeName: type === 'patient' ? 'Paciente' : type === 'budget' ? 'Presupuesto' : type === 'transaction' ? 'Factura / Caja' : type === 'procedure' ? 'Servicio / Baremo' : 'Insumo / Inventario',
+      name: name || item?.name || item?.description || item?.patientName || 'Registro',
+      details: details || item?.documentId || item?.patientName || item?.category || item?.code || '',
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser?.name || 'Administrador',
+      originalData: item
+    };
+    const updated = [newRecord, ...deletedItemsHistory];
+    saveDeletedItemsToStorage(updated);
+  };
+
+  const handleRestoreItem = (item) => {
+    if (!item) return;
+
+    if (item.type === 'patient' && item.originalData) {
+      setPatients([item.originalData, ...safePatients]);
+    } else if (item.type === 'transaction' && item.originalData) {
+      setTransactions([item.originalData, ...safeTransactions]);
+    } else if (item.type === 'procedure' && item.originalData) {
+      setProcedures([item.originalData, ...safeProcedures]);
+    } else if (item.type === 'inventory' && item.originalData) {
+      setInventory([item.originalData, ...safeInventory]);
+    }
+
+    const updated = deletedItemsHistory.filter(i => i.id !== item.id);
+    saveDeletedItemsToStorage(updated);
+
+    Swal.fire({
+      title: '¡Registro Restaurado!',
+      text: `"${item.name}" ha sido restaurado exitosamente a su módulo correspondiente.`,
+      icon: 'success',
+      confirmButtonColor: '#0d9488'
+    });
+  };
+
+  const handlePermanentDeleteItem = (item) => {
+    Swal.fire({
+      title: '¿Eliminar Definitivamente?',
+      text: `Esta acción eliminará de forma permanente a "${item.name}" de la papelera sin posibilidad de recuperación.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Eliminar Definitivamente',
+      cancelButtonText: 'Cancelar'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        const updated = deletedItemsHistory.filter(i => i.id !== item.id);
+        saveDeletedItemsToStorage(updated);
+        Swal.fire('Eliminado Definitivamente', 'El registro ha sido destruido de forma permanente.', 'success');
+      }
+    });
+  };
+
+  const handleEmptyTrashBin = () => {
+    Swal.fire({
+      title: '¿Vaciar la Papelera de Reciclaje?',
+      text: 'Se eliminarán de forma permanente TODOS los registros archivados en la papelera.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Vaciar Todo',
+      cancelButtonText: 'Cancelar'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        saveDeletedItemsToStorage([]);
+        Swal.fire('Papelera Vaciada', 'Todos los elementos han sido destruidos permanentemente.', 'success');
+      }
+    });
+  };
+
   // Tasa de cambio BCV / DolarAPI (USD & EUR)
   const [bcvRateUsd, setBcvRateUsd] = useState(755.90);
   const [bcvRateEur, setBcvRateEur] = useState(879.35);
@@ -650,6 +747,10 @@ export default function App() {
               currentUser={currentUser}
               patients={safePatients}
               transactions={safeTransactions}
+              deletedItems={deletedItemsHistory}
+              onRestoreItem={handleRestoreItem}
+              onPermanentDeleteItem={handlePermanentDeleteItem}
+              onEmptyTrashBin={handleEmptyTrashBin}
               logoImg={currentLogo}
               setLogoImg={handleUpdateLogo}
               theme={theme}

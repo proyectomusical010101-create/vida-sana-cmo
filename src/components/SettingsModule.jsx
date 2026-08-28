@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, ShieldCheck, Building, Image, Mail, Key, Upload, Check, User, Lock, AlertTriangle, Sparkles, Sun, Moon } from 'lucide-react';
+import { 
+  Settings, ShieldCheck, Building, Image, Mail, Key, Upload, Check, 
+  User, Lock, AlertTriangle, Sparkles, Sun, Moon, Trash2, RotateCcw, 
+  Search, Filter, Layers, FileText, DollarSign, UserCheck, Package, Stethoscope 
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import AuditRolesPortalModule from './AuditRolesPortalModule';
 import { CLINIC_INFO } from '../mockData';
@@ -8,6 +12,10 @@ export default function SettingsModule({
   currentUser, 
   patients = [], 
   transactions = [], 
+  deletedItems = [],
+  onRestoreItem,
+  onPermanentDeleteItem,
+  onEmptyTrashBin,
   logoImg, 
   setLogoImg, 
   theme = 'light',
@@ -15,7 +23,11 @@ export default function SettingsModule({
   onOpenCreateUser,
   onUpdateCurrentUser
 }) {
-  const [activeTab, setActiveTab] = useState('company-profile'); // 'users-roles' | 'company-profile'
+  const [activeTab, setActiveTab] = useState('company-profile'); // 'company-profile' | 'users-roles' | 'trash'
+
+  // Filtros de Papelera
+  const [trashSearchTerm, setTrashSearchTerm] = useState('');
+  const [trashTypeFilter, setTrashTypeFilter] = useState('ALL');
 
   // Ajustes de Empresa / Perfil
   const [companyEmail, setCompanyEmail] = useState(() => currentUser?.email || 'admin@vidasana-cmo.com');
@@ -77,8 +89,31 @@ export default function SettingsModule({
     });
   };
 
+  // Filtrar elementos de la papelera
+  const filteredTrashItems = deletedItems.filter(item => {
+    if (!item) return false;
+    const term = trashSearchTerm.toLowerCase();
+    const matchesSearch = (item.name || '').toLowerCase().includes(term) || 
+                          (item.details || '').toLowerCase().includes(term) ||
+                          (item.typeName || '').toLowerCase().includes(term);
+    const matchesType = trashTypeFilter === 'ALL' || item.type === trashTypeFilter;
+    return matchesSearch && matchesType;
+  });
+
+  // Icono por Tipo de Elemento
+  const getItemIcon = (type) => {
+    switch (type) {
+      case 'patient': return <UserCheck className="w-4 h-4 text-emerald-600" />;
+      case 'budget': return <Stethoscope className="w-4 h-4 text-amber-600" />;
+      case 'transaction': return <DollarSign className="w-4 h-4 text-teal-600" />;
+      case 'procedure': return <Layers className="w-4 h-4 text-purple-600" />;
+      case 'inventory': return <Package className="w-4 h-4 text-blue-600" />;
+      default: return <FileText className="w-4 h-4 text-slate-500" />;
+    }
+  };
+
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 w-full max-w-6xl mx-auto pb-12 font-sans">
       {/* Banner Principal de Configuraciones */}
       <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -90,15 +125,15 @@ export default function SettingsModule({
             Configuraciones del Sistema
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
-            Gestión centralizada de usuarios, permisos, roles, auditorías y personalización de marca de la clínica.
+            Gestión centralizada de usuarios, permisos, roles, auditorías, papelera de reciclaje y marca.
           </p>
         </div>
 
         {/* Pestañas Conmutadoras del Módulo */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setActiveTab('company-profile')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'company-profile'
                 ? 'bg-teal-600 text-white shadow-md'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -110,14 +145,31 @@ export default function SettingsModule({
 
           <button
             onClick={() => setActiveTab('users-roles')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'users-roles'
                 ? 'bg-teal-600 text-white shadow-md'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Usuarios, Roles & Auditorías
+            Usuarios & Permisos
+          </button>
+
+          <button
+            onClick={() => setActiveTab('trash')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'trash'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Trash2 className="w-4 h-4" />
+            Papelera de Reciclaje
+            {deletedItems.length > 0 && (
+              <span className="bg-white/20 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                {deletedItems.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -279,6 +331,138 @@ export default function SettingsModule({
             currentUser={currentUser}
             onOpenCreateUser={onOpenCreateUser}
           />
+        </div>
+      )}
+
+      {/* CONTENIDO 3: PAPELERA DE RECICLAJE & RECUPERACIÓN DE DATOS */}
+      {activeTab === 'trash' && (
+        <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-[#1e2d5a] pb-4">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+                Papelera de Reciclaje del Sistema
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Los registros eliminados se almacenan aquí de forma segura para permitir su restauración en cualquier momento.
+              </p>
+            </div>
+
+            {deletedItems.length > 0 && (
+              <button
+                onClick={() => typeof onEmptyTrashBin === 'function' && onEmptyTrashBin()}
+                className="px-4 py-2 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/50 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Vaciar Papelera Definitivamente
+              </button>
+            )}
+          </div>
+
+          {/* Buscador & Filtro por Tipo */}
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar en la papelera por nombre, tipo o detalle..."
+                value={trashSearchTerm}
+                onChange={(e) => setTrashSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+              <select
+                value={trashTypeFilter}
+                onChange={(e) => setTrashTypeFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 w-full sm:w-auto"
+              >
+                <option value="ALL">Todos los Tipos ({deletedItems.length})</option>
+                <option value="patient">Pacientes</option>
+                <option value="budget">Presupuestos</option>
+                <option value="transaction">Facturas / Caja</option>
+                <option value="procedure">Servicios / Baremos</option>
+                <option value="inventory">Insumos / Inventario</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Lista / Tabla de Elementos Eliminados */}
+          {filteredTrashItems.length === 0 ? (
+            <div className="p-12 text-center bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl space-y-3">
+              <Trash2 className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto stroke-1" />
+              <h4 className="font-extrabold text-sm text-slate-700 dark:text-slate-300">La papelera está vacía</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                No hay elementos eliminados en esta categoría. Cuando elimines un paciente, presupuesto, factura, servicio e insumo se conservará aquí para restaurarlo.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-200 dark:border-[#1e2d5a] rounded-2xl shadow-sm">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100 dark:bg-[#0d162f] text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200 dark:border-[#1e2d5a]">
+                    <th className="py-3 px-4">Tipo & Registro</th>
+                    <th className="py-3 px-4">Detalles</th>
+                    <th className="py-3 px-4">Eliminado Por</th>
+                    <th className="py-3 px-4">Fecha Eliminación</th>
+                    <th className="py-3 px-4 text-center">Acciones de Recuperación</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-[#1e2d5a] font-medium text-slate-800 dark:text-slate-200">
+                  {filteredTrashItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3.5 px-4 font-bold flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700">
+                          {getItemIcon(item.type)}
+                        </div>
+                        <div>
+                          <span className="block text-slate-900 dark:text-white font-extrabold text-xs">{item.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
+                            {item.typeName || item.type}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                        {item.details || 'Sin detalles adicionales'}
+                      </td>
+
+                      <td className="py-3.5 px-4 font-bold text-slate-700 dark:text-slate-300">
+                        {item.deletedBy || 'Administrador'}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-500 text-[11px] font-mono">
+                        {item.deletedAt ? new Date(item.deletedAt).toLocaleString('es-VE') : 'Reciente'}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => typeof onRestoreItem === 'function' && onRestoreItem(item)}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer active:scale-95"
+                            title="Restaurar registro de vuelta al sistema"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Restaurar
+                          </button>
+
+                          <button
+                            onClick={() => typeof onPermanentDeleteItem === 'function' && onPermanentDeleteItem(item)}
+                            className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-900/40 dark:hover:bg-rose-900/60 dark:text-rose-300 rounded-xl transition-all cursor-pointer"
+                            title="Eliminar definitivamente"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
