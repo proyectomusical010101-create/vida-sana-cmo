@@ -1158,3 +1158,133 @@ export async function deletePayrollApi(id) {
   }
   return { success: true };
 }
+
+// ==========================================
+// 14. AUDIT LOGS & TRASH RECYCLE BIN (CLOUD SYNC)
+// ==========================================
+
+export async function fetchAuditLogsApi() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(r => ({
+          id: r.id,
+          user: r.user_name || r.user || 'Usuario',
+          docId: r.doc_id || r.docId || 'N/A',
+          email: r.email || '',
+          role: r.role || 'Usuario',
+          action: r.action || '',
+          module: r.module || '',
+          detail: r.detail || '',
+          timestamp: r.timestamp || new Date(r.created_at || Date.now()).toLocaleString('es-VE'),
+          ip: r.ip || '190.202.45.12'
+        }));
+      }
+    } catch (e) {
+      console.warn("Fallo al leer audit_logs de Supabase:", e);
+    }
+  }
+  try {
+    const saved = localStorage.getItem('cmo_audit_logs');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function createAuditLogApi(logItem) {
+  if (supabase) {
+    try {
+      await supabase.from('audit_logs').insert([{
+        id: logItem.id,
+        user_name: logItem.user,
+        doc_id: logItem.docId,
+        email: logItem.email,
+        role: logItem.role,
+        action: logItem.action,
+        module: logItem.module,
+        detail: logItem.detail,
+        timestamp: logItem.timestamp,
+        ip: logItem.ip
+      }]);
+    } catch (e) {
+      console.warn("Fallo al insertar en audit_logs de Supabase:", e);
+    }
+  }
+  return true;
+}
+
+export async function fetchDeletedItemsApi() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('deleted_items')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(r => ({
+          id: r.id,
+          originalId: r.original_id || r.originalId,
+          type: r.type,
+          typeName: r.type_name || r.typeName,
+          name: r.name,
+          details: r.details,
+          deletedAt: r.deleted_at || r.deletedAt,
+          deletedBy: r.deleted_by || r.deletedBy,
+          originalData: typeof r.original_data === 'string' ? JSON.parse(r.original_data) : (r.original_data || null)
+        }));
+      }
+    } catch (e) {
+      console.warn("Fallo al leer deleted_items de Supabase:", e);
+    }
+  }
+  try {
+    const saved = localStorage.getItem('cmo_deleted_items');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function createDeletedItemApi(trashRecord) {
+  if (supabase) {
+    try {
+      await supabase.from('deleted_items').insert([{
+        id: trashRecord.id,
+        original_id: trashRecord.originalId,
+        type: trashRecord.type,
+        type_name: trashRecord.typeName,
+        name: trashRecord.name,
+        details: trashRecord.details,
+        deleted_at: trashRecord.deletedAt,
+        deleted_by: trashRecord.deletedBy,
+        original_data: JSON.stringify(trashRecord.originalData || {})
+      }]);
+    } catch (e) {
+      console.warn("Fallo al insertar en deleted_items de Supabase:", e);
+    }
+  }
+  return true;
+}
+
+export async function deleteDeletedItemApi(id) {
+  if (supabase) {
+    try {
+      await supabase.from('deleted_items').delete().eq('id', id);
+    } catch (e) {}
+  }
+  return true;
+}
+
+export async function emptyDeletedItemsApi() {
+  if (supabase) {
+    try {
+      await supabase.from('deleted_items').delete().neq('id', 'NONE_EXISTS_000');
+    } catch (e) {}
+  }
+  return true;
+}

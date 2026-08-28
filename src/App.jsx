@@ -28,7 +28,13 @@ import {
   fetchPayroll,
   fetchInventory,
   fetchAppointmentsApi,
-  createUserApi
+  createUserApi,
+  fetchAuditLogsApi,
+  createAuditLogApi,
+  fetchDeletedItemsApi,
+  createDeletedItemApi,
+  deleteDeletedItemApi,
+  emptyDeletedItemsApi
 } from './api';
 
 import LoginScreen from './components/LoginScreen';
@@ -132,7 +138,7 @@ export default function App() {
     } catch (e) {}
   };
 
-  // Papelera de Reciclaje Global (Soft Delete & Recovery - 100% Datos Reales)
+  // Papelera de Reciclaje Global (Soft Delete & Recovery - 100% Sincronizado en la Nube y Dispositivos)
   const [deletedItemsHistory, setDeletedItemsHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('cmo_deleted_items');
@@ -141,6 +147,33 @@ export default function App() {
       return [];
     }
   });
+
+  // Historial Inmutable de Auditoría de Acciones por Usuario (100% Sincronizado en la Nube y Dispositivos)
+  const [auditLogsHistory, setAuditLogsHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cmo_audit_logs');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Cargar Papelera e Historial desde Supabase al Iniciar (Sincronización PC ↔ Teléfono ↔ Laptop)
+  useEffect(() => {
+    fetchDeletedItemsApi().then(cloudItems => {
+      if (Array.isArray(cloudItems) && cloudItems.length > 0) {
+        setDeletedItemsHistory(cloudItems);
+        try { localStorage.setItem('cmo_deleted_items', JSON.stringify(cloudItems)); } catch (e) {}
+      }
+    }).catch(() => null);
+
+    fetchAuditLogsApi().then(cloudLogs => {
+      if (Array.isArray(cloudLogs) && cloudLogs.length > 0) {
+        setAuditLogsHistory(cloudLogs);
+        try { localStorage.setItem('cmo_audit_logs', JSON.stringify(cloudLogs)); } catch (e) {}
+      }
+    }).catch(() => null);
+  }, []);
 
   const saveDeletedItemsToStorage = (items) => {
     setDeletedItemsHistory(items);
@@ -161,6 +194,11 @@ export default function App() {
       deletedBy: currentUser?.name || 'Administrador',
       originalData: item
     };
+
+    // 1. Guardar en Nube (Supabase)
+    createDeletedItemApi(newRecord).catch(() => null);
+
+    // 2. Actualizar Estado Local
     setDeletedItemsHistory((prev) => {
       const updated = [newRecord, ...(Array.isArray(prev) ? prev : [])];
       try {
@@ -182,6 +220,8 @@ export default function App() {
     } else if (item.type === 'inventory' && item.originalData) {
       setInventory([item.originalData, ...safeInventory]);
     }
+
+    deleteDeletedItemApi(item.id).catch(() => null);
 
     const updated = deletedItemsHistory.filter(i => i.id !== item.id);
     saveDeletedItemsToStorage(updated);
@@ -206,6 +246,7 @@ export default function App() {
       cancelButtonText: 'Cancelar'
     }).then((res) => {
       if (res.isConfirmed) {
+        deleteDeletedItemApi(item.id).catch(() => null);
         const updated = deletedItemsHistory.filter(i => i.id !== item.id);
         saveDeletedItemsToStorage(updated);
         Swal.fire('Eliminado Definitivamente', 'El registro ha sido destruido de forma permanente.', 'success');
@@ -225,21 +266,12 @@ export default function App() {
       cancelButtonText: 'Cancelar'
     }).then((res) => {
       if (res.isConfirmed) {
+        emptyDeletedItemsApi().catch(() => null);
         saveDeletedItemsToStorage([]);
         Swal.fire('Papelera Vaciada', 'Todos los elementos han sido destruidos permanentemente.', 'success');
       }
     });
   };
-
-  // Historial Inmutable de Auditoría de Acciones por Usuario (100% Datos Reales)
-  const [auditLogsHistory, setAuditLogsHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem('cmo_audit_logs');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
 
   const logSystemAction = (action, module, detail) => {
     const newLog = {
@@ -254,6 +286,11 @@ export default function App() {
       timestamp: new Date().toLocaleString('es-VE'),
       ip: '190.202.45.12'
     };
+
+    // 1. Guardar en Nube (Supabase)
+    createAuditLogApi(newLog).catch(() => null);
+
+    // 2. Actualizar Estado Local
     setAuditLogsHistory((prev) => {
       const updated = [newLog, ...(Array.isArray(prev) ? prev : [])];
       try {
