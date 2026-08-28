@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download, Upload, Layers, Tag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, UserCheck, Phone, Mail, Calendar, FileText, Plus, Search, Stethoscope, CheckCircle, Clock, ShieldCheck, Printer, Send, AlertCircle, Edit, Loader2, Trash2, Download, Upload, Layers, Tag, Percent, ArrowUp, ArrowDown } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { fetchPatients, createPatientApi, updatePatientApi, deletePatientApi } from '../api';
+import { getSavedCategories, saveCategoriesToStorage, getCategoryRule } from '../categoriesConfig';
 
 export default function PatientsModule({ 
   patients = [], 
@@ -50,11 +51,20 @@ export default function PatientsModule({
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isEditCustomCategory, setIsEditCustomCategory] = useState(false);
 
-  // GESTOR TOTAL DE CATEGORÍAS Y ETIQUETAS
-  const [managedCategoriesList, setManagedCategoriesList] = useState(['Privado', 'Funcionario', 'Convenio', 'Asegurado']);
-  const [customCategoriesList, setCustomCategoriesList] = useState([]);
+  // GESTOR TOTAL DE CATEGORÍAS Y ETIQUETAS CON REGLAS DE PRECIOS
+  const [categoriesList, setCategoriesList] = useState(() => getSavedCategories());
   const [showCategoryManagerModal, setShowCategoryManagerModal] = useState(false);
-  const [newCatInput, setNewCatInput] = useState('');
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatType, setNewCatType] = useState('descuento'); // 'descuento' | 'recargo'
+  const [newCatPercentage, setNewCatPercentage] = useState('20');
+  const [newCatDescription, setNewCatDescription] = useState('');
+
+  // Estado para editar categoría existente
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  useEffect(() => {
+    saveCategoriesToStorage(categoriesList);
+  }, [categoriesList]);
 
   const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
   const [isSaving, setIsSaving] = useState(false);
@@ -460,69 +470,84 @@ export default function PatientsModule({
     }
   };
 
+  // Lista combinada de nombres de categorías
   const allCategoriesList = Array.from(
     new Set([
-      ...(Array.isArray(managedCategoriesList) ? managedCategoriesList : ['Privado', 'Funcionario', 'Convenio', 'Asegurado']),
-      ...(Array.isArray(customCategoriesList) ? customCategoriesList : []),
+      ...(Array.isArray(categoriesList) ? categoriesList.map(c => c.name) : ['Privado', 'Funcionario', 'Convenio', 'Asegurado']),
       ...safePatients.map(p => p?.category).filter(Boolean)
     ])
   );
 
-  // Crear categoría nueva independiente (sin crear paciente)
+  // Crear categoría nueva con regla de precio/descuento
   const handleAddNewCategoryStandalone = (e) => {
     e.preventDefault();
-    const trimmed = newCatInput.trim();
+    const trimmed = newCatName.trim();
     if (!trimmed) return;
-    if (allCategoriesList.map(c => c.toLowerCase()).includes(trimmed.toLowerCase())) {
+    if (categoriesList.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
       Swal.fire('Categoría Existente', `La categoría "${trimmed}" ya existe en el sistema.`, 'warning');
       return;
     }
-    setCustomCategoriesList([...customCategoriesList, trimmed]);
-    setNewCatInput('');
+
+    const pct = parseFloat(newCatPercentage) || 0;
+    const newCatObj = {
+      id: `cat-${Date.now()}`,
+      name: trimmed,
+      type: newCatType, // 'descuento' | 'recargo'
+      percentage: pct,
+      description: newCatDescription || `${pct}% ${newCatType === 'descuento' ? 'Descuento' : 'Recargo'}`
+    };
+
+    setCategoriesList([...categoriesList, newCatObj]);
+    setNewCatName('');
+    setNewCatPercentage('20');
+    setNewCatDescription('');
+
     Swal.fire({
-      title: '¡Categoría Guardada!',
-      text: `La etiqueta "${trimmed}" fue creada independientemente y ya está disponible para el filtro y para cualquier expediente.`,
+      title: '¡Etiqueta / Categoría Guardada!',
+      text: `La categoría "${trimmed}" con regla de ${pct}% de ${newCatType === 'descuento' ? 'Descuento' : 'Recargo'} fue configurada exitosamente.`,
       icon: 'success',
-      timer: 1800,
+      timer: 2000,
       showConfirmButton: false
     });
   };
 
-  // Renombrar categoría existente (cualquiera excepto 'ALL')
-  const handleRenameCategory = (oldName) => {
-    if (oldName === 'ALL') return;
+  // Guardar Edición de Categoría Existente
+  const handleSaveEditCategory = (e) => {
+    e.preventDefault();
+    if (!editingCategory) return;
 
-    Swal.fire({
-      title: `Renombrar categoría "${oldName}"`,
-      input: 'text',
-      inputValue: oldName,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar Nombre',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0d9488',
-      inputValidator: (value) => {
-        if (!value || !value.trim()) {
-          return 'Debes escribir un nombre válido para la categoría';
-        }
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const newName = result.value.trim();
-        setManagedCategoriesList((prev) => (prev || []).map(c => c === oldName ? newName : c));
-        setCustomCategoriesList((prev) => (prev || []).map(c => c === oldName ? newName : c));
-        const updatedPatients = safePatients.map(p => p?.category === oldName ? { ...p, category: newName } : p);
-        if (typeof setPatients === 'function') {
-          setPatients(updatedPatients);
-        }
-        if (selectedCategory === oldName) setSelectedCategory(newName);
-        Swal.fire('¡Categoría Renombrada!', `Se actualizó a "${newName}" en todos los expedientes asociadas.`, 'success');
-      }
-    });
+    const trimmed = editingCategory.name.trim();
+    if (!trimmed) return;
+
+    const pct = parseFloat(editingCategory.percentage) || 0;
+    const updatedObj = {
+      ...editingCategory,
+      name: trimmed,
+      percentage: pct
+    };
+
+    const nextList = categoriesList.map(c => c.id === editingCategory.id ? updatedObj : c);
+    setCategoriesList(nextList);
+
+    // Actualizar nombre en pacientes si cambió el nombre
+    const updatedPatients = safePatients.map(p => p?.category === editingCategory.oldName ? { ...p, category: trimmed } : p);
+    if (typeof setPatients === 'function') {
+      setPatients(updatedPatients);
+    }
+    if (selectedCategory === editingCategory.oldName) {
+      setSelectedCategory(trimmed);
+    }
+
+    setEditingCategory(null);
+    Swal.fire('¡Categoría Actualizada!', `Se actualizaron las condiciones de "${trimmed}" (${pct}% ${updatedObj.type === 'descuento' ? 'Descuento' : 'Recargo'}).`, 'success');
   };
 
-  // Eliminar Categoría / Etiqueta (cualquiera excepto 'ALL')
+  // Eliminar Categoría / Etiqueta (cualquiera excepto 'Privado')
   const handleDeleteCategory = (catToDelete) => {
-    if (catToDelete === 'ALL') return;
+    if (catToDelete === 'Privado' || catToDelete === 'ALL') {
+      Swal.fire('Atención', 'La categoría Privado es la tarifa base del sistema y no puede eliminarse.', 'info');
+      return;
+    }
 
     const count = safePatients.filter(p => p?.category === catToDelete).length;
 
@@ -539,8 +564,7 @@ export default function PatientsModule({
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
-        setManagedCategoriesList((prev) => (prev || []).filter(c => c !== catToDelete));
-        setCustomCategoriesList((prev) => (prev || []).filter(c => c !== catToDelete));
+        setCategoriesList(prev => prev.filter(c => c.name !== catToDelete));
         const updatedPatients = safePatients.map(p => p?.category === catToDelete ? { ...p, category: 'Privado' } : p);
         if (typeof setPatients === 'function') {
           setPatients(updatedPatients);
@@ -2197,88 +2221,190 @@ export default function PatientsModule({
         </div>
       )}
 
-      {/* MODAL GESTOR INDEPENDIENTE DE CATEGORÍAS */}
+      {/* MODAL GESTOR INDEPENDIENTE DE CATEGORÍAS Y REGLAS DE PRECIOS */}
       {showCategoryManagerModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+          <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-[#1e2d5a]">
-              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-teal-600" />
-                Gestión Independiente de Categorías & Etiquetas
-              </h3>
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-teal-600" />
+                  Gestión de Etiquetas, Categorías & Descuentos Automáticos
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Las etiquetas aplican descuentos o recargos automáticos a los presupuestos y facturas del paciente.
+                </p>
+              </div>
               <button
-                onClick={() => setShowCategoryManagerModal(false)}
+                type="button"
+                onClick={() => {
+                  setShowCategoryManagerModal(false);
+                  setEditingCategory(null);
+                }}
                 className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold"
               >
                 ✕
               </button>
             </div>
 
-            {/* Formular de Crear Categoría Aislada */}
-            <form onSubmit={handleAddNewCategoryStandalone} className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                Crear Nueva Categoría (Sin registrar paciente)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: VIP, Jubilado, Convenio PDVSA..."
-                  value={newCatInput}
-                  onChange={(e) => setNewCatInput(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-teal-600"
-                />
+            {/* Formulario de Crear o Editar Categoría */}
+            <form onSubmit={editingCategory ? handleSaveEditCategory : handleAddNewCategoryStandalone} className="space-y-3 p-3.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-xs">
+              <span className="block font-black text-slate-900 dark:text-white">
+                {editingCategory ? `✏️ Editar Etiqueta: "${editingCategory.name}"` : '➕ Crear Nueva Etiqueta / Categoría'}
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Etiqueta *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Convenio Especial 70%, Jubilado..."
+                    value={editingCategory ? editingCategory.name : newCatName}
+                    onChange={(e) => {
+                      if (editingCategory) {
+                        setEditingCategory({ ...editingCategory, name: e.target.value });
+                      } else {
+                        setNewCatName(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-[#111c3a] border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Regla de Precio *</label>
+                  <select
+                    value={editingCategory ? editingCategory.type : newCatType}
+                    onChange={(e) => {
+                      if (editingCategory) {
+                        setEditingCategory({ ...editingCategory, type: e.target.value });
+                      } else {
+                        setNewCatType(e.target.value);
+                      }
+                    }}
+                    className="w-full px-2.5 py-2 bg-white dark:bg-[#111c3a] border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="descuento">🟢 Descuento (%)</option>
+                    <option value="recargo">🔴 Recargo / Aumento (%)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Porcentaje Automático (%) *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      required
+                      placeholder="Ej: 70"
+                      value={editingCategory ? editingCategory.percentage : newCatPercentage}
+                      onChange={(e) => {
+                        if (editingCategory) {
+                          setEditingCategory({ ...editingCategory, percentage: e.target.value });
+                        } else {
+                          setNewCatPercentage(e.target.value);
+                        }
+                      }}
+                      className="w-full pl-3 pr-8 py-2 bg-white dark:bg-[#111c3a] border border-slate-300 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white"
+                    />
+                    <Percent className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Descripción / Condiciones</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Aplica 70% de descuento en todos los servicios"
+                    value={editingCategory ? (editingCategory.description || '') : newCatDescription}
+                    onChange={(e) => {
+                      if (editingCategory) {
+                        setEditingCategory({ ...editingCategory, description: e.target.value });
+                      } else {
+                        setNewCatDescription(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-[#111c3a] border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                {editingCategory && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategory(null)}
+                    className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-bold"
+                  >
+                    Cancelar Edición
+                  </button>
+                )}
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0"
+                  className="px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl shadow-md transition-all cursor-pointer"
                 >
-                  + Crear
+                  {editingCategory ? 'Guardar Cambios' : '+ Guardar Etiqueta'}
                 </button>
               </div>
             </form>
 
             {/* Lista de Categorías Existentes */}
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2 pt-1">
               <span className="block text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Categorías Disponibles en el Sistema:
+                Etiquetas Configuradas en el Sistema ({categoriesList.length}):
               </span>
               
-              <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
-                {allCategoriesList.map(cat => {
-                  const isProtected = cat === 'ALL';
-                  const patientCount = safePatients.filter(p => (p?.category || 'Privado') === cat).length;
+              <div className="max-h-52 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
+                {categoriesList.map(cat => {
+                  const isProtected = cat.name === 'Privado';
+                  const patientCount = safePatients.filter(p => (p?.category || 'Privado') === cat.name).length;
+                  const isDiscount = (cat.type || 'descuento') === 'descuento';
+                  const pct = parseFloat(cat.percentage) || 0;
+
                   return (
                     <div
-                      key={cat}
-                      className="p-2.5 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center justify-between text-xs font-bold"
+                      key={cat.id || cat.name}
+                      className="p-2.5 bg-white dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl flex items-center justify-between text-xs font-bold shadow-xs"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-slate-900 dark:text-white">{cat}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">
+                        <span className="font-extrabold text-slate-900 dark:text-white">{cat.name}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1 ${
+                          pct === 0
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300'
+                            : isDiscount
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300'
+                              : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300'
+                        }`}>
+                          {pct === 0 ? 'Sin variación (0%)' : isDiscount ? `-${pct}% Descuento` : `+${pct}% Recargo`}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">
                           ({patientCount} pacientes)
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory({ ...cat, oldName: cat.name })}
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-bold cursor-pointer"
+                          title="Editar regla de precio de esta etiqueta"
+                        >
+                          ✏️ Editar
+                        </button>
                         {!isProtected && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleRenameCategory(cat)}
-                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-bold cursor-pointer"
-                              title="Renombrar categoría"
-                            >
-                              ✏️ Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCategory(cat)}
-                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-300 rounded-lg text-[10px] font-bold cursor-pointer"
-                              title="Eliminar categoría"
-                            >
-                              🗑️ Borrar
-                            </button>
-                          </>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory(cat.name)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-300 rounded-lg text-[10px] font-bold cursor-pointer"
+                            title="Eliminar categoría"
+                          >
+                            🗑️ Borrar
+                          </button>
                         )}
                       </div>
                     </div>
@@ -2290,7 +2416,10 @@ export default function PatientsModule({
             <div className="pt-2 border-t border-slate-200 dark:border-[#1e2d5a] flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowCategoryManagerModal(false)}
+                onClick={() => {
+                  setShowCategoryManagerModal(false);
+                  setEditingCategory(null);
+                }}
                 className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl"
               >
                 Cerrar

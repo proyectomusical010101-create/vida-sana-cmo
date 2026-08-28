@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus, Trash2, Edit3, ShieldCheck, PenTool, RefreshCw, AlertCircle, DollarSign, Calendar } from 'lucide-react';
+import { Stethoscope, FileText, Send, Printer, CheckCircle2, User, Search, Plus, Trash2, Edit3, ShieldCheck, PenTool, RefreshCw, AlertCircle, DollarSign, Calendar, Tag, Percent } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { createBudgetApi, savePatientHistoryEntryApi } from '../api';
+import { getCategoryRule } from '../categoriesConfig';
 
 export default function DentalBudgetOdontogramModule({
   patients = [],
@@ -40,14 +41,25 @@ export default function DentalBudgetOdontogramModule({
 
   const [discountPercent, setDiscountPercent] = useState(activeBudgetDraft?.discountPercent || '0');
 
+  // SECCION 2 State: Paciente Seleccionado
+  const [selectedPatientId, setSelectedPatientId] = useState(activeBudgetDraft?.selectedPatientId || safePatients[0]?.id || '');
+  const activePatient = safePatients.find(p => String(p.id) === String(selectedPatientId)) || safePatients[0];
+
+  // Auto-aplicar regla de descuento o recargo de la etiqueta / categoría del paciente
+  useEffect(() => {
+    if (activePatient?.category) {
+      const catRule = getCategoryRule(activePatient.category);
+      if (catRule && catRule.percentage !== undefined) {
+        setDiscountPercent(String(catRule.percentage));
+      }
+    }
+  }, [selectedPatientId, activePatient?.category]);
+
   useEffect(() => {
     if (!consentText && paperworkSettings?.consentTemplate) {
       setConsentText(paperworkSettings.consentTemplate);
     }
   }, [paperworkSettings]);
-
-  // SECCION 2 State: Paciente Seleccionado
-  const [selectedPatientId, setSelectedPatientId] = useState(activeBudgetDraft?.selectedPatientId || safePatients[0]?.id || '');
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
   // SECCION 3 State: Odontodiagrama Anatómico 5 Caras por Pieza (Modos: 'red' | 'blue' | 'absence_blue' | 'extraction_red')
@@ -232,8 +244,7 @@ export default function DentalBudgetOdontogramModule({
   const [patientSigned, setPatientSigned] = useState(false);
   const [doctorSigned, setDoctorSigned] = useState(false);
 
-  // Active Patient Object
-  const activePatient = safePatients.find(p => String(p.id) === String(selectedPatientId)) || safePatients[0];
+  // Patient Filtering
 
   const filteredPatients = safePatients.filter(p => {
     if (!p) return false;
@@ -1445,10 +1456,18 @@ export default function DentalBudgetOdontogramModule({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-xl text-xs font-bold">
           
           {/* Porcentaje de Descuento Manual */}
-          <div className="md:col-span-4 space-y-1.5">
-            <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
-              🏷️ Descuento Manual (%):
-            </label>
+          <div className="md:col-span-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
+                🏷️ Descuento del Presupuesto (%):
+              </label>
+              {activePatient?.category && (
+                <span className="text-[10px] bg-teal-100 dark:bg-teal-900/60 text-teal-900 dark:text-teal-200 font-black px-2 py-0.5 rounded-full border border-teal-300 dark:border-teal-700">
+                  {activePatient.category}
+                </span>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="number"
@@ -1462,9 +1481,14 @@ export default function DentalBudgetOdontogramModule({
               />
               <span className="font-mono font-black text-teal-700 dark:text-teal-300 text-sm">%</span>
             </div>
-            {discPercentNum > 0 && (
+
+            {discPercentNum > 0 ? (
               <span className="text-[11px] text-rose-600 dark:text-rose-400 font-extrabold block">
                 Monto Descuento: -${discountUsd.toFixed(2)} USD (-{discountBs.toFixed(2)} Bs)
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 block font-medium">
+                Sin descuento asignado a este presupuesto.
               </span>
             )}
           </div>
