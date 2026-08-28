@@ -34,6 +34,22 @@ function saveLocalProcedures(procsList) {
   } catch (e) {}
 }
 
+// Helper para resguardo local de citas agendadas
+function getLocalAppointments() {
+  try {
+    const saved = localStorage.getItem('cmo_local_appointments');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalAppointments(list) {
+  try {
+    localStorage.setItem('cmo_local_appointments', JSON.stringify(list));
+  } catch (e) {}
+}
+
 // 0. AUTHENTICATION & LOGIN
 export async function loginApi(emailOrUsername, password) {
   const cleanInput = String(emailOrUsername || '').trim().toLowerCase();
@@ -546,46 +562,95 @@ export async function saveConsentApi(patientId, patientName, templateTitle, sign
 
 // 2. CITAS
 export async function fetchAppointmentsApi() {
+  let cloudApps = [];
   if (supabase) {
     try {
       const { data } = await supabase.from('appointments').select('*').order('date', { ascending: true });
-      if (data) return data.map(a => ({ id: a.id, date: a.date, time: a.time, patientName: a.patient_name, specialistName: a.specialist_name, consultory: a.consultory, procedureName: a.procedure_name, status: a.status, whatsappSent: a.whatsapp_sent }));
+      if (data && Array.isArray(data)) {
+        cloudApps = data.map(a => ({
+          id: String(a.id),
+          date: a.date,
+          time: a.time,
+          patientName: a.patient_name,
+          specialistName: a.specialist_name,
+          consultory: a.consultory,
+          procedureName: a.procedure_name,
+          status: a.status || 'Confirmada',
+          whatsappSent: a.whatsapp_sent ?? 1
+        }));
+      }
     } catch (e) {}
   }
-  try {
-    const res = await fetch(`${API_BASE}/appointments`);
-    return await res.json();
-  } catch (err) {
-    return null;
+
+  if (cloudApps.length > 0) {
+    saveLocalAppointments(cloudApps);
+    return cloudApps;
   }
+
+  const localApps = getLocalAppointments();
+  if (localApps.length > 0) return localApps;
+
+  return [];
 }
 
 export async function createAppointmentApi(data) {
-  const apptData = {
-    id: `APP-${Math.floor(100 + Math.random() * 900)}`,
+  const cleanId = data.id || `APP-${Math.floor(100 + Math.random() * 900)}`;
+  const apptRecord = {
+    id: cleanId,
     date: data.date,
     time: data.time,
-    patient_name: data.patientName,
-    specialist_name: data.specialistName,
+    patientName: data.patientName,
+    specialistName: data.specialistName,
     consultory: data.consultory,
-    procedure_name: data.procedureName,
-    status: 'Confirmada',
-    whatsapp_sent: 1
+    procedureName: data.procedureName,
+    status: data.status || 'Confirmada',
+    whatsappSent: data.whatsappSent ?? 1
   };
+
+  // Guardar en local storage
+  const currentLocals = getLocalAppointments();
+  const existingIdx = currentLocals.findIndex(a => String(a.id) === String(cleanId));
+  if (existingIdx >= 0) {
+    currentLocals[existingIdx] = apptRecord;
+  } else {
+    currentLocals.push(apptRecord);
+  }
+  saveLocalAppointments(currentLocals);
+
+  // Guardar en Supabase
+  if (supabase) {
+    try {
+      const payload = {
+        id: cleanId,
+        date: data.date,
+        time: data.time,
+        patient_name: data.patientName,
+        specialist_name: data.specialistName,
+        consultory: data.consultory,
+        procedure_name: data.procedureName,
+        status: data.status || 'Confirmada',
+        whatsapp_sent: data.whatsappSent ?? 1
+      };
+      await supabase.from('appointments').upsert(payload);
+    } catch (e) {
+      console.warn("⚠️ Error al crear cita en Supabase:", e);
+    }
+  }
+
+  return apptRecord;
+}
+
+export async function deleteAppointmentApi(id) {
+  const cleanId = String(id);
+  const currentLocals = getLocalAppointments();
+  saveLocalAppointments(currentLocals.filter(a => String(a.id) !== cleanId));
 
   if (supabase) {
     try {
-      await supabase.from('appointments').insert([apptData]);
-      return { ...data, id: apptData.id, status: 'Confirmada', whatsappSent: 1 };
+      await supabase.from('appointments').delete().eq('id', cleanId);
     } catch (e) {}
   }
-
-  const res = await fetch(`${API_BASE}/appointments`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return await res.json();
+  return true;
 }
 
 // 3. INVENTARIO & PROCEDIMIENTOS

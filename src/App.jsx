@@ -516,8 +516,17 @@ export default function App() {
               setSavedBudgetsHistory={setSavedBudgetsHistory}
             />
           );
-        case 'patient-portal':
         case 'schedules':
+          return (
+            <AppointmentsModule
+              appointments={safeAppointments}
+              setAppointments={setAppointments}
+              patients={safePatients}
+              specialists={safeSpecialists}
+              procedures={safeProcedures}
+            />
+          );
+        case 'patient-portal':
           return <PublicPatientPortal procedures={safeProcedures} specialists={safeSpecialists} onAddAppointment={(appt) => setAppointments([appt, ...appointments])} />;
         case 'billing':
           return (
@@ -703,7 +712,7 @@ export default function App() {
 
           {/* 2. +Cita */}
           <button
-            onClick={() => setActiveModule('patient-portal')}
+            onClick={() => setActiveModule('schedules')}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs shadow-md transition-all shrink-0"
             title="Ir a Agendamiento de Citas"
           >
