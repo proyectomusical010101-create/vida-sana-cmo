@@ -652,6 +652,8 @@ export default function App() {
               transactions={safeTransactions}
               logoImg={currentLogo}
               setLogoImg={handleUpdateLogo}
+              theme={theme}
+              setTheme={setTheme}
               onOpenCreateUser={() => setShowUserModal(true)}
               onUpdateCurrentUser={(updated) => setCurrentUser(updated)}
             />

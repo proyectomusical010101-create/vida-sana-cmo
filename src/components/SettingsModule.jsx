@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, ShieldCheck, Building, Image, Mail, Key, Upload, Check, User, Lock, AlertTriangle, Sparkles } from 'lucide-react';
+import { Settings, ShieldCheck, Building, Image, Mail, Key, Upload, Check, User, Lock, AlertTriangle, Sparkles, Sun, Moon } from 'lucide-react';
 import Swal from 'sweetalert2';
 import AuditRolesPortalModule from './AuditRolesPortalModule';
 import { CLINIC_INFO } from '../mockData';
@@ -10,6 +10,8 @@ export default function SettingsModule({
   transactions = [], 
   logoImg, 
   setLogoImg, 
+  theme = 'light',
+  setTheme,
   onOpenCreateUser,
   onUpdateCurrentUser
 }) {
@@ -124,29 +126,70 @@ export default function SettingsModule({
       {activeTab === 'company-profile' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* Tarjeta 1: Personalización de Marca (Logo) */}
-          <div className="lg:col-span-5 bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-3">
-              <Image className="w-5 h-5 text-teal-600" />
-              Logo Oficial de la Clínica
-            </h3>
+          {/* Columna Izquierda: Logo & Apariencia de Tema */}
+          <div className="lg:col-span-5 space-y-6">
 
-            <div className="p-6 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl text-center space-y-4">
-              <div className="w-32 h-32 mx-auto bg-white p-3 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-md flex items-center justify-center">
-                <img src={logoImg} alt="Logo de la Clínica" className="max-h-full max-w-full object-contain" />
+            {/* Tarjeta 1: Personalización de Marca (Logo) */}
+            <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-3">
+                <Image className="w-5 h-5 text-teal-600" />
+                Logo Oficial de la Clínica
+              </h3>
+
+              <div className="p-6 bg-slate-50 dark:bg-[#0d162f] border border-slate-200 dark:border-[#1e2d5a] rounded-2xl text-center space-y-4">
+                <div className="w-32 h-32 mx-auto bg-white p-3 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-md flex items-center justify-center">
+                  <img src={logoImg} alt="Logo de la Clínica" className="max-h-full max-w-full object-contain" />
+                </div>
+
+                <div>
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{CLINIC_INFO.name}</h4>
+                  <p className="text-xs text-slate-500 font-mono">RIF: {CLINIC_INFO.rif}</p>
+                </div>
+
+                <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-md transition-all active:scale-95">
+                  <Upload className="w-4 h-4" />
+                  Subir / Cambiar Nuevo Logo
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                </label>
               </div>
-
-              <div>
-                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{CLINIC_INFO.name}</h4>
-                <p className="text-xs text-slate-500 font-mono">RIF: {CLINIC_INFO.rif}</p>
-              </div>
-
-              <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-md transition-all active:scale-95">
-                <Upload className="w-4 h-4" />
-                Subir / Cambiar Nuevo Logo
-                <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-              </label>
             </div>
+
+            {/* Tarjeta 2: Apariencia & Tema Visual (Claro / Oscuro) */}
+            <div className="bg-white dark:bg-[#111c3a] border border-slate-200 dark:border-[#1e2d5a] shadow-sm p-6 rounded-2xl space-y-4">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-3">
+                <Sun className="w-5 h-5 text-amber-500" />
+                Apariencia & Tema del Sistema
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => typeof setTheme === 'function' && setTheme('light')}
+                  className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                    theme === 'light'
+                      ? 'bg-amber-50 border-amber-400 text-amber-900 font-black shadow-md ring-2 ring-amber-400/50'
+                      : 'bg-slate-50 dark:bg-[#0d162f] border-slate-200 dark:border-[#1e2d5a] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Sun className={`w-6 h-6 ${theme === 'light' ? 'text-amber-600' : 'text-slate-400'}`} />
+                  <span className="text-xs">☀️ Modo Claro</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => typeof setTheme === 'function' && setTheme('dark')}
+                  className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center gap-2 cursor-pointer ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 border-teal-500 text-teal-300 font-black shadow-md ring-2 ring-teal-500/50'
+                      : 'bg-slate-50 dark:bg-[#0d162f] border-slate-200 dark:border-[#1e2d5a] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Moon className={`w-6 h-6 ${theme === 'dark' ? 'text-teal-400' : 'text-slate-400'}`} />
+                  <span className="text-xs">🌙 Modo Oscuro</span>
+                </button>
+              </div>
+            </div>
+
           </div>
 
           {/* Tarjeta 2: Perfil de Usuario & Credenciales */}
