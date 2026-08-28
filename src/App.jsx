@@ -211,6 +211,24 @@ export default function App() {
     });
   };
 
+  const handleEmptyTrashBin = () => {
+    Swal.fire({
+      title: '¿Vaciar la Papelera de Reciclaje?',
+      text: 'Se eliminarán de forma permanente TODOS los registros archivados en la papelera.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, Vaciar Todo',
+      cancelButtonText: 'Cancelar'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        saveDeletedItemsToStorage([]);
+        Swal.fire('Papelera Vaciada', 'Todos los elementos han sido destruidos permanentemente.', 'success');
+      }
+    });
+  };
+
   // Historial Inmutable de Auditoría de Acciones por Usuario
   const [auditLogsHistory] = useState(() => {
     try {
