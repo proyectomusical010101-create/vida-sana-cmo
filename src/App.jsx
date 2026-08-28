@@ -580,6 +580,9 @@ export default function App() {
         case 'seniat':
         case 'profitability':
         case 'cashea':
+        case 'rentals':
+        case 'lab-extramural':
+        case 'specialist-settlement':
           return (
             <FinancesConsolidatedModule
               transactions={safeTransactions}
@@ -640,21 +643,29 @@ export default function App() {
         default:
           return (
             <PatientsModule
+              viewMode="database"
               patients={safePatients}
               setPatients={setPatients}
               specialists={safeSpecialists}
               setSpecialists={setSpecialists}
               procedures={safeProcedures}
               onRegisterProcedure={handleRegisterProcedure}
+              onNavigateModule={(mod) => setActiveModule(mod)}
             />
           );
       }
     } catch (e) {
+      console.error("Error al renderizar:", e);
       return (
-        <div className="p-6 bg-white border border-slate-200 rounded-2xl text-center space-y-2">
-          <h3 className="text-base font-extrabold text-slate-900">Módulo Seleccionado</h3>
-          <p className="text-xs text-slate-600">Haz clic en cualquiera de los 12 módulos del menú lateral para continuar navegando.</p>
-        </div>
+        <SettingsModule
+          currentUser={currentUser}
+          patients={safePatients}
+          transactions={safeTransactions}
+          logoImg={logoImg}
+          setLogoImg={setLogoImg}
+          onOpenCreateUser={() => setShowUserModal(true)}
+          onUpdateCurrentUser={(updated) => setCurrentUser(updated)}
+        />
       );
     }
   };
