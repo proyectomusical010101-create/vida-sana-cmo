@@ -634,9 +634,10 @@ export default function App() {
     }
   };
 
-  // SI SE ACCEDE POR EL ENLACE DE WHATSAPP CON PARAMETRO ?pdf=1
+  // SI SE ACCEDE POR EL ENLACE DE WHATSAPP CON PARAMETRO ?pdf=1 O ?agendar=1
   const urlParams = new URLSearchParams(window.location.search);
   const isPdfDirectLink = urlParams.has('pdf') || urlParams.has('download_pdf') || urlParams.has('print');
+  const isAgendarDirectLink = urlParams.has('agendar') || urlParams.has('portal') || urlParams.has('cita') || window.location.pathname.includes('/agendar');
 
   if (isPdfDirectLink) {
     return (
@@ -645,6 +646,19 @@ export default function App() {
         bcvRate={safeNum(bcvRateUsd, 755.90)}
         paperworkSettings={paperworkSettings}
       />
+    );
+  }
+
+  if (isAgendarDirectLink) {
+    return (
+      <div className="min-h-screen bg-slate-100 p-4 sm:p-6 font-sans">
+        <PublicPatientPortal
+          procedures={safeProcedures}
+          specialists={safeSpecialists}
+          patients={safePatients}
+          isPublicMode={true}
+        />
+      </div>
     );
   }
 
