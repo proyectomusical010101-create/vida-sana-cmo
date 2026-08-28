@@ -883,17 +883,32 @@ export default function AuditRolesPortalModule({ patients = [], transactions = [
 
               <div>
                 <label className="block text-slate-700 dark:text-slate-300 mb-1">Rol Jerárquico Asignado</label>
-                <select
-                  value={formRole}
-                  onChange={(e) => setFormRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
-                >
-                  <option value="Administrador">Administrador Principal (Acceso Total)</option>
-                  <option value="Gerente Administrativo">Gerente Administrativo</option>
-                  <option value="Recepción & Atención">Recepción & Atención al Cliente</option>
-                  <option value="Asistente Dental">Asistente Dental</option>
-                  <option value="Médico Especialista">Médico Especialista / Odontólogo</option>
-                </select>
+                {currentUser && (selectedUser?.id === currentUser.id || selectedUser?.email === currentUser.email) ? (
+                  <div className="space-y-1">
+                    <select
+                      disabled
+                      value={formRole}
+                      className="w-full px-3 py-2 bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-500 font-bold cursor-not-allowed opacity-80"
+                    >
+                      <option value={formRole}>{formRole} (Tu Rol Actual)</option>
+                    </select>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1 mt-1">
+                      🔒 No puedes modificar tu propio rol de Súper Administrador por motivos de seguridad.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    value={formRole}
+                    onChange={(e) => setFormRole(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0d162f] border border-slate-300 dark:border-[#1e2d5a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 font-bold"
+                  >
+                    <option value="Administrador">Administrador Principal (Acceso Total)</option>
+                    <option value="Gerente Administrativo">Gerente Administrativo</option>
+                    <option value="Recepción & Atención">Recepción & Atención al Cliente</option>
+                    <option value="Asistente Dental">Asistente Dental</option>
+                    <option value="Médico Especialista">Médico Especialista / Odontólogo</option>
+                  </select>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-[#1e2d5a]">

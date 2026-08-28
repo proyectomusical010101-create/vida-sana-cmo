@@ -3,9 +3,10 @@ import Swal from 'sweetalert2';
 import {
   UserCheck, Package, DollarSign, Smartphone, TrendingUp,
   Calendar, Truck, FileCheck, Users, MessageSquare, Activity,
-  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff, FileText, LayoutDashboard
+  Sun, Moon, Clock, LogOut, Menu, X, ShieldCheck, UserPlus, Lock, Mail, User, Landmark, RefreshCw, Layers, Globe, History, Key, Stethoscope, CheckSquare, Square, Phone, Eye, EyeOff, FileText, LayoutDashboard, Settings
 } from 'lucide-react';
 import PaperworkCustomizationModule from './components/PaperworkCustomizationModule';
+import SettingsModule from './components/SettingsModule';
 
 import logoImg from './assets/logo.jpeg';
 
@@ -463,8 +464,7 @@ export default function App() {
     { id: 'finances', name: '8. Finanzas', icon: TrendingUp, section: '💼 Administración & Finanzas' },
     { id: 'paperwork', name: '9. Papelería', icon: FileText, section: '💼 Administración & Finanzas' },
     { id: 'payroll', name: '10. Personal & Nómina', icon: Users, section: '💼 Administración & Finanzas' },
-    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' },
-    { id: 'roles-audit', name: '12. Usuarios & Permisos', icon: ShieldCheck, section: '💼 Administración & Finanzas' }
+    { id: 'whatsapp', name: '11. Postventa & WA', icon: MessageSquare, section: '💼 Administración & Finanzas' }
   ];
 
   // Renderizado seguro por módulo
@@ -623,13 +623,17 @@ export default function App() {
           );
         case 'whatsapp':
           return <WhatsAppNotificationsModule patients={safePatients} extramuralLabOrders={safeLabOrders} />;
+        case 'settings':
         case 'roles-audit':
           return (
-            <AuditRolesPortalModule
+            <SettingsModule
+              currentUser={currentUser}
               patients={safePatients}
               transactions={safeTransactions}
-              currentUser={currentUser}
+              logoImg={logoImg}
+              setLogoImg={setLogoImg}
               onOpenCreateUser={() => setShowUserModal(true)}
+              onUpdateCurrentUser={(updated) => setCurrentUser(updated)}
             />
           );
         default:
@@ -847,25 +851,21 @@ export default function App() {
             })}
           </div>
 
-          <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
-            {/* BOTÓN CREAR USUARIO AL FINAL DEL MENÚ IZQUIERDO */}
+          <div className="pt-3 border-t border-slate-200 dark:border-[#1e2d5a]">
+            {/* BOTÓN MINIMALISTA DE CONFIGURACIONES EN LA PARTE INFERIOR IZQUIERDA */}
             <button
-              onClick={() => setShowUserModal(true)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-md transition-all flex items-center justify-between"
+              onClick={() => setActiveModule('settings')}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2.5 cursor-pointer ${
+                activeModule === 'settings'
+                  ? 'bg-teal-600 text-white shadow-md'
+                  : isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                    : 'bg-[#0d162f] hover:bg-[#17254d] text-slate-200 border border-[#1e2d5a]'
+              }`}
             >
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-white" />
-                <span>Crear usuario</span>
-              </div>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">+</span>
+              <Settings className={`w-4 h-4 ${activeModule === 'settings' ? 'text-white' : 'text-teal-600'}`} />
+              <span>⚙️ Configuraciones</span>
             </button>
-
-            <div className={`p-3 rounded-xl border text-[11px] space-y-1 ${
-              isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-[#0d162f] border-[#1e2d5a] text-slate-300'
-            }`}>
-              <div className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Vida Sana CMO v2.0</div>
-              <p className="text-[10px] text-teal-700 font-semibold">Sistema Multidisciplinario</p>
-            </div>
           </div>
         </aside>
 
@@ -908,13 +908,26 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                onClick={handleLogout}
-                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md"
-              >
-                <LogOut className="w-4 h-4" />
-                Cerrar Sesión
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setActiveModule('settings');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <Settings className="w-4 h-4" />
+                  ⚙️ Configuraciones
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar Sesión
+                </button>
+              </div>
             </div>
           </div>
         )}
