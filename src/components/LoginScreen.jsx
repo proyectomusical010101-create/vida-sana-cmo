@@ -65,25 +65,6 @@ export default function LoginScreen({ onLoginSuccess }) {
             Inicio de Sesión
           </h2>
 
-          {/* Indicador de Estado de Conexión Supabase */}
-          <div className={`w-full max-w-xs p-2 mb-4 rounded-xl text-[11px] font-bold text-center flex items-center justify-center gap-1.5 border ${
-            isCloudConnected 
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-              : 'bg-amber-50 border-amber-200 text-amber-800'
-          }`}>
-            {isCloudConnected ? (
-              <>
-                <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>🟢 Base de Datos Cloud Conectada (Supabase)</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>⚠️ Modo Desconectado (Faltan llaves Supabase en Vercel)</span>
-              </>
-            )}
-          </div>
-
           {errorMsg && (
             <div className="w-full max-w-xs p-3 mb-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold text-center">
               ⚠️ {errorMsg}
@@ -160,25 +141,6 @@ export default function LoginScreen({ onLoginSuccess }) {
             alt="VidaSana Logo"
             className="h-16 w-auto object-contain mix-blend-multiply"
           />
-        </div>
-
-        {/* Indicador de Estado de Conexión Supabase (Móvil) */}
-        <div className={`w-full p-2.5 mb-4 rounded-xl text-[10px] font-bold text-center flex items-center justify-center gap-1.5 border ${
-          isCloudConnected 
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-            : 'bg-amber-50 border-amber-200 text-amber-800'
-        }`}>
-          {isCloudConnected ? (
-            <>
-              <Database className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>🟢 Base de Datos Cloud Conectada (Supabase)</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span>⚠️ Modo Local (Sin llaves Vercel)</span>
-            </>
-          )}
         </div>
 
         {errorMsg && (
