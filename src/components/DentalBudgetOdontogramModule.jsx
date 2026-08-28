@@ -362,16 +362,34 @@ export default function DentalBudgetOdontogramModule({
 
     const priceNum = parseFloat(modalPrice) || 0;
 
-    setToothConditions(prev => ({
-      ...prev,
-      [selectedToothModal]: {
-        status: modalStatus,
-        procedureName: modalProcName,
-        price: priceNum,
-        notes: modalNotes
-      }
-    }));
+    // 1. Reflejar la condición en el Odontodiagrama Anatómico
+    if (modalStatus === 'Ausente') {
+      setToothSurfaces(prev => ({
+        ...prev,
+        [selectedToothModal]: { cross: 'blue' }
+      }));
+    } else if (modalStatus === 'Extraccion' || modalStatus === 'Extracción') {
+      setToothSurfaces(prev => ({
+        ...prev,
+        [selectedToothModal]: { cross: 'red' }
+      }));
+    } else if (modalStatus === 'Sano') {
+      setToothSurfaces(prev => ({
+        ...prev,
+        [selectedToothModal]: { center: 'blue' }
+      }));
+    } else {
+      setToothSurfaces(prev => ({
+        ...prev,
+        [selectedToothModal]: {
+          ...(prev[selectedToothModal] || prev[String(selectedToothModal)] || {}),
+          center: 'red',
+          top: 'red'
+        }
+      }));
+    }
 
+    // 2. Añadir al presupuesto si no es 'Sano' y tiene precio
     if (modalStatus !== 'Sano' && priceNum > 0) {
       const newItem = {
         id: `ITEM-${Date.now().toString().slice(-4)}`,
@@ -386,7 +404,7 @@ export default function DentalBudgetOdontogramModule({
     setSelectedToothModal(null);
     Swal.fire({
       title: `Pieza #${selectedToothModal} Actualizada`,
-      text: `Se registró condición "${modalStatus}" y se añadió al presupuesto.`,
+      text: `Se registró "${modalStatus}" y se reflejó en el Odontodiagrama y Presupuesto.`,
       icon: 'success',
       confirmButtonColor: '#0d9488'
     });
@@ -1452,43 +1470,83 @@ export default function DentalBudgetOdontogramModule({
           </div>
 
           {/* Selector de Forma(s) de Pago Múltiples y Mixtas */}
-          <div className="md:col-span-8 space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block text-slate-800 dark:text-slate-200 font-extrabold text-xs">
-                💳 Forma(s) de Pago Asignada(s) (Soporta Pago Mixto / Múltiple):
-              </label>
+          <div className="md:col-span-8 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-[#1e2d5a] pb-2">
+              <div>
+                <label className="block text-slate-900 dark:text-white font-extrabold text-xs">
+                  💳 Forma(s) de Pago Asignada(s) (Múltiples / Pago Mixto):
+                </label>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Puedes combinar varios métodos (ej: $50 en Efectivo + $30 en Pago Móvil + $20 en Zelle).
+                </span>
+              </div>
+
+              {/* Botón Principal para Agregar Otro Método */}
               <button
                 type="button"
                 onClick={() => {
                   const currentSum = paymentSplits.reduce((acc, p) => acc + (parseFloat(p.amountUsd) || 0), 0);
                   const remaining = Math.max(0, finalTotalUsd - currentSum);
-                  setPaymentSplits([...paymentSplits, { id: Date.now(), method: 'Pago Móvil', amountUsd: remaining }]);
+                  setPaymentSplits([...paymentSplits, { id: Date.now() + Math.random(), method: 'Pago Móvil', amountUsd: remaining }]);
                 }}
-                className="text-[11px] bg-teal-600 hover:bg-teal-700 text-white font-extrabold px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                className="text-xs bg-teal-600 hover:bg-teal-700 text-white font-black px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5" /> + Agregar Otro Método
+                <Plus className="w-4 h-4" /> + Añadir Otro Método de Pago
               </button>
             </div>
 
+            {/* Accesos Rápidos de Métodos de Pago */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Agregar rápido:</span>
+              {[
+                { method: 'Pago Móvil', label: '📱 Pago Móvil' },
+                { method: 'Efectivo USD', label: '💵 Efectivo USD' },
+                { method: 'Zelle', label: '🏦 Zelle' },
+                { method: 'Punto de Venta', label: '💳 Punto de Venta' },
+                { method: 'Cashea', label: '📱 Cashea' }
+              ].map(opt => (
+                <button
+                  key={opt.method}
+                  type="button"
+                  onClick={() => {
+                    const currentSum = paymentSplits.reduce((acc, p) => acc + (parseFloat(p.amountUsd) || 0), 0);
+                    const remaining = Math.max(0, finalTotalUsd - currentSum);
+                    setPaymentSplits([...paymentSplits, { id: Date.now() + Math.random(), method: opt.method, amountUsd: remaining }]);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-[#111c3a] hover:bg-teal-50 dark:hover:bg-teal-950/40 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-slate-700 rounded-lg text-[10px] font-bold cursor-pointer transition-all"
+                >
+                  + {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Lista Dinámica de Métodos de Pago */}
             <div className="space-y-2">
               {paymentSplits.map((split, index) => (
-                <div key={split.id || index} className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-[#0d162f] p-2.5 rounded-xl border border-slate-200 dark:border-[#1e2d5a]">
+                <div key={split.id || index} className="flex flex-wrap items-center gap-2 bg-white dark:bg-[#111c3a] p-2.5 rounded-xl border border-slate-200 dark:border-[#1e2d5a] shadow-xs">
+                  <span className="w-5 h-5 rounded-full bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 font-mono text-[10px] font-black flex items-center justify-center">
+                    {index + 1}
+                  </span>
+
                   <select
                     value={split.method}
                     onChange={(e) => {
                       const nextSplits = paymentSplits.map((s, i) => i === index ? { ...s, method: e.target.value } : s);
                       setPaymentSplits(nextSplits);
                     }}
-                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-black text-slate-900 dark:text-white"
+                    className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-black text-slate-900 dark:text-white"
                   >
                     <option value="Pago Móvil">📱 Pago Móvil</option>
-                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Efectivo USD">💵 Efectivo ($ USD)</option>
+                    <option value="Efectivo Bs">💵 Efectivo (Bs)</option>
+                    <option value="Transferencia Bancaria">🏦 Transferencia Bancaria</option>
+                    <option value="Punto de Venta">💳 Punto de Venta (Tarjeta)</option>
                     <option value="Zelle">🏦 Zelle</option>
-                    <option value="Binance">🪙 Binance</option>
+                    <option value="Binance">🪙 Binance / USDT</option>
                     <option value="Cashea">📱 Cashea (Cta. por Cobrar)</option>
                   </select>
 
-                  <div className="flex items-center gap-1.5 flex-1 min-w-[180px]">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[190px]">
                     <span className="text-xs font-bold text-slate-500">$</span>
                     <input
                       type="number"
@@ -1496,11 +1554,12 @@ export default function DentalBudgetOdontogramModule({
                       min="0"
                       value={split.amountUsd}
                       onChange={(e) => {
-                        const nextSplits = paymentSplits.map((s, i) => i === index ? { ...s, amountUsd: parseFloat(e.target.value) || 0 } : s);
+                        const val = parseFloat(e.target.value) || 0;
+                        const nextSplits = paymentSplits.map((s, i) => i === index ? { ...s, amountUsd: val } : s);
                         setPaymentSplits(nextSplits);
                       }}
-                      placeholder="Monto en USD"
-                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white"
+                      placeholder="0.00"
+                      className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white"
                     />
                     <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
                       ({((parseFloat(split.amountUsd) || 0) * bcvRate).toFixed(2)} Bs)
@@ -1511,8 +1570,8 @@ export default function DentalBudgetOdontogramModule({
                     <button
                       type="button"
                       onClick={() => setPaymentSplits(paymentSplits.filter((_, i) => i !== index))}
-                      className="p-1.5 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-lg text-xs cursor-pointer"
-                      title="Quitar este método de pago"
+                      className="p-1.5 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-lg text-xs cursor-pointer transition-all"
+                      title="Eliminar este método de pago"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1520,6 +1579,49 @@ export default function DentalBudgetOdontogramModule({
                 </div>
               ))}
             </div>
+
+            {/* Barra de Balance y Cuadre de Métodos */}
+            {(() => {
+              const currentSum = paymentSplits.reduce((acc, p) => acc + (parseFloat(p.amountUsd) || 0), 0);
+              const diff = finalTotalUsd - currentSum;
+              const isBalanced = Math.abs(diff) < 0.01;
+
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-100 dark:bg-[#091124] rounded-xl text-[11px] font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-600 dark:text-slate-400">Total Métodos:</span>
+                    <span className="font-mono font-black text-slate-900 dark:text-white">${currentSum.toFixed(2)} USD</span>
+                    <span className="text-slate-400">/ Total Presupuesto: ${finalTotalUsd.toFixed(2)} USD</span>
+                  </div>
+
+                  {isBalanced ? (
+                    <span className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800 font-extrabold flex items-center gap-1">
+                      ✓ Montos Distribuidos al 100%
+                    </span>
+                  ) : diff > 0 ? (
+                    <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300">
+                      <span>⚠️ Falta asignar: <strong>${diff.toFixed(2)} USD</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const lastIdx = paymentSplits.length - 1;
+                          const currentLastAmount = parseFloat(paymentSplits[lastIdx]?.amountUsd) || 0;
+                          const updated = paymentSplits.map((s, i) => i === lastIdx ? { ...s, amountUsd: currentLastAmount + diff } : s);
+                          setPaymentSplits(updated);
+                        }}
+                        className="px-2 py-0.5 bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 rounded font-black hover:bg-amber-300 text-[10px] cursor-pointer"
+                      >
+                        ⚡ Ajustar
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-lg border border-rose-300 dark:border-rose-800 font-extrabold">
+                      ⚠️ Excede por: ${Math.abs(diff).toFixed(2)} USD
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
         </div>
