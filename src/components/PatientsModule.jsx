@@ -123,6 +123,11 @@ export default function PatientsModule({
   const [selectedProcToQuote, setSelectedProcToQuote] = useState('PROC-01');
   const [photoTermsAccepted, setPhotoTermsAccepted] = useState(false);
 
+  // Receta Médica & Solicitud de Exámenes
+  const [medsText, setMedsText] = useState('Amoxicilina 500mg - 1 cápsula cada 8 horas por 7 días.\nIbuprofeno 400mg - 1 tableta cada 8 horas si hay dolor persistente.');
+  const [medsNotes, setMedsNotes] = useState('Tomar los medicamentos después de las comidas con abundante agua. Mantener reposo relativo las primeras 24 horas y evitar alimentos duros o muy calientes.');
+  const [selectedExams, setSelectedExams] = useState(['Radiografía Panorámica', 'Tomografía Cone Beam 3D']);
+
   const safePatients = Array.isArray(patients) ? patients : [];
   const activePatient = safePatients.find(p => p && String(p.id) === String(selectedPatientId)) || safePatients[0] || null;
 
