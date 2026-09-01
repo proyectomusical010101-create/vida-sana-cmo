@@ -66,7 +66,7 @@ export default function PatientsModule({
     saveCategoriesToStorage(categoriesList);
   }, [categoriesList]);
 
-  const [patientSpecialist, setPatientSpecialist] = useState('Dr. Carlos Mendoza');
+  const [patientSpecialist, setPatientSpecialist] = useState(() => (specialists && specialists[0]?.name) || 'Dr. Alex Hernández');
   const [isSaving, setIsSaving] = useState(false);
 
   // ANAMNESIS (Historia Médica Completa)
@@ -359,7 +359,7 @@ export default function PatientsModule({
       phone: activePatient.phone || '',
       email: activePatient.email || '',
       category: activePatient.category || 'Privado',
-      assignedSpecialist: activePatient.assignedSpecialist || activePatient.assigned_specialist || 'Dr. Carlos Mendoza',
+      assignedSpecialist: activePatient.assigned_specialist || activePatient.assignedSpecialist || (specialists && specialists[0]?.name) || 'Dr. Rodrigo Navas',
       birthDate: activePatient.birthDate || activePatient.birth_date || '1995-06-15'
     });
     setShowEditPatientModal(true);
@@ -866,7 +866,7 @@ export default function PatientsModule({
                       const docDisplay = p.documentId || p.document_id || 'Sin Cédula';
                       const phoneDisplay = p.phone || p.mobile_phone || 'Sin Teléfono';
                       const categoryDisplay = p.category || 'Privado';
-                      const doctorDisplay = p.assignedSpecialist || p.assigned_specialist || 'Dr. Carlos Mendoza';
+                      const doctorDisplay = p.assigned_specialist || p.assignedSpecialist || (specialists && specialists[0]?.name) || 'Dr. Rodrigo Navas';
                       const ageDisplay = p.age || calculateAge(p.birthDate || p.birth_date);
 
                       return (
@@ -1326,7 +1326,7 @@ export default function PatientsModule({
                   <div><strong>Paciente:</strong> {pName}</div>
                   <div><strong>Cédula:</strong> {pDoc}</div>
                   <div><strong>Categoría:</strong> {pCategory}</div>
-                  <div><strong>Especialista Tratante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
+                  <div><strong>Especialista Tratante:</strong> {activePatient?.assigned_specialist || activePatient?.assignedSpecialist || (specialists && specialists[0]?.name) || 'Dr. Rodrigo Navas'}</div>
                 </div>
 
                 {/* Prescripción Médica */}
@@ -1499,7 +1499,7 @@ export default function PatientsModule({
                   <div><strong>Paciente:</strong> {pName}</div>
                   <div><strong>Cédula:</strong> {pDoc}</div>
                   <div><strong>Categoría:</strong> {pCategory}</div>
-                  <div><strong>Especialista Solicitante:</strong> {activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</div>
+                  <div><strong>Especialista Solicitante:</strong> {activePatient?.assigned_specialist || activePatient?.assignedSpecialist || (specialists && specialists[0]?.name) || 'Dr. Rodrigo Navas'}</div>
                 </div>
 
                 {/* Estudios Solicitados */}

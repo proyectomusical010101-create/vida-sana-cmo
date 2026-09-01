@@ -406,7 +406,7 @@ export default function DentalBudgetOdontogramModule({
         id: `ITEM-${Date.now().toString().slice(-4)}`,
         tooth: selectedToothModal,
         procedure: `${modalStatus}: ${modalProcName}`,
-        doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+        doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
         priceUsd: priceNum
       };
       setBudgetItems(prev => [...prev, newItem]);
@@ -432,7 +432,7 @@ export default function DentalBudgetOdontogramModule({
       id: `ITEM-${Date.now().toString().slice(-4)}`,
       tooth: cleanToothStr,
       procedure: customProcName,
-      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
       priceUsd: price
     };
 
@@ -498,7 +498,7 @@ export default function DentalBudgetOdontogramModule({
       date: new Date().toISOString().slice(0, 10),
       patientId: activePatient?.id || '100-01',
       patientName: activePatient?.name || activePatient?.full_name || 'Paciente',
-      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
       procedure: `Presupuesto Odontológico (${budgetItems.length} ítems)`,
       subtotal: subtotalUsd,
       discountPercent: discPercentNum,
@@ -524,7 +524,7 @@ export default function DentalBudgetOdontogramModule({
       date: new Date().toISOString().slice(0, 10),
       patientId: activePatient?.id || '100-01',
       patientName: activePatient?.name || activePatient?.full_name || 'Paciente',
-      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
       items: [...budgetItems],
       subtotalUsd,
       discountPercent: discPercentNum,
@@ -549,7 +549,7 @@ export default function DentalBudgetOdontogramModule({
     const updatedHistoryEntry = {
       date: new Date().toISOString().slice(0, 10),
       procedure: `Presupuesto Certificado #${budgetRecord.id} (${budgetItems.length} partidas)`,
-      doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+      doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
       cost: finalTotalUsd,
       status: 'Completado'
     };
@@ -1053,7 +1053,7 @@ export default function DentalBudgetOdontogramModule({
               Cédula: <span className="text-slate-900 dark:text-white font-extrabold">{activePatient?.documentId || activePatient?.document_id || 'V-0000000'}</span>
             </p>
             <p className="font-mono text-slate-600 dark:text-slate-400">
-              Categoría: <span className="text-teal-700 dark:text-teal-300 font-extrabold">{activePatient?.category || 'Privado'}</span> • Especialista: <span className="text-slate-900 dark:text-white font-extrabold">{activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'}</span>
+              Categoría: <span className="text-teal-700 dark:text-teal-300 font-extrabold">{activePatient?.category || 'Privado'}</span> • Especialista: <span className="text-slate-900 dark:text-white font-extrabold">{activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas'}</span>
             </p>
             {activePatient?.isMinor && (
               <p className="text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 p-1.5 rounded border border-amber-300 text-[11px]">
@@ -1967,7 +1967,7 @@ export default function DentalBudgetOdontogramModule({
                           id: 'ITEM-' + Date.now(),
                           tooth: `${selectedFaceModal.toothNum} (${selectedFaceModal.faceLabel})`,
                           procedure: pName,
-                          doctor: activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza',
+                          doctor: activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas',
                           priceUsd: price
                         };
 
@@ -2181,7 +2181,7 @@ export default function DentalBudgetOdontogramModule({
           </div>
           <div className="border-t border-slate-800 pt-1">
             <p className="font-extrabold uppercase">Firma Digital del Odontólogo Tratante</p>
-            <p className="text-slate-500 font-mono">{activePatient?.assignedSpecialist || 'Dr. Carlos Mendoza'} • M.P.P.S. 84.920</p>
+            <p className="text-slate-500 font-mono">{activePatient?.assigned_specialist || activePatient?.assignedSpecialist || 'Dr. Rodrigo Navas'} • M.P.P.S. 84.920</p>
           </div>
         </div>
 
