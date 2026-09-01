@@ -471,9 +471,9 @@ export default function App() {
         fetchAppointmentsApi().catch(() => [])
       ]);
 
-      setPatients(pts || []);
+      setPatients(pts && pts.length > 0 ? pts : INITIAL_PATIENTS);
       setProcedures(procs || []);
-      setSpecialists(specs || []);
+      setSpecialists(specs && specs.length > 0 ? specs : INITIAL_SPECIALISTS);
       setTransactions(cash || []);
       setCasheaTransactions(cashea || []);
       setConsultoryRentals(rentals || []);
