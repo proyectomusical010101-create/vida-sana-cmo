@@ -4,8 +4,8 @@ export const MEDICAL_DIVISIONS = [
     name: '1. Medicina Especializada',
     specialties: [
       'Anestesiología', 'Cardiología', 'Cardiovascular', 'Cirugía Cardiovascular',
-      'Coloproctología', 'Dermatología', 'Endocrinología', 'Inmunoalergia',
-      'Medicina General', 'Nefrología', 'Neurocirugía', 'Neurología',
+      'Coloproctología', 'Dermatología', 'Endocrinología', 'Ginecología & Obstetricia',
+      'Inmunoalergia', 'Medicina General', 'Nefrología', 'Neurocirugía', 'Neurología',
       'Nutrición', 'Otorrinolaringología', 'Pediatría', 'Psiquiatría',
       'Tiroides', 'Traumatología', 'Urología'
     ]

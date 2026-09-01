@@ -19,11 +19,11 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
   const [formCategory, setFormCategory] = useState('Odontología General');
   const [formPrice, setFormPrice] = useState('45');
   const [formCommission, setFormCommission] = useState('50');
-  const [formMaterialsCost, setFormMaterialsCost] = useState('5');
-  const [formHygienistBonus, setFormHygienistBonus] = useState('5.00');
+  const [formMaterialsCost, setFormMaterialsCost] = useState('0');
+  const [formAssistantBonus, setFormAssistantBonus] = useState('0.00');
 
   // Disponibilidad de Atención al Público (Días y Horarios)
-  const [formDays, setFormDays] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']);
+  const [formDays, setFormDays] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']);
   const [formStartTime, setFormStartTime] = useState('08:00');
   const [formEndTime, setFormEndTime] = useState('17:00');
 
@@ -58,11 +58,12 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
 
   // Generar y Descargar Plantilla Oficial Excel / CSV para Baremo
   const handleDownloadExcelTemplate = () => {
-    const headers = "Codigo_Servicio;Nombre_Servicio;Division_Medica;Categoria_Especialidad;Precio_Ref_USD;Porcentaje_Comision_Doctor;Costo_Estimado_Materiales_USD;Bonificacion_Higienista_USD\n";
+    const headers = "Codigo_Servicio;Nombre_Servicio;Division_Medica;Categoria_Especialidad;Precio_Ref_USD;Porcentaje_Comision_Doctor;Costo_Estimado_Materiales_USD;Bonificacion_Asistente_USD\n";
     const sampleRows = [
-      "ODON-101;Resina Molar Fotocurada;ODONTOLOGIA;Odontología General;45.00;50;5.00;5.00",
-      "MED-201;Consulta Médica Especializada;MEDICINA;Medicina Interna;50.00;70;0.00;0.00",
-      "RAD-301;Radiografía Panorámica;RAYOS_X;Imagenología;20.00;0;0.00;0.00",
+      "ODON-101;Resina Molar Fotocurada;ODONTOLOGIA;Odontología General;45.00;50;5.00;0.00",
+      "MED-201;Consulta Ginecológica Integral;MEDICINA;Ginecología & Obstetricia;50.00;60;5.00;10.00",
+      "MED-202;Consulta Médica Especializada;MEDICINA;Medicina General;40.00;70;0.00;0.00",
+      "RAD-301;Radiografía Panorámica;RAYOS_X;Radiología Dental 3D / Panorámica;20.00;0;0.00;0.00",
       "LAB-401;Perfil 20 Completo;LABORATORIO;Bionalista / Pruebas de Sangre;35.00;40;7.00;0.00"
     ].join("\n");
 
@@ -113,20 +114,34 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
 
           const code = cols[0] || `IMP-${i}`;
           const name = cols[1] || 'Servicio Sin Nombre';
-          let divisionRaw = (cols[2] || 'MEDICINA').toUpperCase();
+          let divisionRaw = (cols[2] || '').toUpperCase();
           const category = cols[3] || 'General';
           
           // Limpiar números con comas europeas/venezolanas (ej: 45,00 -> 45.00)
           const price = parseFloat((cols[4] || '0').replace(',', '.')) || 0;
           const commission = parseFloat((cols[5] || '50').replace(',', '.')) || 50;
           const materialsCost = parseFloat((cols[6] || '0').replace(',', '.')) || 0;
-          const hygienistBonus = parseFloat((cols[7] || '0').replace(',', '.')) || 0;
+          
+          let assistantBonus = 0;
+          if (cols[7] !== undefined && cols[7] !== '') {
+            assistantBonus = parseFloat(cols[7].replace(',', '.')) || 0;
+          } else if (category.toLowerCase().includes('ginec') || name.toLowerCase().includes('ginec')) {
+            assistantBonus = 10.00;
+          }
 
-          let division = 'MEDICINA';
+          let division = 'ODONTOLOGIA';
           if (divisionRaw.includes('ODON') || divisionRaw.includes('DENT')) division = 'ODONTOLOGIA';
           else if (divisionRaw.includes('LAB') || divisionRaw.includes('SANGRE')) division = 'LABORATORIO';
           else if (divisionRaw.includes('RAYO') || divisionRaw.includes('RAD') || divisionRaw.includes('X')) division = 'RAYOS_X';
           else if (divisionRaw.includes('MED')) division = 'MEDICINA';
+          else {
+            const cLower = category.toLowerCase();
+            const nLower = name.toLowerCase();
+            if (cLower.includes('odon') || nLower.includes('molar') || nLower.includes('resina') || nLower.includes('diente')) division = 'ODONTOLOGIA';
+            else if (cLower.includes('lab') || nLower.includes('perfil') || nLower.includes('sangre')) division = 'LABORATORIO';
+            else if (cLower.includes('rayo') || nLower.includes('panoram') || nLower.includes('eco')) division = 'RAYOS_X';
+            else division = 'MEDICINA';
+          }
 
           const existingIdx = newProcs.findIndex(p => p.code === code || p.name.toLowerCase() === name.toLowerCase());
 
@@ -141,7 +156,8 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               price,
               doctorCommissionPercent: commission,
               estimatedMaterialsCost: materialsCost,
-              hygienistBonus
+              assistantBonus,
+              hygienistBonus: assistantBonus
             };
             updatedCount++;
           } else {
@@ -155,7 +171,11 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               price,
               doctorCommissionPercent: commission,
               estimatedMaterialsCost: materialsCost,
-              hygienistBonus,
+              assistantBonus,
+              hygienistBonus: assistantBonus,
+              availableDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+              startTime: '08:00',
+              endTime: '17:00',
               materials: []
             });
             addedCount++;
@@ -184,6 +204,9 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       return;
     }
 
+    const isGyn = formCategory.toLowerCase().includes('ginec') || formName.toLowerCase().includes('ginec');
+    const asstBonusNum = formAssistantBonus !== '' ? (parseFloat(formAssistantBonus) || 0) : (isGyn ? 10.00 : 0.00);
+
     const procObj = {
       id: editingProc ? editingProc.id : `PROC-${Date.now()}`,
       code: formCode || `SERV-${Date.now().toString().slice(-4)}`,
@@ -194,7 +217,8 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
       price: parseFloat(formPrice) || 0,
       doctorCommissionPercent: parseFloat(formCommission) || 50,
       estimatedMaterialsCost: parseFloat(formMaterialsCost) || 0,
-      hygienistBonus: parseFloat(formHygienistBonus) || 0,
+      assistantBonus: asstBonusNum,
+      hygienistBonus: asstBonusNum,
       availableDays: formDays,
       startTime: formStartTime || '08:00',
       endTime: formEndTime || '17:00',
@@ -304,12 +328,17 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               setEditingProc(null);
               setFormCode('');
               setFormName('');
-              setFormDivision('ODONTOLOGIA');
-              setFormCategory('Odontología General');
+              const initialDiv = selectedDivision !== 'ALL' ? selectedDivision : 'ODONTOLOGIA';
+              setFormDivision(initialDiv);
+              const divObj = MEDICAL_DIVISIONS.find(d => d.id === initialDiv);
+              setFormCategory(divObj && divObj.specialties ? divObj.specialties[0] : 'Odontología General');
               setFormPrice('45');
               setFormCommission('50');
-              setFormMaterialsCost('5');
-              setFormHygienistBonus('5.00');
+              setFormMaterialsCost('0');
+              setFormAssistantBonus('0.00');
+              setFormDays(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']);
+              setFormStartTime('08:00');
+              setFormEndTime('17:00');
               setShowModal(true);
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold rounded-xl text-xs shadow-sm transition-all"
@@ -411,69 +440,96 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 <th className="p-3">Categoría / Especialidad</th>
                 <th className="p-3 text-right">Precio Público ($)</th>
                 <th className="p-3 text-right">% Medico</th>
-                <th className="p-3 text-right">Bono Higienista ($)</th>
+                <th className="p-3 text-right">Bono Asistente ($)</th>
                 <th className="p-3 text-right">Costo Insumos ($)</th>
                 <th className="p-3 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-900 font-medium">
-              {filteredProcedures.map(proc => (
-                <tr key={proc.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3 font-mono font-bold text-slate-700">{proc.code || proc.id}</td>
-                  <td className="p-3 font-extrabold text-slate-900">{proc.name}</td>
-                  <td className="p-3">
-                    <div className="space-y-0.5">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#85a738]/20 text-[#476016] border border-[#85a738]/40 block w-max">
-                        📅 {Array.isArray(proc.availableDays) ? proc.availableDays.join(', ') : 'Lun a Vie'}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-500 font-bold block">
-                        🕒 {proc.startTime || '08:00'} - {proc.endTime || '17:00'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300">
-                      {proc.division || 'ODONTOLOGIA'}
-                    </span>
-                  </td>
-                  <td className="p-3 text-slate-700 font-semibold">{proc.category || 'General'}</td>
-                  <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(proc.price||0).toFixed(2)} USD</td>
-                  <td className="p-3 text-right font-mono font-bold text-teal-800">{proc.doctorCommissionPercent||50}%</td>
-                  <td className="p-3 text-right font-mono font-black text-emerald-700">${(proc.hygienistBonus || 5).toFixed(2)} USD</td>
-                  <td className="p-3 text-right font-mono text-slate-600">${(proc.estimatedMaterialsCost||0).toFixed(2)}</td>
-                  <td className="p-3 text-center space-x-1">
-                    <button
-                      onClick={() => {
-                        setEditingProc(proc);
-                        setFormCode(proc.code || '');
-                        setFormName(proc.name || '');
-                        setFormDivision(proc.division || 'ODONTOLOGIA');
-                        setFormCategory(proc.category || 'Odontología General');
-                        setFormPrice(proc.price?.toString() || '45');
-                        setFormCommission(proc.doctorCommissionPercent?.toString() || '50');
-                        setFormMaterialsCost(proc.estimatedMaterialsCost?.toString() || '5');
-                        setFormHygienistBonus(proc.hygienistBonus?.toString() || '5.00');
-                        setFormDays(Array.isArray(proc.availableDays) ? proc.availableDays : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']);
-                        setFormStartTime(proc.startTime || '08:00');
-                        setFormEndTime(proc.endTime || '17:00');
-                        setShowModal(true);
-                      }}
-                      className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block"
-                      title="Editar Servicio"
-                    >
-                      <Edit className="w-4 h-4 text-teal-700 dark:text-teal-400" />
-                    </button>
+              {filteredProcedures.map(proc => {
+                const isGyn = String(proc.category || '').toLowerCase().includes('ginec') || String(proc.name || '').toLowerCase().includes('ginec');
+                const asstVal = proc.assistantBonus !== undefined && proc.assistantBonus !== null
+                  ? parseFloat(proc.assistantBonus)
+                  : proc.hygienistBonus !== undefined && proc.hygienistBonus !== null
+                    ? parseFloat(proc.hygienistBonus)
+                    : isGyn ? 10.00 : 0.00;
 
-                    <button
-                      onClick={() => handleDeleteProcedure(proc)}
-                      className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-700 dark:text-rose-400 transition-all inline-block"
-                      title="Eliminar Servicio"
-                    >
-                      <Trash2 className="w-4 h-4 text-rose-600" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                const divColor = proc.division === 'ODONTOLOGIA'
+                  ? 'bg-teal-100 text-teal-900 border-teal-300'
+                  : proc.division === 'LABORATORIO'
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : proc.division === 'RAYOS_X'
+                      ? 'bg-purple-100 text-purple-900 border-purple-300'
+                      : 'bg-blue-100 text-blue-900 border-blue-300';
+
+                const divLabel = proc.division === 'ODONTOLOGIA'
+                  ? 'Odontología'
+                  : proc.division === 'LABORATORIO'
+                    ? 'Laboratorio'
+                    : proc.division === 'RAYOS_X'
+                      ? 'Rayos X'
+                      : 'Medicina';
+
+                return (
+                  <tr key={proc.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 font-mono font-bold text-slate-700">{proc.code || proc.id}</td>
+                    <td className="p-3 font-extrabold text-slate-900">{proc.name}</td>
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#85a738]/20 text-[#476016] border border-[#85a738]/40 block w-max">
+                          📅 {Array.isArray(proc.availableDays) ? proc.availableDays.join(', ') : 'Lun a Sáb'}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-500 font-bold block">
+                          🕒 {proc.startTime || '08:00'} - {proc.endTime || '17:00'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${divColor}`}>
+                        {divLabel}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-700 font-semibold">{proc.category || 'General'}</td>
+                    <td className="p-3 text-right font-mono font-extrabold text-emerald-900">${(proc.price||0).toFixed(2)} USD</td>
+                    <td className="p-3 text-right font-mono font-bold text-teal-800">{proc.doctorCommissionPercent||50}%</td>
+                    <td className="p-3 text-right font-mono font-black text-emerald-700">
+                      ${asstVal.toFixed(2)} USD
+                    </td>
+                    <td className="p-3 text-right font-mono text-slate-600">${(proc.estimatedMaterialsCost||0).toFixed(2)}</td>
+                    <td className="p-3 text-center space-x-1">
+                      <button
+                        onClick={() => {
+                          setEditingProc(proc);
+                          setFormCode(proc.code || '');
+                          setFormName(proc.name || '');
+                          setFormDivision(proc.division || 'ODONTOLOGIA');
+                          setFormCategory(proc.category || 'Odontología General');
+                          setFormPrice(proc.price?.toString() || '45');
+                          setFormCommission(proc.doctorCommissionPercent?.toString() || '50');
+                          setFormMaterialsCost(proc.estimatedMaterialsCost?.toString() || '0');
+                          setFormAssistantBonus(asstVal.toString());
+                          setFormDays(Array.isArray(proc.availableDays) ? proc.availableDays : ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']);
+                          setFormStartTime(proc.startTime || '08:00');
+                          setFormEndTime(proc.endTime || '17:00');
+                          setShowModal(true);
+                        }}
+                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-200 transition-all inline-block cursor-pointer"
+                        title="Editar Servicio"
+                      >
+                        <Edit className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteProcedure(proc)}
+                        className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded text-rose-700 dark:text-rose-400 transition-all inline-block cursor-pointer"
+                        title="Eliminar Servicio"
+                      >
+                        <Trash2 className="w-4 h-4 text-rose-600" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -636,10 +692,20 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1">División Clínica</label>
+                  <label className="block font-bold mb-1">División / Área Clínica *</label>
                   <select
                     value={formDivision}
-                    onChange={(e) => setFormDivision(e.target.value)}
+                    onChange={(e) => {
+                      const newDiv = e.target.value;
+                      setFormDivision(newDiv);
+                      const divObj = MEDICAL_DIVISIONS.find(d => d.id === newDiv);
+                      if (divObj && divObj.specialties && divObj.specialties.length > 0) {
+                        setFormCategory(divObj.specialties[0]);
+                        if (divObj.specialties[0].toLowerCase().includes('ginec') && (formAssistantBonus === '0' || formAssistantBonus === '0.00' || !formAssistantBonus)) {
+                          setFormAssistantBonus('10.00');
+                        }
+                      }
+                    }}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
                   >
                     {MEDICAL_DIVISIONS.map(d => (
@@ -650,35 +716,48 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Nombre del Servicio / Tratamiento</label>
+                <label className="block font-bold mb-1">Nombre del Servicio / Tratamiento *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej: Profilaxis Dental Profunda"
                   value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormName(val);
+                    if (val.toLowerCase().includes('ginec') && (formAssistantBonus === '0' || formAssistantBonus === '0.00' || !formAssistantBonus)) {
+                      setFormAssistantBonus('10.00');
+                    }
+                  }}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Categoría / Especialidad</label>
+                <label className="block font-bold mb-1">Categoría / Especialidad *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Odontología General / Pediatría"
+                  placeholder="Ej: Odontología General / Ginecología & Obstetricia"
                   value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormCategory(val);
+                    if (val.toLowerCase().includes('ginec') && (formAssistantBonus === '0' || formAssistantBonus === '0.00' || !formAssistantBonus)) {
+                      setFormAssistantBonus('10.00');
+                    }
+                  }}
                   className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block font-bold mb-1">Precio ($ USD)</label>
+                  <label className="block font-bold mb-1">Precio ($ USD) *</label>
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
                     value={formPrice}
                     onChange={(e) => setFormPrice(e.target.value)}
@@ -687,11 +766,12 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1">% Medico</label>
+                  <label className="block font-bold mb-1">% Médico</label>
                   <input
                     type="number"
                     step="1"
-                    required
+                    min="0"
+                    max="100"
                     value={formCommission}
                     onChange={(e) => setFormCommission(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
@@ -699,15 +779,21 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                 </div>
 
                 <div>
-                  <label className="block font-bold mb-1">Bono Higienista ($)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold mb-1">Bono Asistente ($)</label>
+                  </div>
                   <input
                     type="number"
                     step="0.01"
-                    required
-                    value={formHygienistBonus}
-                    onChange={(e) => setFormHygienistBonus(e.target.value)}
+                    min="0"
+                    placeholder="0.00"
+                    value={formAssistantBonus}
+                    onChange={(e) => setFormAssistantBonus(e.target.value)}
                     className="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg font-mono font-black text-emerald-900"
                   />
+                  <span className="text-[9px] text-slate-400 block mt-0.5 font-normal">
+                    {formCategory.toLowerCase().includes('ginec') || formName.toLowerCase().includes('ginec') ? 'Defecto: $10 (Ginecología)' : 'Opcional (Defecto: $0)'}
+                  </span>
                 </div>
 
                 <div>
@@ -715,11 +801,15 @@ export default function ServicesBaremoModule({ procedures, setProcedures }) {
                   <input
                     type="number"
                     step="0.01"
-                    required
+                    min="0"
+                    placeholder="0.00"
                     value={formMaterialsCost}
                     onChange={(e) => setFormMaterialsCost(e.target.value)}
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono font-bold text-slate-900"
                   />
+                  <span className="text-[9px] text-slate-400 block mt-0.5 font-normal">
+                    Opcional (Defecto: $0)
+                  </span>
                 </div>
               </div>
 

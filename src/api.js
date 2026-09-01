@@ -851,29 +851,74 @@ export async function adjustStockApi(id, type, quantity) {
   return { success: true, currentStock: updatedStock };
 }
 
+// Helper para resolver la división médica de forma precisa sin forzar todo a MEDICINA
+function resolveProcedureDivision(rawDivision, category, name, code) {
+  const d = String(rawDivision || '').toUpperCase().trim();
+  if (d === 'ODONTOLOGIA' || d === 'ODONTOLOGÍA' || d.includes('ODON') || d.includes('DENT')) return 'ODONTOLOGIA';
+  if (d === 'LABORATORIO' || d.includes('LAB') || d.includes('SANGRE')) return 'LABORATORIO';
+  if (d === 'RAYOS_X' || d === 'RAYOS X' || d.includes('RAYO') || d.includes('RAD') || d.includes('IMAGEN')) return 'RAYOS_X';
+  if (d === 'MEDICINA' || d.includes('MED')) return 'MEDICINA';
+
+  const catStr = String(category || '').toLowerCase();
+  const nameStr = String(name || '').toLowerCase();
+  const codeStr = String(code || '').toLowerCase();
+
+  if (catStr.includes('odon') || catStr.includes('dent') || catStr.includes('period') || catStr.includes('endo') || catStr.includes('cirug') ||
+      nameStr.includes('diente') || nameStr.includes('molar') || nameStr.includes('resina') || nameStr.includes('exodon') || nameStr.includes('profilax') || nameStr.includes('limpieza dental') ||
+      codeStr.startsWith('odon')) {
+    return 'ODONTOLOGIA';
+  }
+  if (catStr.includes('lab') || catStr.includes('sangre') || catStr.includes('hemat') || catStr.includes('orina') || catStr.includes('uro') || catStr.includes('quimica') ||
+      nameStr.includes('perfil') || nameStr.includes('laboratorio') || nameStr.includes('cultivo') || codeStr.startsWith('lab')) {
+    return 'LABORATORIO';
+  }
+  if (catStr.includes('rayo') || catStr.includes('rad') || catStr.includes('panoram') || catStr.includes('eco') || catStr.includes('tomo') ||
+      nameStr.includes('radiograf') || nameStr.includes('tomograf') || nameStr.includes('ecograf') || codeStr.startsWith('rad') || codeStr.startsWith('rx')) {
+    return 'RAYOS_X';
+  }
+  return rawDivision || 'MEDICINA';
+}
+
+function resolveAssistantBonus(rawBonus, category, name) {
+  if (rawBonus !== undefined && rawBonus !== null && rawBonus !== '') {
+    return parseFloat(rawBonus) || 0;
+  }
+  const cat = String(category || '').toLowerCase();
+  const n = String(name || '').toLowerCase();
+  if (cat.includes('ginec') || n.includes('ginec') || cat.includes('obstetr') || n.includes('obstetr')) {
+    return 10.00;
+  }
+  return 0.00;
+}
+
 export async function fetchProcedures() {
   let cloudProcs = [];
   if (supabase) {
     try {
       const { data, error } = await supabase.from('procedures').select('*').order('id', { ascending: true });
       if (!error && Array.isArray(data) && data.length > 0) {
-        cloudProcs = data.map(p => ({
-          id: String(p.id),
-          code: p.code || p.id,
-          name: p.name,
-          category: p.category || 'General',
-          division: p.division || 'MEDICINA',
-          specialty: p.category || 'General',
-          price: parseFloat(p.price) || 0,
-          doctorCommissionPercent: parseFloat(p.doctor_commission_percent || p.doctorCommissionPercent) || 50,
-          estimatedMaterialsCost: parseFloat(p.estimated_materials_cost || p.estimatedMaterialsCost) || 0,
-          hygienistBonus: parseFloat(p.hygienist_bonus || p.hygienistBonus) || 0,
-          availableDays: p.available_days || p.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
-          startTime: p.start_time || p.startTime || '08:00',
-          endTime: p.end_time || p.endTime || '17:00',
-          isPublicVisible: p.is_public_visible ?? p.isPublicVisible ?? true,
-          materials: p.materials_json || p.materials || []
-        }));
+        cloudProcs = data.map(p => {
+          const div = resolveProcedureDivision(p.division, p.category, p.name, p.code);
+          const asstBonus = resolveAssistantBonus(p.assistant_bonus ?? p.assistantBonus ?? p.hygienist_bonus ?? p.hygienistBonus, p.category, p.name);
+          return {
+            id: String(p.id),
+            code: p.code || p.id,
+            name: p.name,
+            category: p.category || 'General',
+            division: div,
+            specialty: p.category || 'General',
+            price: parseFloat(p.price) || 0,
+            doctorCommissionPercent: parseFloat(p.doctor_commission_percent || p.doctorCommissionPercent) || 50,
+            estimatedMaterialsCost: parseFloat(p.estimated_materials_cost || p.estimatedMaterialsCost) || 0,
+            assistantBonus: asstBonus,
+            hygienistBonus: asstBonus,
+            availableDays: p.available_days || p.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+            startTime: p.start_time || p.startTime || '08:00',
+            endTime: p.end_time || p.endTime || '17:00',
+            isPublicVisible: p.is_public_visible ?? p.isPublicVisible ?? true,
+            materials: p.materials_json || p.materials || []
+          };
+        });
       }
     } catch (e) {}
   }
@@ -885,29 +930,39 @@ export async function fetchProcedures() {
 
   const localProcs = getLocalProcedures();
   if (localProcs.length > 0) {
-    return localProcs;
+    return localProcs.map(p => ({
+      ...p,
+      division: resolveProcedureDivision(p.division, p.category, p.name, p.code),
+      assistantBonus: resolveAssistantBonus(p.assistantBonus ?? p.hygienistBonus, p.category, p.name),
+      hygienistBonus: resolveAssistantBonus(p.assistantBonus ?? p.hygienistBonus, p.category, p.name)
+    }));
   }
 
   return [
-    { id: 'PROC-01', code: 'ODON-101', name: 'Resina Fotocurada Molar', division: 'ODONTOLOGIA', category: 'Odontología General', specialty: 'Odontología General', price: 45.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 5, isPublicVisible: true, materials: [] },
-    { id: 'PROC-02', code: 'ODON-102', name: 'Exodoncia Simple', division: 'ODONTOLOGIA', category: 'Cirugía/Endodoncia', specialty: 'Cirugía/Endodoncia', price: 60.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, hygienistBonus: 0, isPublicVisible: true, materials: [] }
+    { id: 'PROC-01', code: 'ODON-101', name: 'Resina Fotocurada Molar', division: 'ODONTOLOGIA', category: 'Odontología General', specialty: 'Odontología General', price: 45.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, assistantBonus: 0, hygienistBonus: 0, isPublicVisible: true, materials: [] },
+    { id: 'PROC-02', code: 'ODON-102', name: 'Exodoncia Simple', division: 'ODONTOLOGIA', category: 'Cirugía/Endodoncia', specialty: 'Cirugía/Endodoncia', price: 60.00, doctorCommissionPercent: 50, estimatedMaterialsCost: 5, assistantBonus: 0, hygienistBonus: 0, isPublicVisible: true, materials: [] },
+    { id: 'PROC-03', code: 'MED-201', name: 'Consulta Ginecológica Integral & Citología', division: 'MEDICINA', category: 'Ginecología & Obstetricia', specialty: 'Ginecología & Obstetricia', price: 50.00, doctorCommissionPercent: 60, estimatedMaterialsCost: 5, assistantBonus: 10, hygienistBonus: 10, isPublicVisible: true, materials: [] }
   ];
 }
 
 export async function createOrUpdateProcedureApi(proc) {
   const cleanId = String(proc.id || `PROC-${Date.now()}`);
+  const resolvedDiv = resolveProcedureDivision(proc.division, proc.category || proc.specialty, proc.name, proc.code);
+  const resolvedAsst = resolveAssistantBonus(proc.assistantBonus ?? proc.hygienistBonus, proc.category || proc.specialty, proc.name);
+
   const formattedRecord = {
     id: cleanId,
     code: proc.code || cleanId,
     name: String(proc.name || '').trim(),
     category: proc.category || proc.specialty || 'General',
-    division: proc.division || 'MEDICINA',
+    division: resolvedDiv,
     specialty: proc.category || proc.specialty || 'General',
     price: parseFloat(proc.price) || 0,
     doctorCommissionPercent: parseFloat(proc.doctorCommissionPercent) || 50,
     estimatedMaterialsCost: parseFloat(proc.estimatedMaterialsCost) || 0,
-    hygienistBonus: parseFloat(proc.hygienistBonus) || 0,
-    availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+    assistantBonus: resolvedAsst,
+    hygienistBonus: resolvedAsst,
+    availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
     startTime: proc.startTime || '08:00',
     endTime: proc.endTime || '17:00',
     isPublicVisible: proc.isPublicVisible !== false,
@@ -936,7 +991,8 @@ export async function createOrUpdateProcedureApi(proc) {
         price: formattedRecord.price,
         doctor_commission_percent: formattedRecord.doctorCommissionPercent,
         estimated_materials_cost: formattedRecord.estimatedMaterialsCost,
-        hygienist_bonus: formattedRecord.hygienistBonus,
+        assistant_bonus: formattedRecord.assistantBonus,
+        hygienist_bonus: formattedRecord.assistantBonus,
         available_days: formattedRecord.availableDays,
         start_time: formattedRecord.startTime,
         end_time: formattedRecord.endTime,
@@ -948,8 +1004,10 @@ export async function createOrUpdateProcedureApi(proc) {
       if (error && error.message && error.message.includes('column')) {
         const minPayload = {
           id: cleanId,
+          code: formattedRecord.code,
           name: formattedRecord.name,
           category: formattedRecord.category,
+          division: formattedRecord.division,
           price: formattedRecord.price,
           materials_json: formattedRecord.materials
         };
@@ -968,18 +1026,22 @@ export async function bulkSaveProceduresApi(procArray) {
 
   const formattedList = procArray.map((proc, i) => {
     const cleanId = String(proc.id || `PROC-${Date.now()}-${i}`);
+    const resolvedDiv = resolveProcedureDivision(proc.division, proc.category || proc.specialty, proc.name, proc.code);
+    const resolvedAsst = resolveAssistantBonus(proc.assistantBonus ?? proc.hygienistBonus, proc.category || proc.specialty, proc.name);
+
     return {
       id: cleanId,
       code: proc.code || cleanId,
       name: String(proc.name || '').trim(),
       category: proc.category || proc.specialty || 'General',
-      division: proc.division || 'MEDICINA',
+      division: resolvedDiv,
       specialty: proc.category || proc.specialty || 'General',
       price: parseFloat(proc.price) || 0,
       doctorCommissionPercent: parseFloat(proc.doctorCommissionPercent) || 50,
       estimatedMaterialsCost: parseFloat(proc.estimatedMaterialsCost) || 0,
-      hygienistBonus: parseFloat(proc.hygienistBonus) || 0,
-      availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+      assistantBonus: resolvedAsst,
+      hygienistBonus: resolvedAsst,
+      availableDays: proc.availableDays || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
       startTime: proc.startTime || '08:00',
       endTime: proc.endTime || '17:00',
       isPublicVisible: proc.isPublicVisible !== false,
@@ -993,7 +1055,7 @@ export async function bulkSaveProceduresApi(procArray) {
   // Supabase Cloud
   if (supabase) {
     try {
-      const payloads = formattedList.map(p => ({
+      const payloadArray = formattedList.map(p => ({
         id: p.id,
         code: p.code,
         name: p.name,
@@ -1002,19 +1064,23 @@ export async function bulkSaveProceduresApi(procArray) {
         price: p.price,
         doctor_commission_percent: p.doctorCommissionPercent,
         estimated_materials_cost: p.estimatedMaterialsCost,
-        hygienist_bonus: p.hygienistBonus,
+        assistant_bonus: p.assistantBonus,
+        hygienist_bonus: p.assistantBonus,
         available_days: p.availableDays,
         start_time: p.startTime,
         end_time: p.endTime,
+        is_public_visible: p.isPublicVisible,
         materials_json: p.materials
       }));
 
-      const { error } = await supabase.from('procedures').upsert(payloads);
+      const { error } = await supabase.from('procedures').upsert(payloadArray);
       if (error && error.message && error.message.includes('column')) {
         const minPayloads = formattedList.map(p => ({
           id: p.id,
+          code: p.code,
           name: p.name,
           category: p.category,
+          division: p.division,
           price: p.price,
           materials_json: p.materials
         }));
